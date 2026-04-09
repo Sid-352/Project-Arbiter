@@ -16,7 +16,7 @@
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 
-use crate::ordinance::Summons;
+use crate::ordinance::{EnvContext, Summons};
 
 // ── Shared Event Channel ──────────────────────────────────────────────────────
 
@@ -92,6 +92,7 @@ pub mod fs {
     pub fn spawn_watcher(
         watch_path: String,
         glob: String,
+        filter: crate::filter::VassalFilter,
         tx: mpsc::Sender<Summons>,
     ) -> std::thread::JoinHandle<()> {
         info!(%watch_path, %glob, "Vigil-fs: spawning watcher");
@@ -121,6 +122,11 @@ pub mod fs {
                         for path in &event.paths {
                             let path_str = path.to_string_lossy().to_string();
 
+                            if filter.is_own(&path_str) {
+                                debug!(%path_str, "Vigil-fs: skipping Vassal internal write");
+                                continue;
+                            }
+
                             if is_temp_file(&path_str) {
                                 debug!(%path_str, "Vigil-fs: skipping temp file");
                                 continue;
@@ -141,10 +147,15 @@ pub mod fs {
                                 continue;
                             }
 
-                            info!(%path_str, "Vigil-fs: file event dispatched");
+                            let mut context = super::EnvContext::new();
+                            context.insert("file_path", &path_str);
+                            context.insert("file_name", path.file_name().and_then(|n| n.to_str()).unwrap_or(""));
+                            context.insert("file_ext", path.extension().and_then(|e| e.to_str()).unwrap_or(""));
+
                             let summons = Summons::FileCreated {
                                 watch_path: watch_path.clone(),
                                 glob: glob.clone(),
+                                context,
                             };
                             if tx.blocking_send(summons).is_err() {
                                 break; // Channel closed — watcher done
@@ -205,7 +216,9 @@ pub mod keys {
             loop {
                 if let Ok(event) = global_hotkey::GlobalHotKeyEvent::receiver().try_recv() {
                     debug!(?event, "Vigil-keys: hotkey fired");
-                    let summons = Summons::Hotkey { combo: combo.clone() };
+                    let mut context = super::EnvContext::new();
+                    context.insert("hotkey_combo", &combo);
+                    let summons = Summons::Hotkey { combo: combo.clone(), context };
                     if tx.send(summons).await.is_err() {
                         break;
                     }

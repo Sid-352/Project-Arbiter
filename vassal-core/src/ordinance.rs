@@ -27,6 +27,16 @@ pub enum ActionType {
     Navigate(String),
     /// No-op pause for `u64` milliseconds.
     Wait(u64),
+    // ── File Operations (Inscribe) ──────────────────────────────────────────
+    /// Move a file from `source` to `destination`.
+    InscribeMove { source: String, destination: String },
+    /// Copy a file from `source` to `destination`.
+    InscribeCopy { source: String, destination: String },
+    /// Delete a target file.
+    InscribeDelete { target: String },
+    // ── Shell Execution (Baton) ─────────────────────────────────────────────
+    /// Execute a shell command.
+    Shell { command: String, args: Vec<String>, detached: bool },
 }
 
 /// An absolute screen coordinate validated by The Hand.
@@ -84,14 +94,46 @@ pub struct OrdNode {
 pub enum Summons {
     /// A file matching `glob` finished writing inside `watch_path`.
     #[cfg(feature = "vigil-fs")]
-    FileCreated { watch_path: String, glob: String },
+    FileCreated { watch_path: String, glob: String, context: EnvContext },
     /// A user-defined global hotkey combination.
     #[cfg(feature = "vigil-keys")]
-    Hotkey { combo: String },
+    Hotkey { combo: String, context: EnvContext },
     /// A named process appeared in the process list.
-    ProcessAppeared { name: String },
+    ProcessAppeared { name: String, context: EnvContext },
     /// Manual trigger (used for testing and UI-triggered runs).
-    Manual,
+    Manual { context: EnvContext },
+}
+
+impl Summons {
+    pub fn to_registry_key(&self) -> String {
+        match self {
+            #[cfg(feature = "vigil-fs")]
+            Self::FileCreated { watch_path, glob, .. } => format!("FileCreated|{}|{}", watch_path, glob),
+            #[cfg(feature = "vigil-keys")]
+            Self::Hotkey { combo, .. } => format!("Hotkey|{}", combo),
+            Self::ProcessAppeared { name, .. } => format!("ProcessAppeared|{}", name),
+            Self::Manual { .. } => "Manual".to_string(),
+        }
+    }
+}
+
+// ── Environment Context ───────────────────────────────────────────────────────
+
+/// The payload associated with a fired trigger.
+/// Provides variables for string interpolation (e.g., `${env.file_path}`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvContext {
+    pub variables: HashMap<String, String>,
+}
+
+impl EnvContext {
+    pub fn new() -> Self {
+        Self { variables: HashMap::new() }
+    }
+
+    pub fn insert(&mut self, key: &str, value: &str) {
+        self.variables.insert(key.to_string(), value.to_string());
+    }
 }
 
 // ── Run-time Events ───────────────────────────────────────────────────────────
@@ -107,6 +149,15 @@ pub enum RunEvent {
     Panic(String),
     /// Sequence completed normally.
     Done,
+}
+
+// ── Orchestrator → Executor Payload ──────────────────────────────────────────
+
+/// Payload sent from the Atlas to the mechanical Executor to start a sequence.
+pub struct ExecData {
+    pub nodes: Vec<OrdNode>,
+    pub context: EnvContext,
+    pub abort_rx: tokio::sync::oneshot::Receiver<()>,
 }
 
 /// A single structured log entry.

@@ -18,3 +18,5 @@ pub mod presence;
 
 #[cfg(feature = "signet")]
 pub mod signet;
+
+pub mod filter;

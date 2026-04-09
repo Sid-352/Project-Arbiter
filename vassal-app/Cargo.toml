@@ -11,10 +11,11 @@ name = "vassal"
 path = "src/main.rs"
 
 [dependencies]
-vassal-core   = { path = "../vassal-core", features = ["vigil-fs", "vigil-keys", "presence"] }
+vassal-core   = { path = "../vassal-core", features = ["vigil-fs", "vigil-keys", "presence", "signet"] }
 vassal-bridge = { path = "../vassal-bridge" }
 tao           = "0.30"
 tray-icon     = "0.19"
 tokio         = { version = "1", features = ["rt-multi-thread", "macros"] }
 tracing       = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dirs          = "5.0"

@@ -11,18 +11,26 @@ default = []
 vigil-fs   = ["dep:notify"]
 vigil-keys = ["dep:global-hotkey"]
 presence   = ["dep:rdev"]
-signet     = ["dep:aes-gcm", "dep:base64"]
+signet     = ["dep:aes-gcm", "dep:base64", "dep:hostname", "dep:typenum"]
 
 [dependencies]
-serde       = { version = "1", features = ["derive"] }
-serde_json  = "1"
-tokio       = { version = "1", features = ["rt", "sync", "macros", "time"] }
-tracing     = "0.1"
-regex       = "1"
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing    = "0.1"
+tokio      = { version = "1", features = ["rt", "sync", "macros", "time"] }
+regex      = "1"
 
-# Feature-gated signal modules
-notify        = { version = "6", optional = true }
+# Feature: vigil-fs
+notify = { version = "6", optional = true }
+
+# Feature: vigil-keys
 global-hotkey = { version = "0.6", optional = true }
-rdev          = { version = "0.5", optional = true }
-aes-gcm       = { version = "0.10", optional = true }
-base64        = { version = "0.22", optional = true }
+
+# Feature: presence
+rdev  = { version = "0.5", optional = true }
+
+# Feature: signet
+aes-gcm = { version = "0.10", optional = true }
+base64  = { version = "0.22", optional = true }
+hostname = { version = "0.4", optional = true }
+typenum  = { version = "1.17", optional = true }

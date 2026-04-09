@@ -95,6 +95,10 @@ impl HardwareBridge {
             ActionType::Wait(ms) => {
                 std::thread::sleep(std::time::Duration::from_millis(*ms));
             }
+            // File & Shell actions are handled directly by the Executor, not The Hand.
+            _ => {
+                warn!("The Hand received a non-somatic action — ignoring");
+            }
         }
 
         Ok(())

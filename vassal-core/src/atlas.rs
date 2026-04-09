@@ -2,59 +2,46 @@
 //!
 //! Responsibilities:
 //!   - Owns the engine's `EngineState` machine.
-//!   - Drives sequence execution step-by-step.
-//!   - Handles save/load of the Ordinance graph to disk.
-//!   - Emits `RunEvent`s to any connected consumer (UI terminal, logger).
-//!
-//! The Atlas does NOT touch hardware (that is The Hand / vassal-bridge)
-//! and does NOT watch for signals (that is The Vigil).
+//!   - Drives sequence execution via an async run loop.
+//!   - Maintains the Ordinance registry (Summons -> Sequence).
+//!   - Emits `RunEvent`s to connected consumers and handles UI log pushes.
 
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
-    sync::mpsc::{Receiver, SyncSender},
     time::Instant,
 };
+use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, error, info, warn};
 
 use crate::ordinance::{
-    IoCommand, IoResult, LogEntry, NodeKind, OrdNode, RunEvent, push_log,
+    ExecData, LogEntry, NodeKind, OrdNode, RunEvent, Summons, push_log,
 };
+
+#[cfg(feature = "presence")]
+use crate::presence::PresenceSignal;
 
 // ── Engine State ──────────────────────────────────────────────────────────────
 
-/// The Atlas FSM states.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineState {
-    /// Standing by — no sequence active.
     Idle,
-    /// A sequence is actively executing.
     Executing,
-    /// Execution yielded to human presence (Presence detected input).
     Yielded,
-    /// A non-recoverable fault has occurred.
     Faulted,
-}
-
-// ── Run State ─────────────────────────────────────────────────────────────────
-
-/// Live state of a running sequence, held by the Atlas during execution.
-pub struct RunState {
-    pub nodes_len: usize,
-    pub current_index: usize,
-    pub rx: Receiver<RunEvent>,
-    pub abort_tx: std::sync::mpsc::Sender<()>,
 }
 
 // ── Atlas ─────────────────────────────────────────────────────────────────────
 
-/// The Atlas: owns engine state and drives sequence execution.
+/// The Atlas: owns engine state, registry, and drives sequence execution.
 pub struct Atlas {
     pub state: EngineState,
-    pub run_state: Option<RunState>,
     pub engine_logs: Arc<Mutex<Vec<LogEntry>>>,
-    /// Timestamp of the last sequence start — used for stale-event guard.
     pub last_start: Option<Instant>,
+    pub registry: HashMap<String, Vec<OrdNode>>,
+    
+    // Held during an active sequence to allow interruption.
+    active_abort: Option<oneshot::Sender<()>>,
 }
 
 impl Atlas {
@@ -68,82 +55,138 @@ impl Atlas {
         ]));
         Self {
             state: EngineState::Idle,
-            run_state: None,
             engine_logs: logs,
             last_start: None,
+            registry: HashMap::new(),
+            active_abort: None,
         }
     }
 
-    /// Poll the active run state for new events. Call on every UI tick.
-    pub fn poll_events(&mut self) {
-        if let Some(rs) = &mut self.run_state {
-            while let Ok(event) = rs.rx.try_recv() {
-                match event {
-                    RunEvent::Log(entry) => {
-                        if let Ok(mut logs) = self.engine_logs.lock() {
-                            logs.push(entry);
+    /// Register a sequence to a trigger key.
+    pub fn register_ordinance(&mut self, summons_key: String, nodes: Vec<OrdNode>) {
+        info!(%summons_key, "Atlas: registering ordinance");
+        self.registry.insert(summons_key, nodes);
+    }
+
+    /// The main async event loop.
+    pub async fn run(
+        mut self,
+        mut vigil_rx: mpsc::Receiver<Summons>,
+        #[cfg(feature = "presence")] mut presence_rx: mpsc::Receiver<PresenceSignal>,
+        mut run_event_rx: mpsc::Receiver<RunEvent>,
+        exec_tx: mpsc::Sender<ExecData>,
+        mut shutdown_rx: oneshot::Receiver<()>,
+    ) {
+        info!("Atlas: run loop started");
+
+        loop {
+            tokio::select! {
+                // 1. Process Shutdown
+                _ = &mut shutdown_rx => {
+                    info!("Atlas: shutting down");
+                    if let Some(tx) = self.active_abort.take() {
+                        let _ = tx.send(());
+                    }
+                    break;
+                }
+
+                // 2. Process incoming Triggers (Summons)
+                Some(summons) = vigil_rx.recv() => {
+                    if self.state == EngineState::Idle {
+                        let key = summons.to_registry_key();
+                        if let Some(nodes) = self.registry.get(&key).cloned() {
+                            info!(%key, "Atlas: summons matched, dispatching sequence");
+                            push_log(&self.engine_logs, "ATLAS", &format!("Summons matched: {}", key), false);
+                            
+                            self.state = EngineState::Executing;
+                            self.last_start = Some(Instant::now());
+                            
+                            let (abort_tx, abort_rx) = oneshot::channel();
+                            self.active_abort = Some(abort_tx);
+                            
+                            // Extract context
+                            let context = match summons {
+                                #[cfg(feature = "vigil-fs")]
+                                Summons::FileCreated { context, .. } => context,
+                                #[cfg(feature = "vigil-keys")]
+                                Summons::Hotkey { context, .. } => context,
+                                Summons::ProcessAppeared { context, .. } => context,
+                                Summons::Manual { context, .. } => context,
+                            };
+                            
+                            let exec_data = ExecData {
+                                nodes,
+                                context,
+                                abort_rx,
+                            };
+                            
+                            if let Err(e) = exec_tx.send(exec_data).await {
+                                error!(%e, "Atlas: failed to dispatch to Executor");
+                                self.state = EngineState::Faulted;
+                            }
+                        } else {
+                            debug!(%key, "Atlas: unassigned Summons received, ignoring");
+                        }
+                    } else {
+                        debug!("Atlas: ignoring Summons, Engine is busy");
+                    }
+                }
+
+                // 3. Process Human Yield (Presence)
+                res = async {
+                    #[cfg(feature = "presence")]
+                    { presence_rx.recv().await }
+                    #[cfg(not(feature = "presence"))]
+                    { std::future::pending::<Option<()>>().await }
+                } => {
+                    if let Some(_signal) = res {
+                        if self.state == EngineState::Executing {
+                            info!("Atlas: human presence detected, yielding");
+                            self.yield_to_presence();
                         }
                     }
-                    RunEvent::Progress(idx) => {
-                        rs.current_index = idx;
-                        debug!(idx, "Atlas advanced to node");
-                    }
-                    RunEvent::Panic(msg) => {
-                        push_log(&self.engine_logs, "ATLAS", &msg, true);
-                        error!(%msg, "Atlas entered Faulted state");
-                        self.state = EngineState::Faulted;
-                    }
-                    RunEvent::Done => {
-                        push_log(&self.engine_logs, "ATLAS", "Sequence complete.", false);
-                        info!("Atlas sequence complete — returning to Idle");
-                        self.run_state = None;
-                        self.state = EngineState::Idle;
-                        return;
-                    }
+                }
+
+                // 4. Process Executor Status updates
+                Some(event) = run_event_rx.recv() => {
+                    self.handle_run_event(event);
                 }
             }
         }
-        // Guard: clean up if the sequence index overran node count
-        if self.run_state.as_ref().map_or(false, |rs| rs.current_index >= rs.nodes_len) {
-            self.run_state = None;
-            self.state = EngineState::Idle;
-        }
     }
 
-    /// Yield control to the human — abort the active sequence non-destructively.
-    pub fn yield_to_presence(&mut self) {
-        if let Some(rs) = &self.run_state {
-            let _ = rs.abort_tx.send(());
+    fn yield_to_presence(&mut self) {
+        if let Some(tx) = self.active_abort.take() {
+            let _ = tx.send(());
         }
         self.state = EngineState::Yielded;
         push_log(&self.engine_logs, "PRESN", "Human presence detected — yielding.", false);
         warn!("Atlas yielded to human presence");
     }
 
-    /// Resume from a Yielded state back to Idle (sequence was already aborted).
-    pub fn resume_from_yield(&mut self) {
-        if self.state == EngineState::Yielded {
-            self.state = EngineState::Idle;
-            push_log(&self.engine_logs, "ATLAS", "Resumed from yield — Idle.", false);
+    fn handle_run_event(&mut self, event: RunEvent) {
+        match event {
+            RunEvent::Log(entry) => {
+                if let Ok(mut logs) = self.engine_logs.lock() {
+                    logs.push(entry);
+                }
+            }
+            RunEvent::Progress(idx) => {
+                debug!(idx, "Atlas: node execution complete");
+            }
+            RunEvent::Panic(msg) => {
+                push_log(&self.engine_logs, "ATLAS", &msg, true);
+                error!(%msg, "Atlas entered Faulted state");
+                self.state = EngineState::Faulted;
+                self.active_abort = None;
+            }
+            RunEvent::Done => {
+                push_log(&self.engine_logs, "ATLAS", "Sequence complete.", false);
+                info!("Atlas sequence complete — returning to Idle");
+                self.state = EngineState::Idle;
+                self.active_abort = None;
+            }
         }
-    }
-
-    /// Clear the Faulted state so new sequences can be started.
-    pub fn clear_fault(&mut self) {
-        if self.state == EngineState::Faulted {
-            self.state = EngineState::Idle;
-            push_log(&self.engine_logs, "ATLAS", "Fault cleared — Idle.", false);
-        }
-    }
-
-    /// Abort the running sequence immediately.
-    pub fn stop(&mut self) {
-        if let Some(rs) = &self.run_state {
-            let _ = rs.abort_tx.send(());
-        }
-        self.run_state = None;
-        self.state = EngineState::Idle;
-        push_log(&self.engine_logs, "ATLAS", "Sequence halted by command.", true);
     }
 }
 
@@ -153,47 +196,8 @@ impl Default for Atlas {
     }
 }
 
-// ── I/O Worker ───────────────────────────────────────────────────────────────
+// ── Graph Compiler & IO ───────────────────────────────────────────────────────
 
-/// Spawns the dedicated I/O thread for disk operations.
-///
-/// The Atlas sends `IoCommand`s; results come back as `IoResult`s.
-/// This keeps all blocking file I/O off the engine hot-path.
-pub fn spawn_io_thread(rx: Receiver<IoCommand>, tx: SyncSender<IoResult>) {
-    std::thread::spawn(move || {
-        const GRAPH_PATH: &str = "vassal-data/graph_state.json";
-
-        while let Ok(cmd) = rx.recv() {
-            match cmd {
-                IoCommand::SaveGraph(json) => {
-                    if let Err(e) = std::fs::create_dir_all("vassal-data") {
-                        let _ = tx.send(IoResult::Error(format!("Cannot create data dir: {e}")));
-                        continue;
-                    }
-                    match std::fs::write(GRAPH_PATH, &json) {
-                        Ok(_) => { let _ = tx.send(IoResult::SaveSuccess); }
-                        Err(e) => { let _ = tx.send(IoResult::Error(e.to_string())); }
-                    }
-                }
-                IoCommand::LoadGraph => {
-                    match std::fs::read_to_string(GRAPH_PATH) {
-                        Ok(json) => match serde_json::from_str::<serde_json::Value>(&json) {
-                            Ok(snap) => { let _ = tx.send(IoResult::LoadSuccess(snap)); }
-                            Err(e) => { let _ = tx.send(IoResult::Error(format!("Corrupt save: {e}"))); }
-                        },
-                        Err(e) => { let _ = tx.send(IoResult::Error(format!("Cannot read save: {e}"))); }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ── Graph Compiler ────────────────────────────────────────────────────────────
-
-/// Walk the graph from the Entry node and emit a flat, ordered sequence of `OrdNode`s.
-///
-/// Returns `None` with an error if no Entry node is found.
 pub fn compile_sequence(nodes_map: &HashMap<String, OrdNode>) -> Option<Vec<OrdNode>> {
     let entry = nodes_map.values().find(|n| n.kind == NodeKind::Entry)?;
 
@@ -220,16 +224,4 @@ pub fn compile_sequence(nodes_map: &HashMap<String, OrdNode>) -> Option<Vec<OrdN
     }
 
     Some(sequence)
-}
-
-// ── Serialisation Helpers ─────────────────────────────────────────────────────
-
-/// Serialise the current node map into a pretty-printed JSON snapshot.
-pub fn serialise_graph(nodes: &HashMap<String, OrdNode>) -> Result<String, String> {
-    serde_json::to_string_pretty(nodes).map_err(|e| format!("Serialise error: {e}"))
-}
-
-/// Deserialise a JSON snapshot back into a node map.
-pub fn deserialise_graph(json: &serde_json::Value) -> Result<HashMap<String, OrdNode>, String> {
-    serde_json::from_value(json.clone()).map_err(|e| format!("Deserialise error: {e}"))
 }
