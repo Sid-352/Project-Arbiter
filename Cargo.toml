@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+    "vassal-core",
+    "vassal-bridge",
+    "vassal-app",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Chameleon Sid-352"]
+license = "MIT"
+description = "Industrial-grade deterministic system orchestration."
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

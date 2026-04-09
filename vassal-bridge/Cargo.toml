@@ -1,0 +1,14 @@
+[package]
+name = "vassal-bridge"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "The Hand, Inscribe, and Shell — the mechanical execution bridge."
+
+[dependencies]
+vassal-core = { path = "../vassal-core" }
+enigo       = "0.2"
+walkdir     = "2"
+regex       = "1"
+tracing     = "0.1"

@@ -1,0 +1,28 @@
+[package]
+name = "vassal-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "The Atlas, Vigil, Presence, and Signet — the deterministic engine core."
+
+[features]
+default = []
+vigil-fs   = ["dep:notify"]
+vigil-keys = ["dep:global-hotkey"]
+presence   = ["dep:rdev"]
+signet     = ["dep:aes-gcm", "dep:base64"]
+
+[dependencies]
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+tokio       = { version = "1", features = ["rt", "sync", "macros", "time"] }
+tracing     = "0.1"
+regex       = "1"
+
+# Feature-gated signal modules
+notify        = { version = "6", optional = true }
+global-hotkey = { version = "0.6", optional = true }
+rdev          = { version = "0.5", optional = true }
+aes-gcm       = { version = "0.10", optional = true }
+base64        = { version = "0.22", optional = true }

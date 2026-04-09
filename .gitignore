@@ -1,0 +1,9 @@
+# folders
+/target/
+/doc/not_needed/
+
+# files
+**/*.rs.bk
+*.pdb
+Cargo.lock
+error.txt
