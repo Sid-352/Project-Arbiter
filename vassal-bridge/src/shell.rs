@@ -31,7 +31,10 @@ impl std::fmt::Display for ShellError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BatonNotGranted(t) => {
-                write!(f, "The Baton: '{t}' is not allowed — grant it in the Signet first")
+                write!(
+                    f,
+                    "The Baton: '{t}' is not allowed — grant it in the Signet first"
+                )
             }
             Self::SpawnFailed(e) => write!(f, "Shell: spawn failed: {e}"),
             Self::NonZeroExit { status, stderr } => {
@@ -70,7 +73,11 @@ pub fn run(
 
     info!(%command, ?args, "The Baton: executing allowed command");
 
-    let Output { status, stdout, stderr } = Command::new(command)
+    let Output {
+        status,
+        stdout,
+        stderr,
+    } = Command::new(command)
         .args(args)
         .output()
         .map_err(|e| ShellError::SpawnFailed(e.to_string()))?;
@@ -81,11 +88,18 @@ pub fn run(
 
     if !status.success() {
         warn!(%exit_code, %stderr, "Shell: command exited with error");
-        return Err(ShellError::NonZeroExit { status: exit_code, stderr });
+        return Err(ShellError::NonZeroExit {
+            status: exit_code,
+            stderr,
+        });
     }
 
     info!(%exit_code, "Shell: command completed successfully");
-    Ok(ShellOutput { stdout, stderr, exit_code })
+    Ok(ShellOutput {
+        stdout,
+        stderr,
+        exit_code,
+    })
 }
 
 /// Spawn a command detached (fire-and-forget), verifying Baton first.
@@ -110,4 +124,59 @@ pub fn spawn_detached(
 
     info!(%command, "The Baton: process spawned detached");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn test_baton_granted() {
+        let mut allowed = HashSet::new();
+        allowed.insert("safe_echo".to_string());
+
+        let cmd = if cfg!(target_os = "windows") {
+            "cmd.exe"
+        } else {
+            "sh"
+        };
+        let args = if cfg!(target_os = "windows") {
+            vec!["/c", "echo Hello"]
+        } else {
+            vec!["-c", "echo Hello"]
+        };
+
+        let result = run("safe_echo", cmd, &args, &allowed);
+        assert!(result.is_ok());
+        let output = result.unwrap();
+        assert!(output.stdout.contains("Hello"));
+        assert_eq!(output.exit_code, 0);
+    }
+
+    #[test]
+    fn test_baton_blocked() {
+        let mut allowed = HashSet::new();
+        allowed.insert("safe_echo".to_string());
+
+        let cmd = if cfg!(target_os = "windows") {
+            "cmd.exe"
+        } else {
+            "sh"
+        };
+        let args = if cfg!(target_os = "windows") {
+            vec!["/c", "echo Malicious"]
+        } else {
+            vec!["-c", "echo Malicious"]
+        };
+
+        let result = run("malicious_script", cmd, &args, &allowed);
+
+        match result {
+            Err(ShellError::BatonNotGranted(req)) => {
+                assert_eq!(req, "malicious_script");
+            }
+            _ => panic!("Expected BatonNotGranted error"),
+        }
+    }
 }

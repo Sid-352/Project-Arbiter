@@ -44,7 +44,10 @@ impl From<std::io::Error> for InscribeError {
 /// Verify a path is under at least one trusted root before any write.
 fn assert_trusted(path: &Path, trusted_roots: &[String]) -> Result<(), InscribeError> {
     let path_str = path.to_string_lossy();
-    if trusted_roots.iter().any(|root| path_str.starts_with(root.as_str())) {
+    if trusted_roots
+        .iter()
+        .any(|root| path_str.starts_with(root.as_str()))
+    {
         return Ok(());
     }
     warn!(%path_str, "Inscribe: Conservatory rejected path");
@@ -54,11 +57,7 @@ fn assert_trusted(path: &Path, trusted_roots: &[String]) -> Result<(), InscribeE
 // ── File Operations ───────────────────────────────────────────────────────────
 
 /// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn move_file(
-    src: &Path,
-    dst: &Path,
-    trusted_roots: &[String],
-) -> Result<(), InscribeError> {
+pub fn move_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<(), InscribeError> {
     assert_trusted(dst, trusted_roots)?;
 
     if !src.exists() {
@@ -80,11 +79,7 @@ pub fn move_file(
 }
 
 /// Copy `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn copy_file(
-    src: &Path,
-    dst: &Path,
-    trusted_roots: &[String],
-) -> Result<u64, InscribeError> {
+pub fn copy_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<u64, InscribeError> {
     assert_trusted(dst, trusted_roots)?;
 
     if !src.exists() {
@@ -159,4 +154,68 @@ fn regex_for_glob(glob: &str) -> regex::Regex {
     use regex::Regex;
     let escaped = regex::escape(glob).replace("\\*", ".*");
     Regex::new(&format!("(?i)^{escaped}$")).unwrap_or_else(|_| Regex::new(".*").unwrap())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_conservatory_allows_trusted() {
+        let root = tempdir().unwrap();
+        let root_str = root.path().to_string_lossy().to_string();
+
+        let trusted_roots = vec![root_str.clone()];
+
+        let src = root.path().join("source.txt");
+        let dst = root.path().join("subfolder").join("dest.txt");
+
+        File::create(&src).unwrap();
+
+        // Should succeed because dst is within root
+        let res = move_file(&src, &dst, &trusted_roots);
+        assert!(res.is_ok());
+        assert!(dst.exists());
+        assert!(!src.exists());
+    }
+
+    #[test]
+    fn test_conservatory_blocks_untrusted() {
+        let allowed_root = tempdir().unwrap();
+        let malicious_root = tempdir().unwrap();
+
+        let trusted_roots = vec![allowed_root.path().to_string_lossy().to_string()];
+
+        let src = allowed_root.path().join("source.txt");
+        let dst = malicious_root.path().join("dest.txt");
+
+        File::create(&src).unwrap();
+
+        // Should return NotTrusted because dst is inside malicious_root
+        let res = copy_file(&src, &dst, &trusted_roots);
+        match res {
+            Err(InscribeError::NotTrusted(_)) => {}
+            _ => panic!("Expected NotTrusted error, got {:?}", res),
+        }
+        assert!(!dst.exists());
+    }
+
+    #[test]
+    fn test_dry_run_warnings() {
+        // Just verify the regex warning triggers correctly without writing a real system file
+        let sys_root = tempdir().unwrap();
+
+        // Windows warning check only checks if path contains 'system32' (case insensitive converted)
+        let f2 = sys_root.path().join("SYSTEM32");
+        std::fs::create_dir_all(&f2).unwrap();
+        File::create(f2.join("dummy.sys")).unwrap();
+
+        let report = dry_run_walk(sys_root.path(), "*.sys");
+        assert!(report
+            .warnings
+            .iter()
+            .any(|w| w.contains("System-critical")));
+    }
 }

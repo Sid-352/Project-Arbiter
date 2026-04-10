@@ -4,8 +4,11 @@
 //! I/O messaging. No logic lives here — this is the shared vocabulary
 //! used by The Atlas, The Vigil, and the UI terminal.
 
-use std::{collections::HashMap, sync::{Arc, Mutex}};
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
@@ -36,7 +39,11 @@ pub enum ActionType {
     InscribeDelete { target: String },
     // ── Shell Execution (Baton) ─────────────────────────────────────────────
     /// Execute a shell command.
-    Shell { command: String, args: Vec<String>, detached: bool },
+    Shell {
+        command: String,
+        args: Vec<String>,
+        detached: bool,
+    },
 }
 
 /// An absolute screen coordinate validated by The Hand.
@@ -94,7 +101,11 @@ pub struct OrdNode {
 pub enum Summons {
     /// A file matching `glob` finished writing inside `watch_path`.
     #[cfg(feature = "vigil-fs")]
-    FileCreated { watch_path: String, glob: String, context: EnvContext },
+    FileCreated {
+        watch_path: String,
+        glob: String,
+        context: EnvContext,
+    },
     /// A user-defined global hotkey combination.
     #[cfg(feature = "vigil-keys")]
     Hotkey { combo: String, context: EnvContext },
@@ -108,7 +119,9 @@ impl Summons {
     pub fn to_registry_key(&self) -> String {
         match self {
             #[cfg(feature = "vigil-fs")]
-            Self::FileCreated { watch_path, glob, .. } => format!("FileCreated|{}|{}", watch_path, glob),
+            Self::FileCreated {
+                watch_path, glob, ..
+            } => format!("FileCreated|{}|{}", watch_path, glob),
             #[cfg(feature = "vigil-keys")]
             Self::Hotkey { combo, .. } => format!("Hotkey|{}", combo),
             Self::ProcessAppeared { name, .. } => format!("ProcessAppeared|{}", name),
@@ -121,14 +134,14 @@ impl Summons {
 
 /// The payload associated with a fired trigger.
 /// Provides variables for string interpolation (e.g., `${env.file_path}`).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EnvContext {
     pub variables: HashMap<String, String>,
 }
 
 impl EnvContext {
     pub fn new() -> Self {
-        Self { variables: HashMap::new() }
+        Self::default()
     }
 
     pub fn insert(&mut self, key: &str, value: &str) {
@@ -175,7 +188,11 @@ pub fn push_log(logs: &Arc<Mutex<Vec<LogEntry>>>, tag: &str, msg: &str, is_error
         if v.len() >= 1_000 {
             v.remove(0);
         }
-        v.push(LogEntry { tag: tag.into(), message: msg.into(), is_error });
+        v.push(LogEntry {
+            tag: tag.into(),
+            message: msg.into(),
+            is_error,
+        });
     }
 }
 

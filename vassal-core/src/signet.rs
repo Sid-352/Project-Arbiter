@@ -70,7 +70,7 @@ fn machine_key() -> Key<Aes256Gcm> {
 /// Because the nonce-key pair is unique per machine (key is machine-derived),
 /// reusing the nonce is acceptable for this single-file, low-frequency write use case.
 fn vault_nonce() -> Nonce<typenum::U12> {
-    *Nonce::from_slice(b"vassal-signet")  // 13 bytes — padded below at compile time
+    *Nonce::from_slice(b"vassal-signet") // 13 bytes — padded below at compile time
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -89,7 +89,9 @@ pub fn load() -> Result<VassalConfig, String> {
     };
 
     // Decode base64 wrapper
-    let ciphertext = B64.decode(&raw).map_err(|e| format!("Signet: base64 decode: {e}"))?;
+    let ciphertext = B64
+        .decode(&raw)
+        .map_err(|e| format!("Signet: base64 decode: {e}"))?;
 
     let cipher = Aes256Gcm::new(&machine_key());
     let plaintext = cipher
@@ -132,7 +134,10 @@ pub fn revoke_path(config: &mut VassalConfig, path: &str) {
 
 /// Returns `true` if `path` is within a trusted root (The Conservatory check).
 pub fn is_path_trusted(config: &VassalConfig, path: &str) -> bool {
-    config.trusted_paths.iter().any(|root| path.starts_with(root.as_str()))
+    config
+        .trusted_paths
+        .iter()
+        .any(|root| path.starts_with(root.as_str()))
 }
 
 /// Activate The Baton for a specific shell target.

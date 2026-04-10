@@ -13,16 +13,17 @@
 //! Quitting through the tray is the canonical shutdown path.
 
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
+use tracing::info;
 use tray_icon::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     TrayIcon, TrayIconBuilder,
 };
-use tracing::info;
 
 // ── Tray App Events ───────────────────────────────────────────────────────────
 
 /// Events emitted from engine threads back into the tray event loop.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum TrayAppEvent {
     /// The engine wants to update the tray tooltip.
     StatusUpdate(String),
@@ -49,8 +50,8 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
 
     let menu = Menu::new();
     let status_item = MenuItem::new("Vassal — Standing By", false, None);
-    let open_item   = MenuItem::new("Open Terminal", true, None);
-    let quit_item   = MenuItem::new("Quit Vassal", true, None);
+    let open_item = MenuItem::new("Open Terminal", true, None);
+    let quit_item = MenuItem::new("Quit Vassal", true, None);
 
     menu.append(&status_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
@@ -98,7 +99,9 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
 
             if id.contains("Quit") {
                 info!("Tray: Quit selected — initiating shutdown");
-                if let Some(f) = on_quit.take() { f(); }
+                if let Some(f) = on_quit.take() {
+                    f();
+                }
                 *control_flow = ControlFlow::Exit;
                 return;
             }
@@ -118,7 +121,9 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
                 }
                 TrayAppEvent::Shutdown => {
                     info!("Tray: engine-initiated shutdown");
-                    if let Some(f) = on_quit.take() { f(); }
+                    if let Some(f) = on_quit.take() {
+                        f();
+                    }
                     *control_flow = ControlFlow::Exit;
                 }
             }

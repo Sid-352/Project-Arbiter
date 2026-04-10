@@ -79,7 +79,7 @@ pub fn is_write_complete(path: &str) -> bool {
 #[cfg(feature = "vigil-fs")]
 pub mod fs {
     use super::*;
-    use notify::{Event, EventKind, RecursiveMode, Watcher, recommended_watcher};
+    use notify::{recommended_watcher, Event, EventKind, RecursiveMode, Watcher};
 
     /// Spawn a file-system watcher on `watch_path` and forward matching
     /// `FileCreated` events into `tx`.
@@ -108,17 +108,18 @@ pub mod fs {
                 }
             };
 
-            if let Err(e) = watcher.watch(
-                std::path::Path::new(&watch_path),
-                RecursiveMode::Recursive,
-            ) {
+            if let Err(e) =
+                watcher.watch(std::path::Path::new(&watch_path), RecursiveMode::Recursive)
+            {
                 warn!(%e, %watch_path, "Vigil-fs: failed to watch path");
                 return;
             }
 
             for result in nrx {
                 match result {
-                    Ok(event) if matches!(event.kind, EventKind::Create(_) | EventKind::Modify(_)) => {
+                    Ok(event)
+                        if matches!(event.kind, EventKind::Create(_) | EventKind::Modify(_)) =>
+                    {
                         for path in &event.paths {
                             let path_str = path.to_string_lossy().to_string();
 
@@ -134,9 +135,8 @@ pub mod fs {
 
                             // Glob filter — simple filename match
                             if !glob.is_empty() {
-                                let filename = path.file_name()
-                                    .and_then(|n| n.to_str())
-                                    .unwrap_or("");
+                                let filename =
+                                    path.file_name().and_then(|n| n.to_str()).unwrap_or("");
                                 if !matches_glob(&glob, filename) {
                                     continue;
                                 }
@@ -149,8 +149,14 @@ pub mod fs {
 
                             let mut context = super::EnvContext::new();
                             context.insert("file_path", &path_str);
-                            context.insert("file_name", path.file_name().and_then(|n| n.to_str()).unwrap_or(""));
-                            context.insert("file_ext", path.extension().and_then(|e| e.to_str()).unwrap_or(""));
+                            context.insert(
+                                "file_name",
+                                path.file_name().and_then(|n| n.to_str()).unwrap_or(""),
+                            );
+                            context.insert(
+                                "file_ext",
+                                path.extension().and_then(|e| e.to_str()).unwrap_or(""),
+                            );
 
                             let summons = Summons::FileCreated {
                                 watch_path: watch_path.clone(),
@@ -193,14 +199,11 @@ pub mod keys {
     ///
     /// `combo` is a string like `"Ctrl+Shift+V"` parsed by `global-hotkey`.
     /// Returns an error string if registration fails.
-    pub fn register_hotkey(
-        combo: String,
-        tx: mpsc::Sender<Summons>,
-    ) -> Result<(), String> {
-        use global_hotkey::{GlobalHotKeyManager, hotkey::HotKey};
+    pub fn register_hotkey(combo: String, tx: mpsc::Sender<Summons>) -> Result<(), String> {
+        use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 
-        let manager = GlobalHotKeyManager::new()
-            .map_err(|e| format!("HotKey manager init failed: {e:?}"))?;
+        let manager =
+            GlobalHotKeyManager::new().map_err(|e| format!("HotKey manager init failed: {e:?}"))?;
 
         let hotkey: HotKey = combo
             .parse()
@@ -218,7 +221,10 @@ pub mod keys {
                     debug!(?event, "Vigil-keys: hotkey fired");
                     let mut context = super::EnvContext::new();
                     context.insert("hotkey_combo", &combo);
-                    let summons = Summons::Hotkey { combo: combo.clone(), context };
+                    let summons = Summons::Hotkey {
+                        combo: combo.clone(),
+                        context,
+                    };
                     if tx.send(summons).await.is_err() {
                         break;
                     }

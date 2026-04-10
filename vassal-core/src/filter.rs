@@ -1,5 +1,5 @@
 //! filter.rs — The Filter: explicit thread-ID / path tagging guard.
-//! 
+//!
 //! Prevents The Vigil from reacting to file creations caused by The Inscribe
 //! (Vassal's own File I/O component).
 //!
@@ -57,5 +57,42 @@ impl VassalFilter {
         } else {
             false
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_mark_unmark() {
+        let filter = VassalFilter::new();
+        let p = Path::new("C:\\Engine\\Dummy\\file.txt");
+
+        assert!(!filter.is_own(p));
+        filter.mark(p);
+        assert!(filter.is_own(p));
+        filter.unmark(p);
+        assert!(!filter.is_own(p));
+    }
+
+    #[test]
+    fn test_filter_case_insensitivity() {
+        let filter = VassalFilter::new();
+        filter.mark("C:\\Temp\\File.txt");
+
+        // Assert that a lowercased or differently cased variant matches
+        assert!(filter.is_own("c:\\temp\\file.txt"));
+        assert!(filter.is_own("C:\\temp\\FILE.TXT"));
+    }
+
+    #[test]
+    fn test_filter_absolute_resolution() {
+        let filter = VassalFilter::new();
+        let rel_path = Path::new("test_file.txt");
+        filter.mark(rel_path);
+
+        let abs_path = std::env::current_dir().unwrap().join("test_file.txt");
+        assert!(filter.is_own(abs_path));
     }
 }

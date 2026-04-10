@@ -1,14 +1,14 @@
-/// vassal-core — The engine's nerve center.
-///
-/// Module layout follows the Vassal Lexicon:
-///   ordinance  — Data types: triggers, actions, sequences, log events.
-///   atlas      — The FSM orchestrator and run-loop (The Atlas).
-///   vigil      — System-event watchers: file changes, hotkeys (The Vigil).
-///   presence   — Human-input detection and yield logic (Presence).
-///   signet     — Encrypted config vault (The Signet).
+//! vassal-core — The engine's nerve center.
+//!
+//! Module layout follows the Vassal Lexicon:
+//!   ordinance  — Data types: triggers, actions, sequences, log events.
+//!   atlas      — The FSM orchestrator and run-loop (The Atlas).
+//!   vigil      — System-event watchers: file changes, hotkeys (The Vigil).
+//!   presence   — Human-input detection and yield logic (Presence).
+//!   signet     — Encrypted config vault (The Signet).
 
-pub mod ordinance;
 pub mod atlas;
+pub mod ordinance;
 
 #[cfg(any(feature = "vigil-fs", feature = "vigil-keys"))]
 pub mod vigil;

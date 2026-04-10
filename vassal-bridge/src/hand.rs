@@ -33,7 +33,11 @@ impl HardwareBridge {
         let enigo = Enigo::new(&Settings::default())
             .expect("The Hand: failed to initialise enigo hardware bridge");
         debug!(width, height, "The Hand initialised");
-        Self { enigo, screen_width: width, screen_height: height }
+        Self {
+            enigo,
+            screen_width: width,
+            screen_height: height,
+        }
     }
 
     /// Execute a single resolved `Action`.
@@ -125,7 +129,7 @@ impl HardwareBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vassal_core::ordinance::{Action, ActionType, Point};
+    use vassal_core::ordinance::{Action, ActionType};
 
     #[test]
     fn coordinate_guard_rejects_out_of_bounds() {

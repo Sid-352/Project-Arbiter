@@ -3,15 +3,15 @@
 //! Owns The Hand, interfaces with The Inscribe and The Baton, and
 //! processes instructions sequentially under a Singleton Queue Lock.
 
-use std::{collections::HashSet, sync::Arc, path::Path};
+use std::{collections::HashSet, path::Path, sync::Arc};
 use tokio::sync::{mpsc, oneshot, Mutex};
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
+use crate::{hand::HardwareBridge, inscribe, shell};
 use vassal_core::{
     filter::VassalFilter,
     ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent},
 };
-use crate::{hand::HardwareBridge, inscribe, shell};
 
 // ── Executor Commands ────────────────────────────────────────────────────────
 
@@ -30,8 +30,8 @@ pub enum ExecCmd {
 
 // ── Singleton Queue ──────────────────────────────────────────────────────────
 
-/// A global lock to ensure only one sequence can execute at a time.
 lazy_static::lazy_static! {
+    /// A global lock to ensure only one sequence can execute at a time.
     static ref QUEUE_LOCK: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
 }
 
@@ -50,7 +50,14 @@ fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
         ActionType::Type(ref mut s) | ActionType::Navigate(ref mut s) => {
             *s = interpolate_str(s, ctx);
         }
-        ActionType::InscribeMove { source, destination } | ActionType::InscribeCopy { source, destination } => {
+        ActionType::InscribeMove {
+            source,
+            destination,
+        }
+        | ActionType::InscribeCopy {
+            source,
+            destination,
+        } => {
             *source = interpolate_str(source, ctx);
             *destination = interpolate_str(destination, ctx);
         }
@@ -78,13 +85,20 @@ pub fn spawn_executor(
 ) {
     tokio::spawn(async move {
         info!("Executor task started");
-        
+
         // The Hand is owned locally by this task and only used while holding QUEUE_LOCK
         let mut hand = HardwareBridge::new(screen_width, screen_height);
-        
+
         while let Some(cmd) = cmd_rx.recv().await {
             match cmd {
-                ExecCmd::Run { nodes, context, mut abort_rx, event_tx, trusted_roots, baton_allowed } => {
+                ExecCmd::Run {
+                    nodes,
+                    context,
+                    mut abort_rx,
+                    event_tx,
+                    trusted_roots,
+                    baton_allowed,
+                } => {
                     info!("Executor: acquiring queue lock");
                     let _guard = QUEUE_LOCK.lock().await;
                     info!("Executor: lock acquired, beginning ordinance");
@@ -106,41 +120,79 @@ pub fn spawn_executor(
                         match parsed {
                             Ok(mut action) => {
                                 interpolate_action(&mut action.action_type, &context);
-                                
+
                                 let exec_result = match action.action_type {
                                     // Somatic actions
-                                    ActionType::Wait(_) | ActionType::Click | ActionType::DoubleClick | 
-                                    ActionType::RightClick | ActionType::Type(_) | ActionType::Scroll(_) | 
-                                    ActionType::Navigate(_) => {
-                                        hand.execute(&action)
-                                    }
-                                    
+                                    ActionType::Wait(_)
+                                    | ActionType::Click
+                                    | ActionType::DoubleClick
+                                    | ActionType::RightClick
+                                    | ActionType::Type(_)
+                                    | ActionType::Scroll(_)
+                                    | ActionType::Navigate(_) => hand.execute(&action),
+
                                     // Inscribe actions
-                                    ActionType::InscribeMove { source, destination } => {
+                                    ActionType::InscribeMove {
+                                        source,
+                                        destination,
+                                    } => {
                                         let copy_tgt = Path::new(&destination);
                                         filter.mark(copy_tgt);
-                                        let r = inscribe::move_file(Path::new(&source), copy_tgt, &trusted_roots).map_err(|e| e.to_string());
+                                        let r = inscribe::move_file(
+                                            Path::new(&source),
+                                            copy_tgt,
+                                            &trusted_roots,
+                                        )
+                                        .map_err(|e| e.to_string());
                                         filter.unmark(copy_tgt);
                                         r
                                     }
-                                    ActionType::InscribeCopy { source, destination } => {
+                                    ActionType::InscribeCopy {
+                                        source,
+                                        destination,
+                                    } => {
                                         let copy_tgt = Path::new(&destination);
                                         filter.mark(copy_tgt);
-                                        let r = inscribe::copy_file(Path::new(&source), copy_tgt, &trusted_roots).map(|_| ()).map_err(|e| e.to_string());
+                                        let r = inscribe::copy_file(
+                                            Path::new(&source),
+                                            copy_tgt,
+                                            &trusted_roots,
+                                        )
+                                        .map(|_| ())
+                                        .map_err(|e| e.to_string());
                                         filter.unmark(copy_tgt);
                                         r
                                     }
                                     ActionType::InscribeDelete { target } => {
-                                        inscribe::delete_file(Path::new(&target), &trusted_roots).map_err(|e| e.to_string())
+                                        inscribe::delete_file(Path::new(&target), &trusted_roots)
+                                            .map_err(|e| e.to_string())
                                     }
 
                                     // Shell actions
-                                    ActionType::Shell { command, args, detached } => {
-                                        let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+                                    ActionType::Shell {
+                                        command,
+                                        args,
+                                        detached,
+                                    } => {
+                                        let arg_refs: Vec<&str> =
+                                            args.iter().map(|s| s.as_str()).collect();
                                         if detached {
-                                            shell::spawn_detached(&command, &command, &arg_refs, &baton_allowed).map_err(|e| e.to_string())
+                                            shell::spawn_detached(
+                                                &command,
+                                                &command,
+                                                &arg_refs,
+                                                &baton_allowed,
+                                            )
+                                            .map_err(|e| e.to_string())
                                         } else {
-                                            shell::run(&command, &command, &arg_refs, &baton_allowed).map(|_| ()).map_err(|e| e.to_string())
+                                            shell::run(
+                                                &command,
+                                                &command,
+                                                &arg_refs,
+                                                &baton_allowed,
+                                            )
+                                            .map(|_| ())
+                                            .map_err(|e| e.to_string())
                                         }
                                     }
                                 };
@@ -155,7 +207,9 @@ pub fn spawn_executor(
                             }
                             Err(e) => {
                                 error!(%e, id = %node.id, "Executor: failed to parse JSON action");
-                                let _ = event_tx.send(RunEvent::Panic(format!("Parse failure: {}", e))).await;
+                                let _ = event_tx
+                                    .send(RunEvent::Panic(format!("Parse failure: {}", e)))
+                                    .await;
                                 break;
                             }
                         }
@@ -166,7 +220,53 @@ pub fn spawn_executor(
                 }
             }
         }
-        
+
         info!("Executor task shutting down");
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interpolation_replaces_correctly() {
+        let mut ctx = EnvContext::new();
+        ctx.insert("file_path", "C:\\dummy.zip");
+        ctx.insert("file_name", "dummy.zip");
+
+        let mut action = ActionType::Shell {
+            command: "echo".to_string(),
+            args: vec![
+                "Opened: ${env.file_name}".to_string(),
+                "From: ${env.file_path}".to_string(),
+            ],
+            detached: false,
+        };
+
+        interpolate_action(&mut action, &ctx);
+
+        match action {
+            ActionType::Shell { args, .. } => {
+                assert_eq!(args[0], "Opened: dummy.zip");
+                assert_eq!(args[1], "From: C:\\dummy.zip");
+            }
+            _ => panic!("Wrong action type after interpolation"),
+        }
+    }
+
+    #[test]
+    fn test_interpolation_ignores_missing_keys() {
+        let ctx = EnvContext::new();
+
+        let mut action = ActionType::Type("${env.missing_key}".to_string());
+        interpolate_action(&mut action, &ctx);
+
+        match action {
+            ActionType::Type(text) => {
+                assert_eq!(text, "${env.missing_key}");
+            }
+            _ => panic!("Wrong action type"),
+        }
+    }
 }

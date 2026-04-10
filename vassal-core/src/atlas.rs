@@ -14,9 +14,7 @@ use std::{
 use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, error, info, warn};
 
-use crate::ordinance::{
-    ExecData, LogEntry, NodeKind, OrdNode, RunEvent, Summons, push_log,
-};
+use crate::ordinance::{push_log, ExecData, LogEntry, NodeKind, OrdNode, RunEvent, Summons};
 
 #[cfg(feature = "presence")]
 use crate::presence::PresenceSignal;
@@ -39,20 +37,18 @@ pub struct Atlas {
     pub engine_logs: Arc<Mutex<Vec<LogEntry>>>,
     pub last_start: Option<Instant>,
     pub registry: HashMap<String, Vec<OrdNode>>,
-    
+
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
 }
 
 impl Atlas {
     pub fn new() -> Self {
-        let logs: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(vec![
-            LogEntry {
-                tag: "ATLAS".into(),
-                message: "Engine boot sequence initiated.".into(),
-                is_error: false,
-            },
-        ]));
+        let logs: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(vec![LogEntry {
+            tag: "ATLAS".into(),
+            message: "Engine boot sequence initiated.".into(),
+            is_error: false,
+        }]));
         Self {
             state: EngineState::Idle,
             engine_logs: logs,
@@ -97,13 +93,13 @@ impl Atlas {
                         if let Some(nodes) = self.registry.get(&key).cloned() {
                             info!(%key, "Atlas: summons matched, dispatching sequence");
                             push_log(&self.engine_logs, "ATLAS", &format!("Summons matched: {}", key), false);
-                            
+
                             self.state = EngineState::Executing;
                             self.last_start = Some(Instant::now());
-                            
+
                             let (abort_tx, abort_rx) = oneshot::channel();
                             self.active_abort = Some(abort_tx);
-                            
+
                             // Extract context
                             let context = match summons {
                                 #[cfg(feature = "vigil-fs")]
@@ -113,13 +109,13 @@ impl Atlas {
                                 Summons::ProcessAppeared { context, .. } => context,
                                 Summons::Manual { context, .. } => context,
                             };
-                            
+
                             let exec_data = ExecData {
                                 nodes,
                                 context,
                                 abort_rx,
                             };
-                            
+
                             if let Err(e) = exec_tx.send(exec_data).await {
                                 error!(%e, "Atlas: failed to dispatch to Executor");
                                 self.state = EngineState::Faulted;
@@ -160,7 +156,12 @@ impl Atlas {
             let _ = tx.send(());
         }
         self.state = EngineState::Yielded;
-        push_log(&self.engine_logs, "PRESN", "Human presence detected — yielding.", false);
+        push_log(
+            &self.engine_logs,
+            "PRESN",
+            "Human presence detected — yielding.",
+            false,
+        );
         warn!("Atlas yielded to human presence");
     }
 
