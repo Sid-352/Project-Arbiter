@@ -14,7 +14,7 @@
 
 use enigo::{Axis, Button, Coordinate, Direction, Enigo, Keyboard, Mouse, Settings};
 use tracing::{debug, warn};
-use vassal_core::ordinance::{Action, ActionType};
+use arbiter_core::ordinance::{Action, ActionType};
 
 // ── Hardware Bridge ───────────────────────────────────────────────────────────
 
@@ -129,7 +129,7 @@ impl HardwareBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vassal_core::ordinance::{Action, ActionType};
+    use arbiter_core::ordinance::{Action, ActionType};
 
     #[test]
     fn coordinate_guard_rejects_out_of_bounds() {

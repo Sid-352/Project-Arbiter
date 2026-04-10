@@ -1,7 +1,7 @@
 //! filter.rs — The Filter: explicit thread-ID / path tagging guard.
 //!
 //! Prevents The Vigil from reacting to file creations caused by The Inscribe
-//! (Vassal's own File I/O component).
+//! (Arbiter's own File I/O component).
 //!
 //! When The Inscribe moves a file, it adds the destination path here.
 //! The Vigil checks this filter before dispatching a Summons.
@@ -22,18 +22,18 @@ fn normalize_key(path: impl AsRef<Path>) -> String {
     abs.to_string_lossy().to_lowercase()
 }
 
-/// A thread-safe, shared set of paths currently being written by Vassal itself.
+/// A thread-safe, shared set of paths currently being written by Arbiter itself.
 #[derive(Debug, Clone, Default)]
-pub struct VassalFilter {
+pub struct ArbiterFilter {
     active_paths: Arc<Mutex<HashSet<String>>>,
 }
 
-impl VassalFilter {
+impl ArbiterFilter {
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Mark a path as currently being written by Vassal.
+    /// Mark a path as currently being written by Arbiter.
     pub fn mark(&self, path: impl AsRef<Path>) {
         let key = normalize_key(path);
         if let Ok(mut set) = self.active_paths.lock() {
@@ -41,7 +41,7 @@ impl VassalFilter {
         }
     }
 
-    /// Unmark a path (Vassal finishes writing).
+    /// Unmark a path (Arbiter finishes writing).
     pub fn unmark(&self, path: impl AsRef<Path>) {
         let key = normalize_key(path);
         if let Ok(mut set) = self.active_paths.lock() {
@@ -49,7 +49,7 @@ impl VassalFilter {
         }
     }
 
-    /// Returns `true` if this path is currently marked by Vassal.
+    /// Returns `true` if this path is currently marked by Arbiter.
     pub fn is_own(&self, path: impl AsRef<Path>) -> bool {
         let key = normalize_key(path);
         if let Ok(set) = self.active_paths.lock() {
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn test_filter_mark_unmark() {
-        let filter = VassalFilter::new();
+        let filter = ArbiterFilter::new();
         let p = Path::new("C:\\Engine\\Dummy\\file.txt");
 
         assert!(!filter.is_own(p));
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_filter_case_insensitivity() {
-        let filter = VassalFilter::new();
+        let filter = ArbiterFilter::new();
         filter.mark("C:\\Temp\\File.txt");
 
         // Assert that a lowercased or differently cased variant matches
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_filter_absolute_resolution() {
-        let filter = VassalFilter::new();
+        let filter = ArbiterFilter::new();
         let rel_path = Path::new("test_file.txt");
         filter.mark(rel_path);
 

@@ -8,8 +8,8 @@ use tokio::sync::{mpsc, oneshot, Mutex};
 use tracing::{error, info, warn};
 
 use crate::{hand::HardwareBridge, inscribe, shell};
-use vassal_core::{
-    filter::VassalFilter,
+use arbiter_core::{
+    filter::ArbiterFilter,
     ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent},
 };
 
@@ -81,7 +81,7 @@ pub fn spawn_executor(
     mut cmd_rx: mpsc::Receiver<ExecCmd>,
     screen_width: i32,
     screen_height: i32,
-    filter: VassalFilter,
+    filter: ArbiterFilter,
 ) {
     tokio::spawn(async move {
         info!("Executor task started");
@@ -189,7 +189,7 @@ pub fn spawn_executor(
                                         detached,
                                     } => {
                                         let arg_refs: Vec<&str> =
-                                            args.iter().map(|s| s.as_str()).collect();
+                                            args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
                                         if detached {
                                             shell::spawn_detached(
                                                 &command,

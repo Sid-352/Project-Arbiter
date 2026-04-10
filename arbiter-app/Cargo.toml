@@ -1,5 +1,5 @@
 [package]
-name = "vassal-app"
+name = "arbiter-app"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -7,15 +7,16 @@ license.workspace = true
 description = "The Servant's entry point — silent tray lifecycle and engine host."
 
 [[bin]]
-name = "vassal"
+name = "arbiter"
 path = "src/main.rs"
 
 [dependencies]
-vassal-core   = { path = "../vassal-core", features = ["vigil-fs", "vigil-keys", "presence", "signet"] }
-vassal-bridge = { path = "../vassal-bridge" }
+arbiter-core   = { path = "../arbiter-core", features = ["vigil-fs", "vigil-keys", "presence", "signet"] }
+arbiter-bridge = { path = "../arbiter-bridge" }
 tao           = "0.30"
 tray-icon     = "0.19"
 tokio         = { version = "1", features = ["rt-multi-thread", "macros"] }
 tracing       = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
 dirs          = "5.0"

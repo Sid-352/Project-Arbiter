@@ -1,6 +1,6 @@
 //! shell.rs — The Baton: guarded shell command execution.
 //!
-//! Shell execution is the highest-privilege action Vassal can perform.
+//! Shell execution is the highest-privilege action Arbiter can perform.
 //! Every command must pass The Baton toggle before it runs — a per-target
 //! explicit user allowance stored in The Signet.
 //!

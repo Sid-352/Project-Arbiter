@@ -1,5 +1,5 @@
 [package]
-name = "vassal-core"
+name = "arbiter-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

@@ -1,4 +1,4 @@
-//! main.rs — Vassal Engine entry point.
+//! main.rs — Arbiter Engine entry point.
 //!
 //! The binary is a silent background service. On launch it:
 //!   1. Initialises structured logging (tracing).
@@ -15,30 +15,43 @@ mod tray;
 
 use tracing::info;
 use tracing_subscriber::{fmt, EnvFilter};
-use vassal_core::atlas::Atlas;
-use vassal_core::ordinance::{NodeKind, OrdNode};
+use arbiter_core::atlas::Atlas;
+use arbiter_core::ordinance::{NodeKind, OrdNode};
 
 fn main() {
     // ── Logging ───────────────────────────────────────────────────────────────
-    fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("vassal=info,warn")),
-        )
+    // Optional local terminal output for development
+    let stdout_log = tracing_subscriber::fmt::layer()
         .with_target(false)
         .with_thread_names(true)
-        .compact()
-        .init();
+        .compact();
+
+    // Persistent file log for the UI (arbiter-forge) to tail
+    let file_appender = tracing_appender::rolling::never("doc/logs", "arbiter.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    let file_log = tracing_subscriber::fmt::layer()
+        .with_writer(non_blocking)
+        .with_ansi(false)
+        .with_target(false)
+        .compact();
+
+    use tracing_subscriber::layer::SubscriberExt;
+    let subscriber = tracing_subscriber::registry()
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("arbiter=info,warn")))
+        .with(stdout_log)
+        .with(file_log);
+        
+    tracing::subscriber::set_global_default(subscriber).expect("Unable to set global tracing subscriber");
 
     info!("╔═══════════════════════════════╗");
-    info!("║   V A S S A L  v{}       ║", env!("CARGO_PKG_VERSION"));
+    info!("║   A R B I T E R  v{}          ║", env!("CARGO_PKG_VERSION"));
     info!("╚═══════════════════════════════╝");
     info!("The duty is performed.");
 
     // ── Tokio Runtime ─────────────────────────────────────────────────────────
     let rt = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(2)
-        .thread_name("vassal-worker")
+        .thread_name("arbiter-worker")
         .enable_all()
         .build()
         .expect("Failed to build Tokio runtime");
@@ -47,23 +60,23 @@ fn main() {
     let _guard = rt.enter();
 
     // Load Signet vault
-    let signet_config = vassal_core::signet::load().unwrap_or_default();
+    let signet_config = arbiter_core::signet::load().unwrap_or_default();
     info!("Signet config loaded");
 
     // The Filter
-    let filter = vassal_core::filter::VassalFilter::new();
+    let filter = arbiter_core::filter::ArbiterFilter::new();
 
     // Channels
-    let (vigil_tx, vigil_rx) = vassal_core::vigil::channel(64);
+    let (vigil_tx, vigil_rx) = arbiter_core::vigil::channel(64);
     let (presence_tx, presence_rx) = tokio::sync::mpsc::channel(8);
     let (atlas_exec_tx, mut atlas_exec_rx) =
-        tokio::sync::mpsc::channel::<vassal_core::ordinance::ExecData>(16);
+        tokio::sync::mpsc::channel::<arbiter_core::ordinance::ExecData>(16);
     let (exec_cmd_tx, exec_cmd_rx) = tokio::sync::mpsc::channel(16);
     let (run_event_tx, run_event_rx) = tokio::sync::mpsc::channel(32);
     let (atlas_shutdown_tx, atlas_shutdown_rx) = tokio::sync::oneshot::channel();
 
     // 1. Spawn Executor
-    vassal_bridge::executor::spawn_executor(
+    arbiter_bridge::executor::spawn_executor(
         exec_cmd_rx,
         1920,
         1080, // Hardcoded display resolution for Phase 2
@@ -76,7 +89,7 @@ fn main() {
     let map_baton = signet_config.baton_allowed.clone();
     tokio::spawn(async move {
         while let Some(exec_data) = atlas_exec_rx.recv().await {
-            let cmd = vassal_bridge::executor::ExecCmd::Run {
+            let cmd = arbiter_bridge::executor::ExecCmd::Run {
                 nodes: exec_data.nodes,
                 context: exec_data.context,
                 abort_rx: exec_data.abort_rx,
@@ -89,11 +102,11 @@ fn main() {
     });
 
     // 3. Spawn Watchers
-    let _ = vassal_core::vigil::keys::register_hotkey("Ctrl+Shift+D".into(), vigil_tx.clone());
+    let _ = arbiter_core::vigil::keys::register_hotkey("Ctrl+Shift+D".into(), vigil_tx.clone());
 
     // Just an example to prove compilation and logic — assumes Downloads exist.
     if let Some(downloads) = dirs::download_dir() {
-        vassal_core::vigil::fs::spawn_watcher(
+        arbiter_core::vigil::fs::spawn_watcher(
             downloads.to_string_lossy().to_string(),
             "*.zip".into(),
             filter.clone(),
@@ -101,7 +114,7 @@ fn main() {
         );
     }
 
-    vassal_core::presence::spawn_monitor(presence_tx);
+    arbiter_core::presence::spawn_monitor(presence_tx);
     info!("Presence monitor active");
 
     // 4. Initialise & Configure Atlas
@@ -158,7 +171,7 @@ fn main() {
     atlas.register_ordinance("Hotkey|Ctrl+Shift+D".into(), macro_nodes);
 
     // Smoke Test 2: The Organiser
-    if let Some(archive_dir) = dirs::document_dir().map(|d| d.join("Vassal_Archives")) {
+    if let Some(archive_dir) = dirs::document_dir().map(|d| d.join("Arbiter_Archives")) {
         let archive_path = archive_dir.to_string_lossy().to_string();
         // A bit hacky escaping for the JSON, but sufficient for the smoke test
         let internal_json = format!(
@@ -210,7 +223,7 @@ fn main() {
 
     // ── Tray (blocks main thread) ─────────────────────────────────────────────
     tray::run_event_loop(move || {
-        info!("Vassal shutting down — the servant is dismissed.");
+        info!("Arbiter shutting down — the servant is dismissed.");
         if let Ok(mut cell) = shutdown_cell.lock() {
             if let Some(tx) = cell.take() {
                 let _ = tx.send(());

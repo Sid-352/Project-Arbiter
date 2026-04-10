@@ -1,0 +1,16 @@
+2026-04-10T18:31:57.668064Z  INFO ╔═══════════════════════════════╗
+2026-04-10T18:31:57.668391Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-10T18:31:57.668615Z  INFO ╚═══════════════════════════════╝
+2026-04-10T18:31:57.668857Z  INFO The duty is performed.
+2026-04-10T18:31:57.669827Z  INFO Signet: vault not found, using default configuration
+2026-04-10T18:31:57.670077Z  INFO Signet config loaded
+2026-04-10T18:31:57.670723Z  INFO Executor task started
+2026-04-10T18:31:57.688206Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-10T18:31:57.690861Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-10T18:31:57.691172Z  INFO Presence monitor spawned
+2026-04-10T18:31:57.691460Z  INFO Presence monitor active
+2026-04-10T18:31:57.691854Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-10T18:31:57.692477Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-10T18:31:57.692766Z  INFO Atlas: run loop started
+2026-04-10T18:31:57.724629Z  INFO Tray icon built and visible
+2026-04-10T18:31:57.724815Z  INFO Arbiter tray event loop starting

@@ -95,7 +95,7 @@ pub mod fs {
     pub fn spawn_watcher(
         watch_path: String,
         glob: String,
-        filter: crate::filter::VassalFilter,
+        filter: crate::filter::ArbiterFilter,
         tx: mpsc::Sender<Summons>,
     ) -> std::thread::JoinHandle<()> {
         info!(%watch_path, %glob, "Vigil-fs: spawning watcher");
@@ -127,7 +127,7 @@ pub mod fs {
                             let path_str = path.to_string_lossy().to_string();
 
                             if filter.is_own(&path_str) {
-                                debug!(%path_str, "Vigil-fs: skipping Vassal internal write");
+                                debug!(%path_str, "Vigil-fs: skipping Arbiter internal write");
                                 continue;
                             }
 

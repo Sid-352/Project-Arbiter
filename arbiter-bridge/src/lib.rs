@@ -1,4 +1,4 @@
-//! vassal-bridge — The mechanical execution bridge.
+//! arbiter-bridge — The mechanical execution bridge.
 //!
 //! Provides three independent, focused modules:
 //!   hand     — enigo hardware bridge: mouse + keyboard (The Hand).

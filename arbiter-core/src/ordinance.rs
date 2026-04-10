@@ -1,4 +1,4 @@
-//! ordinance.rs — The Vassal data contract.
+//! ordinance.rs — The Arbiter data contract.
 //!
 //! Defines all pure data types for triggers, actions, sequences, and
 //! I/O messaging. No logic lives here — this is the shared vocabulary

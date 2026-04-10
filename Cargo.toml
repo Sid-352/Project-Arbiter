@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "vassal-core",
-    "vassal-bridge",
-    "vassal-app",
+    "arbiter-core",
+    "arbiter-bridge",
+    "arbiter-app", "arbiter-forge",
 ]
 
 [workspace.package]
