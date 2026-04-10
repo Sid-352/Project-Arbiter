@@ -56,6 +56,29 @@ fn assert_trusted(path: &Path, trusted_roots: &[String]) -> Result<(), InscribeE
 
 // ── File Operations ───────────────────────────────────────────────────────────
 
+/// Executes a closure with exponential backoff for Transient/Permission/Lock errors.
+fn retry_with_backoff<F, T>(mut action: F) -> std::io::Result<T>
+where
+    F: FnMut() -> std::io::Result<T>,
+{
+    let mut delay = 100;
+    let mut attempts = 0;
+    loop {
+        match action() {
+            Ok(result) => return Ok(result),
+            Err(e) => {
+                attempts += 1;
+                if attempts >= 5 {
+                    return Err(e);
+                }
+                warn!(%e, "Inscribe: Operation failed, retrying in {}ms (Attempt {})", delay, attempts);
+                std::thread::sleep(std::time::Duration::from_millis(delay));
+                delay *= 2;
+            }
+        }
+    }
+}
+
 /// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
 pub fn move_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<(), InscribeError> {
     assert_trusted(dst, trusted_roots)?;
@@ -69,10 +92,13 @@ pub fn move_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<(),
     }
 
     // Attempt rename first (atomic on same volume), fall back to copy+delete
-    if std::fs::rename(src, dst).is_err() {
-        std::fs::copy(src, dst)?;
-        std::fs::remove_file(src)?;
-    }
+    retry_with_backoff(|| {
+        if std::fs::rename(src, dst).is_err() {
+            std::fs::copy(src, dst)?;
+            std::fs::remove_file(src)?;
+        }
+        Ok(())
+    })?;
 
     info!(src = %src.display(), dst = %dst.display(), "Inscribe: file moved");
     Ok(())
@@ -90,7 +116,7 @@ pub fn copy_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<u64
         std::fs::create_dir_all(parent)?;
     }
 
-    let bytes = std::fs::copy(src, dst)?;
+    let bytes = retry_with_backoff(|| std::fs::copy(src, dst))?;
     info!(src = %src.display(), dst = %dst.display(), bytes, "Inscribe: file copied");
     Ok(bytes)
 }
@@ -103,7 +129,7 @@ pub fn delete_file(path: &Path, trusted_roots: &[String]) -> Result<(), Inscribe
         return Err(InscribeError::SourceNotFound(path.display().to_string()));
     }
 
-    std::fs::remove_file(path)?;
+    retry_with_backoff(|| std::fs::remove_file(path))?;
     info!(path = %path.display(), "Inscribe: file deleted");
     Ok(())
 }

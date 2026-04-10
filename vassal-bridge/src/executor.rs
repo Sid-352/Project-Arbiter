@@ -101,7 +101,21 @@ pub fn spawn_executor(
                 } => {
                     info!("Executor: acquiring queue lock");
                     let _guard = QUEUE_LOCK.lock().await;
-                    info!("Executor: lock acquired, beginning ordinance");
+                    info!("Executor: lock acquired, checking hibernation guard");
+
+                    // The Hibernation Guard: Discard stale events > 5s
+                    if let Some(ts_str) = context.variables.get("timestamp") {
+                        if let Ok(ts) = ts_str.parse::<u64>() {
+                            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+                            if now > ts + 5 {
+                                warn!("Executor: Hibernation Guard triggered — dropping stale event (age > 5s)");
+                                let _ = event_tx.send(RunEvent::Done).await;
+                                continue; // bypass processing
+                            }
+                        }
+                    }
+
+                    info!("Executor: beginning ordinance");
 
                     for (idx, node) in nodes.iter().enumerate() {
                         // Check for abort signal before every node

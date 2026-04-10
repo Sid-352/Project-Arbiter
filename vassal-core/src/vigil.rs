@@ -13,6 +13,9 @@
 //!
 //! The Vigil does NOT execute actions — it only fires Summons events.
 
+#[cfg(feature = "vigil-sys")]
+pub mod sys;
+
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 
@@ -157,6 +160,10 @@ pub mod fs {
                                 "file_ext",
                                 path.extension().and_then(|e| e.to_str()).unwrap_or(""),
                             );
+                            context.insert(
+                                "timestamp",
+                                &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()),
+                            );
 
                             let summons = Summons::FileCreated {
                                 watch_path: watch_path.clone(),
@@ -221,6 +228,10 @@ pub mod keys {
                     debug!(?event, "Vigil-keys: hotkey fired");
                     let mut context = super::EnvContext::new();
                     context.insert("hotkey_combo", &combo);
+                    context.insert(
+                        "timestamp",
+                        &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()),
+                    );
                     let summons = Summons::Hotkey {
                         combo: combo.clone(),
                         context,
