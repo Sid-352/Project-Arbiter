@@ -14,3 +14,25 @@
 2026-04-10T18:31:57.692766Z  INFO Atlas: run loop started
 2026-04-10T18:31:57.724629Z  INFO Tray icon built and visible
 2026-04-10T18:31:57.724815Z  INFO Arbiter tray event loop starting
+2026-04-10T18:32:01.128563Z  INFO Tray: Spawning Terminal user interface
+2026-04-10T18:36:19.375584Z  INFO Tray: Quit selected — initiating shutdown
+2026-04-10T18:36:19.375870Z  INFO Arbiter shutting down — the servant is dismissed.
+2026-04-11T03:43:59.200949Z  INFO ╔═══════════════════════════════╗
+2026-04-11T03:43:59.201072Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T03:43:59.201165Z  INFO ╚═══════════════════════════════╝
+2026-04-11T03:43:59.201367Z  INFO The duty is performed.
+2026-04-11T03:43:59.201756Z  INFO Signet: vault not found, using default configuration
+2026-04-11T03:43:59.201861Z  INFO Signet config loaded
+2026-04-11T03:43:59.202131Z  INFO Executor task started
+2026-04-11T03:43:59.215146Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T03:43:59.217211Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T03:43:59.217377Z  INFO Presence monitor spawned
+2026-04-11T03:43:59.217507Z  INFO Presence monitor active
+2026-04-11T03:43:59.217649Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T03:43:59.218007Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T03:43:59.218167Z  INFO Atlas: run loop started
+2026-04-11T03:43:59.247782Z  INFO Tray icon built and visible
+2026-04-11T03:43:59.247897Z  INFO Arbiter tray event loop starting
+2026-04-11T03:44:07.940124Z  INFO Tray: Spawning Terminal user interface
+2026-04-11T03:44:25.895162Z  INFO Tray: Quit selected — initiating shutdown
+2026-04-11T03:44:25.895476Z  INFO Arbiter shutting down — the servant is dismissed.
