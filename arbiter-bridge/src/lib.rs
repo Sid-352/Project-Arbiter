@@ -5,7 +5,7 @@
 //!   inscribe — file-system write operations (Inscribe).
 //!   shell    — process spawning with Baton toggle guard (The Baton).
 
-pub mod executor;
+pub mod runner;
 pub mod hand;
 pub mod inscribe;
 pub mod shell;

@@ -9,7 +9,7 @@
 use std::{
     collections::HashSet,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}},
 };
 
 fn normalize_key(path: impl AsRef<Path>) -> String {
@@ -22,10 +22,13 @@ fn normalize_key(path: impl AsRef<Path>) -> String {
     abs.to_string_lossy().to_lowercase()
 }
 
-/// A thread-safe, shared set of paths currently being written by Arbiter itself.
+/// A thread-safe, shared set of paths and flags currently being manipulated by Arbiter itself.
 #[derive(Debug, Clone, Default)]
 pub struct ArbiterFilter {
     active_paths: Arc<Mutex<HashSet<String>>>,
+    /// When true, the engine is generating hardware input (The Hand is active).
+    /// Used by The Presence to inhibit self-abort cycles.
+    somatic_lock: Arc<AtomicBool>,
 }
 
 impl ArbiterFilter {
@@ -57,6 +60,21 @@ impl ArbiterFilter {
         } else {
             false
         }
+    }
+
+    /// Inhibit presence detection (The Hand is about to act).
+    pub fn inhibit_presence(&self) {
+        self.somatic_lock.store(true, Ordering::SeqCst);
+    }
+
+    /// Resume presence detection (The Hand has finished).
+    pub fn resume_presence(&self) {
+        self.somatic_lock.store(false, Ordering::SeqCst);
+    }
+
+    /// Returns `true` if presence detection is currently inhibited.
+    pub fn is_inhibited(&self) -> bool {
+        self.somatic_lock.load(Ordering::SeqCst)
     }
 }
 

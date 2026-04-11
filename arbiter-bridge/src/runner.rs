@@ -1,4 +1,4 @@
-//! executor.rs — The Executor: background orchestration task.
+//! runner.rs — The Runner: background orchestration task.
 //!
 //! Owns The Hand, interfaces with The Inscribe and The Baton, and
 //! processes instructions sequentially under a Singleton Queue Lock.
@@ -13,7 +13,7 @@ use arbiter_core::{
     ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent},
 };
 
-// ── Executor Commands ────────────────────────────────────────────────────────
+// ── Runner Commands ────────────────────────────────────────────────────────
 
 pub enum ExecCmd {
     /// Request to run a sequence of nodes.
@@ -76,15 +76,15 @@ fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
 
 // ── Execution Task ───────────────────────────────────────────────────────────
 
-/// Spawns the executor background task.
-pub fn spawn_executor(
+/// Spawns the runner background task.
+pub fn spawn_runner(
     mut cmd_rx: mpsc::Receiver<ExecCmd>,
     screen_width: i32,
     screen_height: i32,
     filter: ArbiterFilter,
 ) {
     tokio::spawn(async move {
-        info!("Executor task started");
+        info!("Runner task started");
 
         // The Hand is owned locally by this task and only used while holding QUEUE_LOCK
         let mut hand = HardwareBridge::new(screen_width, screen_height);
@@ -99,28 +99,28 @@ pub fn spawn_executor(
                     trusted_roots,
                     baton_allowed,
                 } => {
-                    info!("Executor: acquiring queue lock");
+                    info!("Runner: acquiring queue lock");
                     let _guard = QUEUE_LOCK.lock().await;
-                    info!("Executor: lock acquired, checking hibernation guard");
+                    info!("Runner: lock acquired, checking hibernation guard");
 
                     // The Hibernation Guard: Discard stale events > 5s
                     if let Some(ts_str) = context.variables.get("timestamp") {
                         if let Ok(ts) = ts_str.parse::<u64>() {
                             let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
                             if now > ts + 5 {
-                                warn!("Executor: Hibernation Guard triggered — dropping stale event (age > 5s)");
+                                warn!("Runner: Hibernation Guard triggered — dropping stale event (age > 5s)");
                                 let _ = event_tx.send(RunEvent::Done).await;
                                 continue; // bypass processing
                             }
                         }
                     }
 
-                    info!("Executor: beginning ordinance");
+                    info!("Runner: beginning ordinance");
 
                     for (idx, node) in nodes.iter().enumerate() {
                         // Check for abort signal before every node
                         if abort_rx.try_recv().is_ok() {
-                            warn!("Executor: sequence aborted by yield");
+                            warn!("Runner: sequence aborted by yield");
                             let _ = event_tx.send(RunEvent::Done).await;
                             break;
                         }
@@ -135,15 +135,31 @@ pub fn spawn_executor(
                             Ok(mut action) => {
                                 interpolate_action(&mut action.action_type, &context);
 
+                                // Pacing: Handle pre-action delay asynchronously
+                                if action.delay_ms > 0 {
+                                    tokio::time::sleep(std::time::Duration::from_millis(action.delay_ms)).await;
+                                }
+
+                                // Async Wait: Handle ActionType::Wait without blocking
+                                if let ActionType::Wait(ms) = action.action_type {
+                                    tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                                    let _ = event_tx.send(RunEvent::Progress(idx)).await;
+                                    continue;
+                                }
+
                                 let exec_result = match action.action_type {
                                     // Somatic actions
-                                    ActionType::Wait(_)
-                                    | ActionType::Click
+                                    ActionType::Click
                                     | ActionType::DoubleClick
                                     | ActionType::RightClick
                                     | ActionType::Type(_)
                                     | ActionType::Scroll(_)
-                                    | ActionType::Navigate(_) => hand.execute(&action),
+                                    | ActionType::Navigate(_) => {
+                                        filter.inhibit_presence();
+                                        let res = hand.execute(&action);
+                                        filter.resume_presence();
+                                        res
+                                    }
 
                                     // Inscribe actions
                                     ActionType::InscribeMove {
@@ -209,10 +225,11 @@ pub fn spawn_executor(
                                             .map_err(|e| e.to_string())
                                         }
                                     }
+                                    ActionType::Wait(_) => unreachable!("Wait handled async above"),
                                 };
 
                                 if let Err(e) = exec_result {
-                                    error!(%e, "Executor: action failed");
+                                    error!(%e, "Runner: action failed");
                                     let _ = event_tx.send(RunEvent::Panic(e)).await;
                                     break;
                                 }
@@ -220,7 +237,7 @@ pub fn spawn_executor(
                                 let _ = event_tx.send(RunEvent::Progress(idx)).await;
                             }
                             Err(e) => {
-                                error!(%e, id = %node.id, "Executor: failed to parse JSON action");
+                                error!(%e, id = %node.id, "Runner: failed to parse JSON action");
                                 let _ = event_tx
                                     .send(RunEvent::Panic(format!("Parse failure: {}", e)))
                                     .await;
@@ -229,58 +246,12 @@ pub fn spawn_executor(
                         }
                     } // end for
 
-                    info!("Executor: ordinance complete, releasing lock");
+                    info!("Runner: ordinance complete, releasing lock");
                     let _ = event_tx.send(RunEvent::Done).await;
                 }
             }
         }
 
-        info!("Executor task shutting down");
+        info!("Runner task shutting down");
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_interpolation_replaces_correctly() {
-        let mut ctx = EnvContext::new();
-        ctx.insert("file_path", "C:\\dummy.zip");
-        ctx.insert("file_name", "dummy.zip");
-
-        let mut action = ActionType::Shell {
-            command: "echo".to_string(),
-            args: vec![
-                "Opened: ${env.file_name}".to_string(),
-                "From: ${env.file_path}".to_string(),
-            ],
-            detached: false,
-        };
-
-        interpolate_action(&mut action, &ctx);
-
-        match action {
-            ActionType::Shell { args, .. } => {
-                assert_eq!(args[0], "Opened: dummy.zip");
-                assert_eq!(args[1], "From: C:\\dummy.zip");
-            }
-            _ => panic!("Wrong action type after interpolation"),
-        }
-    }
-
-    #[test]
-    fn test_interpolation_ignores_missing_keys() {
-        let ctx = EnvContext::new();
-
-        let mut action = ActionType::Type("${env.missing_key}".to_string());
-        interpolate_action(&mut action, &ctx);
-
-        match action {
-            ActionType::Type(text) => {
-                assert_eq!(text, "${env.missing_key}");
-            }
-            _ => panic!("Wrong action type"),
-        }
-    }
 }

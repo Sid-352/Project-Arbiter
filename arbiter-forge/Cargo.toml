@@ -17,6 +17,8 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 tokio = { version = "1", features = ["full"] }
 chrono = "0.4"
+tokio-util = { version = "0.7", features = ["net", "codec"] }
+futures = "0.3"
 
 [build-dependencies]
 slint-build = "1.5"

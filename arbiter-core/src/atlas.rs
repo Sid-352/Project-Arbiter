@@ -19,6 +19,11 @@ use crate::ordinance::{push_log, ExecData, LogEntry, NodeKind, OrdNode, RunEvent
 #[cfg(feature = "presence")]
 use crate::presence::PresenceSignal;
 
+#[cfg(feature = "presence")]
+type PresenceSignalInner = PresenceSignal;
+#[cfg(not(feature = "presence"))]
+type PresenceSignalInner = ();
+
 // ── Engine State ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,19 +71,21 @@ impl Atlas {
 
     /// The main async event loop.
     pub async fn run(
-        mut self,
-        mut vigil_rx: mpsc::Receiver<Summons>,
-        #[cfg(feature = "presence")] mut presence_rx: mpsc::Receiver<PresenceSignal>,
-        mut run_event_rx: mpsc::Receiver<RunEvent>,
-        exec_tx: mpsc::Sender<ExecData>,
-        mut shutdown_rx: oneshot::Receiver<()>,
+        &mut self,
+        vigil_rx: &mut mpsc::Receiver<Summons>,
+        #[cfg_attr(not(feature = "presence"), allow(unused_variables))]
+        presence_rx: &mut mpsc::Receiver<PresenceSignalInner>,
+        run_event_rx: &mut mpsc::Receiver<RunEvent>,
+        run_tx: mpsc::Sender<ExecData>,
+        shutdown_rx: &mut oneshot::Receiver<()>,
+        log_broadcast: tokio::sync::broadcast::Sender<LogEntry>,
     ) {
         info!("Atlas: run loop started");
 
         loop {
             tokio::select! {
                 // 1. Process Shutdown
-                _ = &mut shutdown_rx => {
+                _ = &mut *shutdown_rx => {
                     info!("Atlas: shutting down");
                     if let Some(tx) = self.active_abort.take() {
                         let _ = tx.send(());
@@ -92,7 +99,9 @@ impl Atlas {
                         let key = summons.to_registry_key();
                         if let Some(nodes) = self.registry.get(&key).cloned() {
                             info!(%key, "Atlas: summons matched, dispatching sequence");
-                            push_log(&self.engine_logs, "ATLAS", &format!("Summons matched: {}", key), false);
+                            let msg = format!("Summons matched: {}", key);
+                            push_log(&self.engine_logs, "ATLAS", &msg, false);
+                            let _ = log_broadcast.send(LogEntry { tag: "ATLAS".into(), message: msg, is_error: false });
 
                             self.state = EngineState::Executing;
                             self.last_start = Some(Instant::now());
@@ -116,8 +125,8 @@ impl Atlas {
                                 abort_rx,
                             };
 
-                            if let Err(e) = exec_tx.send(exec_data).await {
-                                error!(%e, "Atlas: failed to dispatch to Executor");
+                            if let Err(e) = run_tx.send(exec_data).await {
+                                error!(%e, "Atlas: failed to dispatch to Runner");
                                 self.state = EngineState::Faulted;
                             }
                         } else {
@@ -133,41 +142,52 @@ impl Atlas {
                     #[cfg(feature = "presence")]
                     { presence_rx.recv().await }
                     #[cfg(not(feature = "presence"))]
-                    { std::future::pending::<Option<()>>().await }
+                    { std::future::pending::<Option<()>>().await; None::<PresenceSignalInner> }
                 } => {
                     if let Some(_signal) = res {
                         if self.state == EngineState::Executing {
+                            // Grace Period: Ignore presence for 1500ms after summons
+                            // Allows user to release hotkeys and settle mouse without immediate abort.
+                            if let Some(start) = self.last_start {
+                                if start.elapsed().as_millis() < 1500 {
+                                    debug!("Atlas: ignoring presence during 1500ms grace period");
+                                    continue;
+                                }
+                            }
                             info!("Atlas: human presence detected, yielding");
-                            self.yield_to_presence();
+                            self.yield_to_presence(&log_broadcast);
                         }
                     }
                 }
 
-                // 4. Process Executor Status updates
+                // 4. Process Runner Status updates
                 Some(event) = run_event_rx.recv() => {
-                    self.handle_run_event(event);
+                    self.handle_run_event(event, &log_broadcast);
                 }
             }
         }
     }
 
-    fn yield_to_presence(&mut self) {
+    fn yield_to_presence(&mut self, log_broadcast: &tokio::sync::broadcast::Sender<LogEntry>) {
         if let Some(tx) = self.active_abort.take() {
             let _ = tx.send(());
         }
         self.state = EngineState::Yielded;
+        let msg = "Human presence detected — yielding.";
         push_log(
             &self.engine_logs,
             "PRESN",
-            "Human presence detected — yielding.",
+            msg,
             false,
         );
+        let _ = log_broadcast.send(LogEntry { tag: "PRESN".into(), message: msg.into(), is_error: false });
         warn!("Atlas yielded to human presence");
     }
 
-    fn handle_run_event(&mut self, event: RunEvent) {
+    fn handle_run_event(&mut self, event: RunEvent, log_broadcast: &tokio::sync::broadcast::Sender<LogEntry>) {
         match event {
             RunEvent::Log(entry) => {
+                let _ = log_broadcast.send(entry.clone());
                 if let Ok(mut logs) = self.engine_logs.lock() {
                     logs.push(entry);
                 }
@@ -177,12 +197,15 @@ impl Atlas {
             }
             RunEvent::Panic(msg) => {
                 push_log(&self.engine_logs, "ATLAS", &msg, true);
+                let _ = log_broadcast.send(LogEntry { tag: "ATLAS".into(), message: msg.clone(), is_error: true });
                 error!(%msg, "Atlas entered Faulted state");
                 self.state = EngineState::Faulted;
                 self.active_abort = None;
             }
             RunEvent::Done => {
-                push_log(&self.engine_logs, "ATLAS", "Sequence complete.", false);
+                let msg = "Sequence complete.";
+                push_log(&self.engine_logs, "ATLAS", msg, false);
+                let _ = log_broadcast.send(LogEntry { tag: "ATLAS".into(), message: msg.into(), is_error: false });
                 info!("Atlas sequence complete — returning to Idle");
                 self.state = EngineState::Idle;
                 self.active_abort = None;

@@ -1,8 +1,7 @@
 slint::include_modules!();
 
 use std::time::Duration;
-use tokio::time::sleep;
-use slint::{ComponentHandle, VecModel, Model, Color, ModelRc};
+use slint::{ComponentHandle, VecModel, Color, ModelRc, Model};
 use tracing::{info};
 
 thread_local! {
@@ -17,41 +16,69 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ui = ArbiterForge::new()?;
     let ui_handle = ui.as_weak();
 
-    // ── Telemetry Polling (The Pulse) ─────────────────────────────────────────
-    // Reads from arbiter.log and pushes parsed entries to the Slint model.
+    // Initialize the UI model
     let log_model = LOG_MODEL.with(|m| m.clone());
     ui.set_telemetry_logs(ModelRc::from(log_model));
 
-    let ui_handle_copy = ui_handle.clone();
+    let ui_handle_for_telemetry = ui_handle.clone();
+    // ── Telemetry (The Pulse) ───────────────────────────────────────────────
+    // Receives real-time logs from arbiter-app over a Named Pipe IPC channel.
     tokio::spawn(async move {
-        let mut last_line_count = 0;
+        use tokio::net::windows::named_pipe::ClientOptions;
+        use tokio_util::codec::{FramedRead, LinesCodec};
+        use futures::StreamExt;
+        use arbiter_core::ordinance::LogEntry as CoreLogEntry;
+
+        let pipe_name = r"\\.\pipe\arbiter_telemetry";
+        
         loop {
-            sleep(Duration::from_millis(500)).await;
+            // Attempt to connect to the pipe
+            let client = match ClientOptions::new().open(pipe_name) {
+                Ok(c) => c,
+                Err(_) => {
+                    // App not running or pipe not ready, retry in 1s
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+            };
+
+            let mut framed = FramedRead::new(client, LinesCodec::new());
             
-            if let Ok(content) = std::fs::read_to_string("doc/logs/arbiter.log") {
-                let lines: Vec<&str> = content.lines().collect();
-                if lines.len() > last_line_count {
-                    let new_lines = &lines[last_line_count..];
-                    last_line_count = lines.len();
+            while let Some(Ok(line)) = framed.next().await {
+                if let Ok(core_entry) = serde_json::from_str::<CoreLogEntry>(&line) {
+                    let ui_handle_copy = ui_handle_for_telemetry.clone();
                     
-                    for line in new_lines {
-                        // Simple Parser for: "[TIME] TAG MSG" or similar patterns
-                        // Example: "[11:42:00] VIGIL FS_CREATE Z:/..."
-                        let entry = parse_log_line(line);
-                        
-                        let ui_handle_for_loop = ui_handle_copy.clone();
-                        let _ = ui_handle_for_loop.upgrade_in_event_loop(move |_ui| {
-                            LOG_MODEL.with(|m| {
-                                m.push(entry);
-                                // Limit to 50 entries for performance
-                                if m.row_count() > 50 {
-                                    m.remove(0);
-                                }
-                            });
+                    // Map core LogEntry to Slint LogEntry
+                    let tag_color = match core_entry.tag.as_str() {
+                        "VIGIL" | "Vigil-fs" | "Vigil-keys" => Color::from_rgb_u8(99, 102, 241),
+                        "ATLAS" | "Atlas" => Color::from_rgb_u8(245, 158, 11),
+                        "RUNNER" | "Runner" => Color::from_rgb_u8(16, 185, 129),
+                        "BATON" | "Baton" => Color::from_rgb_u8(244, 63, 94),
+                        "ERROR" => Color::from_rgb_u8(244, 63, 94),
+                        "WARN" => Color::from_rgb_u8(245, 158, 11),
+                        _ => Color::from_rgb_u8(161, 161, 170),
+                    };
+
+                    let slint_entry = LogEntry {
+                        time: chrono::Local::now().format("%H:%M:%S").to_string().into(),
+                        tag: core_entry.tag.into(),
+                        msg: core_entry.message.into(),
+                        tag_color,
+                    };
+
+                    let _ = ui_handle_copy.upgrade_in_event_loop(move |_ui| {
+                        LOG_MODEL.with(|m| {
+                            m.push(slint_entry);
+                            if m.row_count() > 50 {
+                                m.remove(0);
+                            }
                         });
-                    }
+                    });
                 }
             }
+            
+            // Connection lost, retry
+            tokio::time::sleep(Duration::from_millis(500)).await;
         }
     });
 
@@ -69,55 +96,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ui.run()?;
 
     Ok(())
-}
-
-fn parse_log_line(line: &str) -> LogEntry {
-    // Expected format: "2026-04-11T03:44:07.940124Z  INFO TAG: MESSAGE"
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    
-    if parts.len() < 3 {
-        return LogEntry {
-            time: "--:--:--".into(),
-            tag: "INFO".into(),
-            msg: line.into(),
-            tag_color: Color::from_rgb_u8(161, 161, 170),
-        };
-    }
-
-    // Extract time from ISO timestamp: 2026-04-11T03:44:07.940124Z -> 03:44:07
-    let timestamp = parts.first().unwrap_or(&"");
-    let time = if timestamp.len() > 18 && timestamp.contains('T') {
-        if let Some(t_pos) = timestamp.find('T') {
-            if timestamp.len() >= t_pos + 9 {
-                timestamp[t_pos+1..t_pos+9].to_string()
-            } else {
-                "--:--:--".to_string()
-            }
-        } else {
-            "--:--:--".to_string()
-        }
-    } else {
-        "--:--:--".to_string()
-    };
-
-    let tag = parts[1].trim_matches(':').to_string();
-    let msg = parts[2..].join(" ");
-
-    // Semantic Color Mapping
-    let tag_color = match tag.as_str() {
-        "VIGIL" | "Vigil-fs" | "Vigil-keys" => Color::from_rgb_u8(99, 102, 241),    // Accent Indigo
-        "ATLAS" | "Atlas" => Color::from_rgb_u8(245, 158, 11),   // Warning Orange
-        "EXECUTOR" | "Executor" => Color::from_rgb_u8(16, 185, 129), // Success Emerald
-        "BATON" | "Baton" => Color::from_rgb_u8(244, 63, 94),    // Critical Rose
-        "ERROR" => Color::from_rgb_u8(244, 63, 94),
-        "WARN" => Color::from_rgb_u8(245, 158, 11),
-        _ => Color::from_rgb_u8(161, 161, 170),        // Text Secondary Gray
-    };
-
-    LogEntry {
-        time: time.into(),
-        tag: tag.into(),
-        msg: msg.into(),
-        tag_color,
-    }
 }

@@ -29,6 +29,8 @@ pub enum TrayAppEvent {
     StatusUpdate(String),
     /// Graceful shutdown requested by an engine thread.
     Shutdown,
+    /// Reset requested via tray menu.
+    Reset,
 }
 
 // ── Icon Builder ──────────────────────────────────────────────────────────────
@@ -50,10 +52,13 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
 
     let menu = Menu::new();
     let status_item = MenuItem::with_id("status", "Arbiter — Standing By", false, None);
+    let reset_item = MenuItem::with_id("reset", "Reset Engine", true, None);
     let open_item = MenuItem::with_id("terminal", "Open Terminal", true, None);
     let quit_item = MenuItem::with_id("quit", "Quit Arbiter", true, None);
 
     menu.append(&status_item)?;
+    menu.append(&PredefinedMenuItem::separator())?;
+    menu.append(&reset_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
     menu.append(&open_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
@@ -76,7 +81,7 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
 /// Must be called on the main thread (Windows COM / Cocoa requirement).
 /// `on_quit` is a `FnOnce` consumed exactly once from whichever exit branch
 /// fires first (menu Quit or engine-initiated Shutdown).
-pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
+pub fn run_event_loop(on_event: impl Fn(TrayAppEvent) + 'static) {
     use tao::event::Event;
     use tray_icon::menu::MenuEvent;
 
@@ -87,9 +92,6 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
 
     info!("Arbiter tray event loop starting");
 
-    // Wrap in Option so the FnOnce can be taken from either exit branch.
-    let mut on_quit = Some(on_quit);
-
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
@@ -99,20 +101,32 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
 
             if id == "quit" {
                 info!("Tray: Quit selected — initiating shutdown");
-                if let Some(f) = on_quit.take() {
-                    f();
-                }
+                on_event(TrayAppEvent::Shutdown);
                 *control_flow = ControlFlow::Exit;
                 return;
             }
 
+            if id == "reset" {
+                info!("Tray: Reset requested");
+                on_event(TrayAppEvent::Reset);
+            }
+
             if id == "terminal" {
                 info!("Tray: Spawning Terminal user interface");
-                let term_path = if cfg!(debug_assertions) {
-                    "target/debug/arbiter-forge.exe"
-                } else {
-                    "arbiter-forge.exe"
-                };
+                
+                let mut term_path = std::env::current_exe()
+                    .unwrap_or_default()
+                    .parent()
+                    .unwrap_or(std::path::Path::new("."))
+                    .join("arbiter-forge.exe");
+
+                // Fallback for dev environment if not in the same folder (e.g. running via cargo)
+                if !term_path.exists() {
+                    let dev_path = std::path::Path::new("target").join("debug").join("arbiter-forge.exe");
+                    if dev_path.exists() {
+                        term_path = dev_path;
+                    }
+                }
 
                 if let Err(e) = std::process::Command::new(term_path).spawn() {
                     tracing::error!(%e, "Failed to spawn Terminal process");
@@ -129,10 +143,11 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
                 }
                 TrayAppEvent::Shutdown => {
                     info!("Tray: engine-initiated shutdown");
-                    if let Some(f) = on_quit.take() {
-                        f();
-                    }
+                    on_event(TrayAppEvent::Shutdown);
                     *control_flow = ControlFlow::Exit;
+                }
+                TrayAppEvent::Reset => {
+                    on_event(TrayAppEvent::Reset);
                 }
             }
         }

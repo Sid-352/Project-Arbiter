@@ -164,9 +164,9 @@ pub enum RunEvent {
     Done,
 }
 
-// ── Orchestrator → Executor Payload ──────────────────────────────────────────
+// ── Orchestrator → Runner Payload ──────────────────────────────────────────
 
-/// Payload sent from the Atlas to the mechanical Executor to start a sequence.
+/// Payload sent from the Atlas to the mechanical Runner to start a sequence.
 pub struct ExecData {
     pub nodes: Vec<OrdNode>,
     pub context: EnvContext,
@@ -174,7 +174,7 @@ pub struct ExecData {
 }
 
 /// A single structured log entry.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogEntry {
     /// Short category tag shown in the terminal (e.g. "ATLAS", "VIGIL", "HAND").
     pub tag: String,
