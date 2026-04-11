@@ -14,7 +14,7 @@
 mod tray;
 
 use tracing::info;
-use tracing_subscriber::{fmt, EnvFilter};
+use tracing_subscriber::EnvFilter;
 use arbiter_core::atlas::Atlas;
 use arbiter_core::ordinance::{NodeKind, OrdNode};
 

@@ -4,16 +4,19 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description.workspace = true
+description = "The visual command center for Arbiter."
 
 [dependencies]
-arbiter-core = { path = "../arbiter-core", features = [] }
-arbiter-bridge = { path = "../arbiter-bridge", features = [] }
+arbiter-core = { path = "../arbiter-core", features = ["vigil-fs", "vigil-keys", "signet"] }
+arbiter-bridge = { path = "../arbiter-bridge" }
 
-eframe = "0.27"
-egui = "0.27"
+slint = { version = "1.15", features = ["renderer-winit-skia"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 tokio = { version = "1", features = ["full"] }
+chrono = "0.4"
+
+[build-dependencies]
+slint-build = "1.5"

@@ -10,7 +10,7 @@
 
 use std::{
     collections::HashSet,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use serde::{Deserialize, Serialize};

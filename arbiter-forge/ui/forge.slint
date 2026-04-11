@@ -1,0 +1,1186 @@
+﻿// ============================================================
+//  ARBITER FORGE — Slint UI
+// ============================================================
+
+import { ScrollView } from "std-widgets.slint";
+
+// ── Theme global ──────────────────────────────────────────────────────────────
+// Animations are NOT allowed inside a global — they are applied per-element
+// in the components that consume these properties instead.
+export global Theme {
+    in-out property <bool> is-dark:         true;
+    in-out property <color> bg-app:         is-dark ? #18181b : #fafafa;
+    in-out property <color> bg-sidebar:     is-dark ? #0f0f12 : #f4f4f5;
+    in-out property <color> bg-card:        is-dark ? #222226 : #fffffff6;
+    in-out property <color> bg-input:       is-dark ? #0c0c0e : #fdfdfd;
+    in-out property <color> accent:         #6366f1;
+    in-out property <color> accent-subtle:  is-dark ? #6366f120 : #6366f110;
+    in-out property <color> success:        #10b981;
+    in-out property <color> warning:        #f59e0b;
+    in-out property <color> critical:       #f43f5e;
+    in-out property <color> border:         is-dark ? #2d2d32 : #e4e4e7;
+    in-out property <color> border-hover:   is-dark ? #3f3f46 : #d4d4d8;
+    in-out property <color> text-main:      is-dark ? #fafafa : #09090b;
+    in-out property <color> text-secondary: is-dark ? #a1a1aa : #52525b;
+    in-out property <color> text-muted:     is-dark ? #52525b : #a1a1aa;
+    in-out property <length> radius:        8px;
+}
+
+export struct LogEntry {
+    time: string,
+    tag: string,
+    tag-color: color,
+    msg: string,
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+component SunIcon inherits Path {
+    in property <color> icon-color: Theme.text-secondary;
+    width: 16px;
+    height: 16px;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    stroke: root.icon-color;
+    stroke-width: 2px;
+    fill: transparent;
+    commands: "M 12 8 a 4 4 0 1 0 0.001 0 z M 12 2 v 2 M 12 20 v 2 M 4.93 4.93 l 1.41 1.41 M 17.66 17.66 l 1.41 1.41 M 2 12 h 2 M 20 12 h 2 M 6.34 17.66 l -1.41 1.41 M 19.07 4.93 l -1.41 1.41";
+}
+
+component MoonIcon inherits Path {
+    in property <color> icon-color: Theme.text-secondary;
+    width: 16px;
+    height: 16px;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    stroke: transparent;
+    stroke-width: 0px;
+    fill: root.icon-color;
+    commands: "M 21 12.79 A 9 9 0 1 1 11.21 3 A 7 7 0 0 0 21 12.79 z";
+}
+
+// ── SidebarItem ───────────────────────────────────────────────────────────────
+component SidebarItem inherits Rectangle {
+    in property <bool> active: false;
+    in property <string> label;
+    in property <int> decree-status: 0;
+    in property <string> icon-commands: "";
+    in property <bool> icon-filled: false;
+    in property <color> icon-color: root.active ? Theme.accent : Theme.text-secondary;
+    callback clicked;
+    height: 36px;
+    border-radius: 6px;
+    background: root.active ? Theme.accent-subtle : (ta.has-hover ? (Theme.is-dark ? #ffffff08 : #00000008) : transparent);
+    animate background { duration: 150ms; }
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 10px;
+        spacing: 10px;
+        alignment: stretch;
+        VerticalLayout {
+            alignment: center;
+            width: 16px;
+            Path {
+                width: 16px;
+                height: 16px;
+                viewbox-width: 24;
+                viewbox-height: 24;
+                stroke: root.icon-filled ? transparent : root.icon-color;
+                stroke-width: root.icon-filled ? 0px : 2px;
+                fill: root.icon-filled ? root.icon-color : transparent;
+                commands: root.icon-commands;
+            }
+        }
+
+        Text {
+            text: root.label;
+            color: root.active ? (Theme.is-dark ? #ffffff : Theme.accent) : (ta.has-hover ? Theme.text-main : Theme.text-secondary);
+            font-size: 13px;
+            font-weight: root.active ? 600 : 400;
+            vertical-alignment: center;
+            height: root.height;
+            horizontal-stretch: 1;
+            animate color { duration: 150ms; }
+        }
+
+        if root.decree-status != 0: VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 7px;
+                height: 7px;
+                border-radius: 4px;
+                background: root.decree-status == 1 ? Theme.success : root.decree-status == 2 ? Theme.warning : Theme.critical;
+            }
+        }
+    }
+
+    ta := TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+// ── EnvChip ───────────────────────────────────────────────────────────────────
+component EnvChip inherits Rectangle {
+    in property <string> token;
+    in property <bool> deep: false;
+    callback clicked; // Exposes click event to Rust
+
+    height: 22px;
+    border-radius: 4px;
+    // Added hover states to the background color
+    background: root.deep ? (ta.has-hover ? #f59e0b25 : #f59e0b14) : (ta.has-hover ? Theme.border : Theme.bg-input);
+    border-width: 1px;
+    border-color: root.deep ? Theme.warning : Theme.border;
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        alignment: stretch;
+        Text {
+            text: root.token;
+            color: root.deep ? Theme.warning : Theme.text-secondary;
+            font-size: 9px;
+            vertical-alignment: center;
+            height: parent.height;
+        }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+// ── InputPill ─────────────────────────────────────────────────────────────────
+// Defined here so SummonsBlock and OrdinanceStep (below) can both use it.
+component InputPill inherits Rectangle {
+    in property <string> value;
+    in property <color> value-color: Theme.text-main;
+    background: Theme.bg-input;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: Theme.border;
+    height: 34px;
+    horizontal-stretch: 1;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: stretch;
+        Text {
+            text: root.value;
+            color: root.value-color;
+            font-size: 11px;
+            vertical-alignment: center;
+            height: 34px;
+        }
+    }
+}
+
+// ── EventBadge ────────────────────────────────────────────────────────────────
+component EventBadge inherits Rectangle {
+    in property <string> label;
+    in property <color> badge-color: Theme.accent;
+    background: Theme.accent-subtle;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: root.badge-color;
+    height: 34px;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: stretch;
+        Text {
+            text: root.label;
+            color: root.badge-color;
+            font-size: 11px;
+            font-weight: 700;
+            vertical-alignment: center;
+            height: 34px;
+        }
+    }
+}
+
+// ── StatusChip ────────────────────────────────────────────────────────────────
+component StatusChip inherits Rectangle {
+    in property <string> label;
+    in property <color> chip-color: Theme.accent;
+    height: 20px;
+    border-radius: 4px;
+    background: Theme.accent-subtle;
+    border-width: 1px;
+    border-color: root.chip-color;
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        alignment: stretch;
+        Text {
+            text: root.label;
+            color: root.chip-color;
+            font-size: 9px;
+            font-weight: 700;
+            vertical-alignment: center;
+            height: parent.height;
+        }
+    }
+}
+
+// ── TriggerTab ────────────────────────────────────────────────────────────────
+component TriggerTab inherits Rectangle {
+    in property <bool> active: false;
+    in property <string> label;
+    callback clicked;
+    height: 28px;
+    horizontal-stretch: 1;
+    border-radius: 5px;
+    background: root.active ? (Theme.is-dark ? #ffffff18 : #00000012) : transparent;
+    animate background { duration: 150ms; }
+    Text {
+        text: root.label;
+        color: root.active ? Theme.text-main : Theme.text-muted;
+        font-size: 10px;
+        font-weight: root.active ? 700 : 500;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        width: parent.width;
+        height: parent.height;
+        animate color { duration: 150ms; }
+    }
+
+    TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+// ── SummonsBlock ──────────────────────────────────────────────────────────────
+component SummonsBlock inherits Rectangle {
+    in-out property <int> trigger-type: 0;
+    background: Theme.bg-card;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: Theme.border;
+    VerticalLayout {
+        padding: 18px;
+        spacing: 14px;
+        Rectangle {
+            height: 36px;
+            border-radius: 7px;
+            background: Theme.bg-input;
+            border-width: 1px;
+            border-color: Theme.border;
+            HorizontalLayout {
+                padding: 4px;
+                spacing: 3px;
+                TriggerTab {
+                    label: "VIGIL\u{00B7}FS";
+                    active: root.trigger-type == 0;
+                    clicked => {
+                        root.trigger-type = 0;
+                    }
+                }
+
+                TriggerTab {
+                    label: "VIGIL\u{00B7}KEY";
+                    active: root.trigger-type == 1;
+                    clicked => {
+                        root.trigger-type = 1;
+                    }
+                }
+
+                TriggerTab {
+                    label: "VIGIL\u{00B7}PROC";
+                    active: root.trigger-type == 2;
+                    clicked => {
+                        root.trigger-type = 2;
+                    }
+                }
+            }
+        }
+
+        if root.trigger-type == 0: HorizontalLayout {
+            spacing: 10px;
+            alignment: stretch;
+            EventBadge {
+                label: "FS_CREATE";
+                width: 120px;
+            }
+
+            InputPill {
+                value: "Z:/Downloads/*.zip";
+            }
+        }
+        if root.trigger-type == 1: HorizontalLayout {
+            spacing: 10px;
+            alignment: stretch;
+            EventBadge {
+                label: "CTRL+ALT";
+                width: 110px;
+            }
+
+            EventBadge {
+                label: "F9";
+                width: 56px;
+            }
+
+            InputPill {
+                value: "Trigger label (optional)";
+                value-color: Theme.text-muted;
+            }
+        }
+        if root.trigger-type == 2: HorizontalLayout {
+            spacing: 10px;
+            alignment: stretch;
+            EventBadge {
+                label: "PROC_START";
+                width: 130px;
+            }
+
+            InputPill {
+                value: "chrome.exe";
+            }
+        }
+        if root.trigger-type == 0: HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            StatusChip {
+                label: "LAYER 1 \u{00B7} SURFACE";
+                chip-color: Theme.success;
+                width: 118px;
+            }
+
+            StatusChip {
+                label: "WARD \u{00B7} Z:/";
+                chip-color: Theme.accent;
+                width: 82px;
+            }
+        }
+    }
+}
+
+// ── OrdinanceStep ─────────────────────────────────────────────────────────────
+component OrdinanceStep inherits Rectangle {
+    in property <string> title;
+    in property <string> subtext;
+    in property <bool> is-active: false;
+    in property <bool> is-last: false;
+    in property <bool> is-editing: false;
+    in property <int> step-type: 3;
+    in property <bool> baton-required: false;
+    property <color> type-color:
+        root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : Theme.text-muted;
+    property <string> type-label:
+        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : "STEADY";
+    background: Theme.bg-card;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: root.is-editing ? Theme.accent : (ta.has-hover ? Theme.border-hover : Theme.border);
+    animate border-color { duration: 150ms; }
+    if !root.is-last: Rectangle {
+        x: 25px;
+        y: 36px;
+        width: 2px;
+        height: root.height - 6px;
+        background: Theme.border;
+    }
+    VerticalLayout {
+        padding: 16px;
+        spacing: 10px;
+        HorizontalLayout {
+            spacing: 14px;
+            alignment: stretch;
+            VerticalLayout {
+                alignment: center;
+                width: 20px;
+                Rectangle {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 10px;
+                    background: root.is-active ? Theme.accent-subtle : Theme.bg-app;
+                    border-width: 1.5px;
+                    border-color: root.is-active ? Theme.accent : Theme.border;
+                    if root.is-active: Rectangle {
+                        x: 6px;
+                        y: 6px;
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 4px;
+                        background: Theme.accent;
+                    }
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                spacing: 5px;
+                horizontal-stretch: 1;
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    Text {
+                        text: root.title;
+                        color: Theme.text-main;
+                        font-weight: 600;
+                        font-size: 14px;
+                        vertical-alignment: center;
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            height: 18px;
+                            border-radius: 3px;
+                            background: root.step-type == 0 ? #10b98118 : root.step-type == 1 && root.baton-required ? #f43f5e18 : root.step-type == 1 ? #f59e0b18 : root.step-type == 2 ? Theme.accent-subtle : (Theme.is-dark ? #ffffff0a : #0000000a);
+                            border-width: 1px;
+                            border-color: root.type-color;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                alignment: stretch;
+                                Text {
+                                    text: root.type-label;
+                                    color: root.type-color;
+                                    font-size: 8px;
+                                    font-weight: 800;
+                                    font-family: "Geist Mono";
+                                    vertical-alignment: center;
+                                    height: 18px;
+                                }
+                            }
+                        }
+                    }
+
+                    if root.step-type == 1 && root.baton-required: VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            height: 18px;
+                            border-radius: 3px;
+                            background: #f43f5e18;
+                            border-width: 1px;
+                            border-color: Theme.critical;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                alignment: stretch;
+                                Text {
+                                    text: "BATON REQUIRED";
+                                    color: Theme.critical;
+                                    font-size: 8px;
+                                    font-weight: 800;
+                                    font-family: "Geist Mono";
+                                    vertical-alignment: center;
+                                    height: 18px;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !root.is-editing: Text {
+                    text: root.subtext;
+                    color: Theme.text-secondary;
+                    font-size: 11px;
+                }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: "...";
+                    font-size: 13px;
+                    color: Theme.text-muted;
+                }
+
+                TouchArea {
+                    width: 32px;
+                    height: 32px;
+                }
+            }
+        }
+
+        if root.is-editing: VerticalLayout {
+            padding-left: 34px;
+            spacing: 8px;
+            if root.step-type == 0: HorizontalLayout {
+                spacing: 8px;
+                alignment: stretch;
+                InputPill {
+                    value: "Z:/Downloads/${env.file_name}";
+                }
+
+                InputPill {
+                    value: "C:/Archive/";
+                    value-color: Theme.text-muted;
+                }
+            }
+            if root.step-type == 1: HorizontalLayout {
+                spacing: 8px;
+                alignment: stretch;
+                InputPill {
+                    value: "ffmpeg.exe";
+                    width: 120px;
+                }
+
+                InputPill {
+                    value: "--input ${env.file_path} --output C:/out/";
+                }
+            }
+            if root.step-type == 2: HorizontalLayout {
+                spacing: 8px;
+                alignment: stretch;
+                EventBadge {
+                    label: "TYPE";
+                    width: 72px;
+                    badge-color: Theme.accent;
+                }
+
+                InputPill {
+                    value: "Hello, ${env.file_name}";
+                }
+            }
+            if root.step-type == 3: Text {
+                text: "Internal guard — no configuration required.";
+                color: Theme.text-muted;
+                font-size: 10px;
+            }
+            VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: "AVAILABLE CONTEXT";
+                    color: Theme.text-muted;
+                    font-size: 8px;
+                    font-weight: 800;
+                }
+
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    EnvChip {
+                        token: "${env.file_path}";
+                    }
+
+                    EnvChip {
+                        token: "${env.file_name}";
+                    }
+
+                    EnvChip {
+                        token: "${env.file_ext}";
+                    }
+
+                    EnvChip {
+                        token: "${env.file_size_human}";
+                    }
+
+                    EnvChip {
+                        token: "${env.content_sha256}";
+                        deep: true;
+                    }
+
+                    EnvChip {
+                        token: "${env.origin_zone}";
+                        deep: true;
+                    }
+
+                    EnvChip {
+                        token: "${env.origin_url}";
+                        deep: true;
+                    }
+                }
+            }
+        }
+    }
+
+    ta := TouchArea { }
+}
+
+// ── ModalDialog Overlay ───────────────────────────────────────────────────────
+component ModalDialog inherits Rectangle {
+    in property <string> title;
+    in property <string> message;
+    in property <string> confirm-text: "OK";
+    callback confirmed;
+
+    // The dark overlay that blocks clicks to the background
+    width: 100%;
+    height: 100%;
+    background: Theme.is-dark ? #00000080 : #ffffff80;
+    TouchArea { } // Absorbs stray clicks
+
+    // The actual popup box
+    Rectangle {
+        width: 400px;
+        height: 200px;
+        border-radius: 12px;
+        background: Theme.bg-card;
+        border-width: 1px;
+        border-color: Theme.border;
+        drop-shadow-blur: 20px;
+        drop-shadow-color: #00000040;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+            alignment: center;
+            Text {
+                text: root.title;
+                font-size: 18px;
+                font-weight: 700;
+                color: Theme.text-main;
+                horizontal-alignment: center;
+            }
+
+            Text {
+                text: root.message;
+                font-size: 14px;
+                color: Theme.text-secondary;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: end;
+                Rectangle {
+                    width: 120px;
+                    height: 36px;
+                    border-radius: 8px;
+                    background: Theme.accent;
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: root.confirm-text;
+                            color: white;
+                            font-size: 12px;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                        }
+                    }
+
+                    TouchArea {
+                        clicked => {
+                            root.confirmed();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Root Window ───────────────────────────────────────────────────────────────
+export component ArbiterForge inherits Window {
+    callback save-decree;
+    title: "Arbiter Forge";
+    preferred-width: 1120px;
+    preferred-height: 780px;
+    background: Theme.bg-app;
+    default-font-family: "Inter";
+
+    // State for the modal
+    property <bool> show-modal: false;
+    property <string> modal-title: "";
+    property <string> modal-message: "";
+    property <string> modal-action-type: ""; // Optional: useful for telling your Rust backend WHICH action to take when confirmed
+    
+    // Dynamic Telemetry
+    in property <[LogEntry]> telemetry-logs: [];
+    HorizontalLayout {
+
+        // ── Sidebar ───────────────────────────────────────────────────────────
+        Rectangle {
+            width: 260px;
+            background: Theme.bg-sidebar;
+            border-width: 1px;
+            border-color: Theme.border;
+            VerticalLayout {
+                padding: 24px;
+                spacing: 28px;
+
+                // Brand
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: start;
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Arbiter Forge";
+                            color: Theme.text-main;
+                            font-weight: 700;
+                            font-size: 15px;
+                        }
+                    }
+                }
+
+                // Nav
+                VerticalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: "NAVIGATE";
+                        color: Theme.text-muted;
+                        font-size: 10px;
+                        font-weight: 800;
+                    }
+
+                    SidebarItem {
+                        label: "Forge";
+                        active: true;
+                        icon-commands: "M 2 6 h 10 v 4 H 2 z M 9 10 l 4 8 M 13 4 l 4 4 M 14 5 l 3 -3 2 2 -3 3";
+                        icon-color: Theme.accent;
+                    }
+
+                    SidebarItem {
+                        label: "Conservatory";
+                        icon-commands: "M 3 9 l 9 -7 l 9 7 v 11 a 2 2 0 0 1 -2 2 H 5 a 2 2 0 0 1 -2 -2 z M 9 22 V 12 h 6 v 10";
+                    }
+
+                    SidebarItem {
+                        label: "Signet";
+                        icon-commands: "M 12 2 L 3 7 v 5 c 0 5.25 3.75 10.15 9 11.25 C 17.25 22.15 21 17.25 21 12 V 7 z";
+                    }
+                }
+
+                // Active Decrees
+                VerticalLayout {
+                    spacing: 4px;
+                    HorizontalLayout {
+                        alignment: stretch;
+                        VerticalLayout {
+                            alignment: center;
+                            Text {
+                                text: "ACTIVE DECREES";
+                                color: Theme.text-muted;
+                                font-size: 10px;
+                                font-weight: 800;
+                            }
+                        }
+
+                        Rectangle {
+                            horizontal-stretch: 1;
+                        }
+
+                        Rectangle {
+                            width: 24px;
+                            height: 24px;
+                            border-radius: 4px;
+                            background: Theme.is-dark ? #ffffff08 : #00000008;
+                            Text {
+                                text: "+";
+                                color: Theme.text-muted;
+                                font-size: 16px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 24px;
+                                height: 24px;
+                            }
+
+                            TouchArea { }
+                        }
+                    }
+
+                    Rectangle {
+                        height: 4px;
+                    }
+
+                    SidebarItem {
+                        label: "Archive Automation";
+                        active: true;
+                        decree-status: 1;
+                    }
+
+                    SidebarItem {
+                        label: "Registry Scrubber";
+                        decree-status: 2;
+                    }
+                }
+
+                Rectangle {
+                    vertical-stretch: 1;
+                }
+
+                // Theme toggle
+                Rectangle {
+                    height: 40px;
+                    border-radius: 20px;
+                    background: Theme.bg-input;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    HorizontalLayout {
+                        padding: 4px;
+                        spacing: 4px;
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            border-radius: 16px;
+                            background: Theme.is-dark ? transparent : Theme.accent-subtle;
+                            animate background { duration: 200ms; }
+                            VerticalLayout {
+                                alignment: center;
+                                HorizontalLayout {
+                                    alignment: center;
+                                    Rectangle {
+                                        width: 16px;
+                                        height: 16px;
+                                        opacity: Theme.is-dark ? 0.3 : 1.0;
+                                        animate opacity { duration: 200ms; }
+                                        SunIcon {
+                                            icon-color: Theme.text-main;
+                                        }
+                                    }
+                                }
+                            }
+
+                            TouchArea {
+                                clicked => {
+                                    Theme.is-dark = false;
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            border-radius: 16px;
+                            background: Theme.is-dark ? Theme.accent-subtle : transparent;
+                            animate background { duration: 200ms; }
+                            VerticalLayout {
+                                alignment: center;
+                                HorizontalLayout {
+                                    alignment: center;
+                                    Rectangle {
+                                        width: 16px;
+                                        height: 16px;
+                                        opacity: Theme.is-dark ? 1.0 : 0.3;
+                                        animate opacity { duration: 200ms; }
+                                        MoonIcon {
+                                            icon-color: Theme.text-main;
+                                        }
+                                    }
+                                }
+                            }
+
+                            TouchArea {
+                                clicked => {
+                                    Theme.is-dark = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Workspace ─────────────────────────────────────────────────────────
+        VerticalLayout {
+            horizontal-stretch: 1;
+
+            // Topbar
+            Rectangle {
+                height: 56px;
+                background: Theme.bg-app;
+                border-width: 1px;
+                border-color: Theme.border;
+                HorizontalLayout {
+                    padding-left: 28px;
+                    padding-right: 20px;
+                    spacing: 14px;
+                    alignment: stretch;
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Archive Automation";
+                            font-size: 15px;
+                            font-weight: 600;
+                            color: Theme.text-main;
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: 1px;
+                            height: 16px;
+                            background: Theme.border;
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "STABLE";
+                            color: Theme.success;
+                            font-size: 10px;
+                            font-weight: 800;
+                        }
+                    }
+
+                    Rectangle {
+                        horizontal-stretch: 1;
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: 148px;
+                            height: 32px;
+                            background: Theme.accent;
+                            border-radius: 6px;
+                            Text {
+                                text: "COMMIT CHANGES";
+                                color: #ffffff;
+                                font-weight: 700;
+                                font-size: 10px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 148px;
+                                height: 32px;
+                            }
+
+                            TouchArea {
+                                clicked => {
+                                    root.modal-title = "Confirm Commit";
+                                    root.modal-message = "Are you sure you want to commit these changes to the archive?";
+                                    root.modal-action-type = "commit_decree";
+                                    root.show-modal = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Canvas
+            Rectangle {
+                background: Theme.bg-app;
+                vertical-stretch: 1;
+                clip: true;
+                ScrollView {
+                    VerticalLayout {
+                        padding: 48px;
+                        spacing: 40px;
+                        alignment: start;
+
+                        // Summons
+                        VerticalLayout {
+                            spacing: 12px;
+                            Text {
+                                text: "SUMMONS CONDITION";
+                                color: Theme.accent;
+                                font-weight: 800;
+                                font-size: 10px;
+                            }
+
+                            SummonsBlock { }
+                        }
+
+                        // Decree sequence
+                        VerticalLayout {
+                            spacing: 14px;
+                            HorizontalLayout {
+                                alignment: stretch;
+                                VerticalLayout {
+                                    alignment: center;
+                                    Text {
+                                        text: "DECREE SEQUENCE";
+                                        color: Theme.accent;
+                                        font-weight: 800;
+                                        font-size: 10px;
+                                    }
+                                }
+
+                                Rectangle {
+                                    horizontal-stretch: 1;
+                                }
+
+                                VerticalLayout {
+                                    alignment: center;
+                                    Text {
+                                        text: "DETERMINISTIC";
+                                        color: Theme.success;
+                                        font-size: 9px;
+                                        font-weight: 800;
+                                    }
+                                }
+                            }
+
+                            OrdinanceStep {
+                                title: "Successive Size Check";
+                                subtext: "Awaiting stability pulse";
+                                step-type: 3;
+                                is-active: true;
+                            }
+
+                            OrdinanceStep {
+                                title: "Atomic Relocation";
+                                subtext: "Moving verified artifact to vault";
+                                baton-required: false;
+                                clip: false;
+                                is-active: false;
+                                is-editing: false;
+                                step-type: 0;
+                            }
+
+                            OrdinanceStep {
+                                title: "Shell Dispatch";
+                                subtext: "Firing post-process signal";
+                                step-type: 1;
+                                baton-required: true;
+                                is-editing: false;
+                            }
+
+                            OrdinanceStep {
+                                title: "Audit Verification";
+                                subtext: "Finalizing ledger entry";
+                                step-type: 3;
+                                is-last: true;
+                            }
+
+                            Rectangle {
+                                height: 40px;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                border-radius: Theme.radius;
+                                background: Theme.bg-card;
+                                Text {
+                                    text: "+ Append Action Step";
+                                    color: Theme.text-muted;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                    width: parent.width;
+                                    height: 40px;
+                                }
+
+                                TouchArea { }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Telemetry feed ────────────────────────────────────────────────
+            Rectangle {
+                height: 110px;
+                background: Theme.bg-sidebar;
+                border-width: 1px;
+                border-color: Theme.border;
+                clip: true;
+                VerticalLayout {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                    padding-top: 8px;
+                    padding-bottom: 8px;
+                    spacing: 0px;
+                    HorizontalLayout {
+                        alignment: stretch;
+                        spacing: 12px;
+                        HorizontalLayout {
+                            spacing: 6px;
+                            VerticalLayout {
+                                alignment: center;
+                                Rectangle {
+                                    width: 6px;
+                                    height: 6px;
+                                    border-radius: 3px;
+                                    background: Theme.success;
+                                }
+                            }
+
+                            VerticalLayout {
+                                alignment: center;
+                                Text {
+                                    text: "VIGILANT";
+                                    color: Theme.text-secondary;
+                                    font-size: 9px;
+                                    font-weight: 800;
+                                }
+                            }
+                        }
+
+                        VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: 1px;
+                                height: 10px;
+                                background: Theme.border;
+                            }
+                        }
+
+                        Rectangle {
+                            horizontal-stretch: 1;
+                        }
+
+                        VerticalLayout {
+                            alignment: center;
+                            Text {
+                                text: "ARBITER v0.1.0";
+                                color: Theme.text-muted;
+                                font-size: 9px;
+                                font-weight: 800;
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        height: 6px;
+                    }
+
+                    ScrollView {
+                        VerticalLayout {
+                            alignment: start;
+                            for entry in root.telemetry-logs: HorizontalLayout {
+                                spacing: 0px;
+                                Text {
+                                    text: entry.time + "  ";
+                                    color: Theme.text-muted;
+                                    font-size: 9px;
+                                    vertical-alignment: center;
+                                    height: 16px;
+                                    font-family: "Geist Mono";
+                                }
+
+                                Text {
+                                    text: entry.tag + "   ";
+                                    color: entry.tag-color;
+                                    font-size: 9px;
+                                    font-weight: 700;
+                                    vertical-alignment: center;
+                                    height: 16px;
+                                    font-family: "Geist Mono";
+                                }
+
+                                Text {
+                                    text: entry.msg;
+                                    color: Theme.text-muted;
+                                    font-size: 9px;
+                                    vertical-alignment: center;
+                                    height: 16px;
+                                    horizontal-stretch: 1;
+                                    font-family: "Geist Mono";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // ── Modal Overlay ──────────────────────────────────────────────────────
+    if root.show-modal: ModalDialog {
+        title: root.modal-title;
+        message: root.modal-message;
+        confirm-text: "CONFIRM";
+        confirmed => {
+            root.show-modal = false; 
+            // In Rust, you would listen to `modal-action-type` to know what to execute!
+            /* if (root.modal-action-type == "commit_decree") { ... }
+            */
+        }
+    }
+}
