@@ -18,6 +18,68 @@ use tracing_subscriber::EnvFilter;
 use arbiter_core::atlas::Atlas;
 use arbiter_core::ordinance::{NodeKind, OrdNode};
 use serde_json;
+use std::io::Write;
+use std::fs::{File, OpenOptions};
+use std::path::PathBuf;
+use chrono::Local;
+
+// ── Custom Rolling Writer ─────────────────────────────────────────────────────
+
+/// A simple rolling file writer that follows the pattern: arbiter.YYYY-MM-DD.log
+struct ArbiterRollingWriter {
+    log_dir: PathBuf,
+    current_date: Option<String>,
+    current_file: Option<File>,
+}
+
+impl ArbiterRollingWriter {
+    fn new(dir: impl Into<PathBuf>) -> Self {
+        Self {
+            log_dir: dir.into(),
+            current_date: None,
+            current_file: None,
+        }
+    }
+}
+
+impl Write for ArbiterRollingWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let date = Local::now().format("%Y-%m-%d").to_string();
+
+        // Roll to a new file if the date has changed (or on first write)
+        if self.current_date.as_ref() != Some(&date) {
+            let filename = format!("arbiter.{}.log", date);
+            let path = self.log_dir.join(filename);
+            
+            // Create directory if missing
+            if !self.log_dir.exists() {
+                std::fs::create_dir_all(&self.log_dir)?;
+            }
+
+            let file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)?;
+            
+            self.current_file = Some(file);
+            self.current_date = Some(date);
+        }
+
+        if let Some(ref mut file) = self.current_file {
+            file.write(buf)
+        } else {
+            Ok(0)
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        if let Some(ref mut file) = self.current_file {
+            file.flush()
+        } else {
+            Ok(())
+        }
+    }
+}
 
 fn banner(title: impl std::fmt::Display, subtitle: impl std::fmt::Display) {
     let width = 56;
@@ -37,7 +99,8 @@ fn main() {
         .compact();
 
     // Persistent file log for the UI (arbiter-forge) to tail
-    let file_appender = tracing_appender::rolling::never("doc/logs", "arbiter.log");
+    // Custom daily rolling: arbiter.YYYY-MM-DD.log
+    let file_appender = ArbiterRollingWriter::new("doc/logs");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     let file_log = tracing_subscriber::fmt::layer()
         .with_writer(non_blocking)
