@@ -19,6 +19,15 @@ use arbiter_core::atlas::Atlas;
 use arbiter_core::ordinance::{NodeKind, OrdNode};
 use serde_json;
 
+fn banner(title: impl std::fmt::Display, subtitle: impl std::fmt::Display) {
+    let width = 56;
+
+    println!("╔{}╗", "═".repeat(width - 2));
+    println!("│{:^54}│", title);
+    println!("│{:^54}│", subtitle);
+    println!("╚{}╝", "═".repeat(width - 2));
+}
+
 fn main() {
     // ── Logging ───────────────────────────────────────────────────────────────
     // Optional local terminal output for development
@@ -44,10 +53,12 @@ fn main() {
         
     tracing::subscriber::set_global_default(subscriber).expect("Unable to set global tracing subscriber");
 
-    info!("╔═══════════════════════════════╗");
-    info!("║   A R B I T E R  v{}          ║", env!("CARGO_PKG_VERSION"));
-    info!("╚═══════════════════════════════╝");
-    info!("The duty is performed.");
+    banner(
+        format!("ARBITER v{}", env!("CARGO_PKG_VERSION")),
+        "Command & Control Orchestration Engine",
+    );
+
+    info!("Status: Initialising mechanical bridges...");
 
     // ── Tokio Runtime ─────────────────────────────────────────────────────────
     let rt = tokio::runtime::Builder::new_multi_thread()
@@ -62,7 +73,7 @@ fn main() {
 
     // Load Signet vault
     let signet_config = arbiter_core::signet::load().unwrap_or_default();
-    info!("Signet config loaded");
+    info!("Signet: secure configuration loaded");
 
     // The Filter
     let filter = arbiter_core::filter::ArbiterFilter::new();
@@ -95,7 +106,7 @@ fn main() {
             {
                 Ok(s) => s,
                 Err(e) => {
-                    error!(%e, "IPC: failed to create named pipe");
+                    error!(%e, "IPC: telemetry pipe creation failed");
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     continue;
                 }
@@ -156,7 +167,7 @@ fn main() {
             (1920, 1080) // Fallback for other OS or headless
         }
     };
-    info!(screen_width, screen_height, "Runner: detected display resolution");
+    info!("Runner: display boundaries mapped to {}x{}", screen_width, screen_height);
 
     arbiter_bridge::runner::spawn_runner(
         exec_cmd_rx,
@@ -197,10 +208,12 @@ fn main() {
     }
 
     arbiter_core::presence::spawn_monitor(presence_tx, filter.clone());
-    info!("Presence monitor active");
+    info!("Vigil: presence monitoring active");
 
     // 4. Initialise & Configure Atlas
     let mut atlas = Atlas::new();
+    atlas.presence_config.ignore_mouse = true; // Refined: Mouse move won't abort, only keys
+    info!("Atlas: engine core ready (Sensitivity: Keyboard Only)");
 
     // Smoke Test 1: The Macro
     let macro_nodes = vec![

@@ -34,6 +34,25 @@ pub enum EngineState {
     Faulted,
 }
 
+// ── Presence Configuration ────────────────────────────────────────────────────
+
+#[derive(Debug, Clone)]
+pub struct PresenceConfig {
+    /// If true, mouse movement/clicks will not trigger a yield.
+    pub ignore_mouse: bool,
+    /// If true, keyboard input will not trigger a yield.
+    pub ignore_keyboard: bool,
+}
+
+impl Default for PresenceConfig {
+    fn default() -> Self {
+        Self {
+            ignore_mouse: false,
+            ignore_keyboard: false,
+        }
+    }
+}
+
 // ── Atlas ─────────────────────────────────────────────────────────────────────
 
 /// The Atlas: owns engine state, registry, and drives sequence execution.
@@ -42,6 +61,7 @@ pub struct Atlas {
     pub engine_logs: Arc<Mutex<Vec<LogEntry>>>,
     pub last_start: Option<Instant>,
     pub registry: HashMap<String, Vec<OrdNode>>,
+    pub presence_config: PresenceConfig,
 
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
@@ -59,6 +79,7 @@ impl Atlas {
             engine_logs: logs,
             last_start: None,
             registry: HashMap::new(),
+            presence_config: PresenceConfig::default(),
             active_abort: None,
         }
     }
@@ -144,8 +165,19 @@ impl Atlas {
                     #[cfg(not(feature = "presence"))]
                     { std::future::pending::<Option<()>>().await; None::<PresenceSignalInner> }
                 } => {
-                    if let Some(_signal) = res {
+                    if let Some(signal) = res {
                         if self.state == EngineState::Executing {
+                            // Sensitivity Filter
+                            #[cfg(feature = "presence")]
+                            {
+                                use crate::presence::PresenceSignal;
+                                match signal {
+                                    PresenceSignal::MouseInput if self.presence_config.ignore_mouse => continue,
+                                    PresenceSignal::KeyboardInput if self.presence_config.ignore_keyboard => continue,
+                                    _ => {}
+                                }
+                            }
+
                             // Grace Period: Ignore presence for 1500ms after summons
                             // Allows user to release hotkeys and settle mouse without immediate abort.
                             if let Some(start) = self.last_start {

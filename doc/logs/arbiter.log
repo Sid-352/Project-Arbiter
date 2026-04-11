@@ -953,3 +953,21 @@
 2026-04-11T12:54:51.673434Z  INFO Atlas: run loop started
 2026-04-11T12:54:55.357026Z  INFO Tray: Spawning Terminal user interface
 2026-04-11T12:54:55.357805Z ERROR Failed to spawn Terminal process e=The system cannot find the file specified. (os error 2)
+2026-04-11T13:39:03.030017Z  INFO Status: Initialising mechanical bridges...
+2026-04-11T13:39:03.030615Z  INFO Signet: vault not found, using default configuration
+2026-04-11T13:39:03.030823Z  INFO Signet: secure configuration loaded
+2026-04-11T13:39:03.045188Z  INFO Runner: display boundaries mapped to 1920x1080
+2026-04-11T13:39:03.045610Z  INFO Runner task started
+2026-04-11T13:39:03.106742Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T13:39:03.109098Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T13:39:03.109361Z  INFO Presence monitor spawned
+2026-04-11T13:39:03.109618Z  INFO Vigil: presence monitoring active
+2026-04-11T13:39:03.109820Z  INFO Atlas: engine core ready (Sensitivity: Keyboard Only)
+2026-04-11T13:39:03.110065Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T13:39:03.110537Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T13:39:03.110756Z  INFO Atlas: run loop started
+2026-04-11T13:39:04.700333Z  INFO Tray icon built and visible
+2026-04-11T13:39:04.700703Z  INFO Arbiter tray event loop starting
+2026-04-11T13:39:58.196286Z  INFO Tray: Spawning Terminal user interface
+2026-04-11T13:40:38.701237Z  INFO Tray: Quit selected — initiating shutdown
+2026-04-11T13:40:38.701629Z  INFO Arbiter shutting down — the servant is dismissed.
