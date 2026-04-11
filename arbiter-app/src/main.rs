@@ -275,8 +275,7 @@ fn main() {
 
     // 4. Initialise & Configure Atlas
     let mut atlas = Atlas::new();
-    atlas.presence_config.ignore_mouse = true; // Refined: Mouse move won't abort, only keys
-    info!("Atlas: engine core ready (Sensitivity: Keyboard Only)");
+    info!("Atlas: engine core ready");
 
     // Smoke Test 1: The Macro
     let macro_nodes = vec![
@@ -333,7 +332,16 @@ fn main() {
             next_nodes: [].into(),
         },
     ];
-    atlas.register_ordinance("Hotkey|Ctrl+Shift+D".into(), macro_nodes);
+    atlas.register_ordinance(
+        "Hotkey|Ctrl+Shift+D".into(),
+        arbiter_core::ordinance::Ordinance {
+            nodes: macro_nodes,
+            presence_config: arbiter_core::ordinance::PresenceConfig {
+                ignore_mouse: true, // Specific scope: ignore mouse for the Discord macro
+                ignore_keyboard: false,
+            },
+        },
+    );
 
     // Smoke Test 2: The Organiser
     if let Some(archive_dir) = dirs::document_dir().map(|d| d.join("Arbiter_Archives")) {
@@ -363,7 +371,13 @@ fn main() {
 
         if let Some(downloads) = dirs::download_dir() {
             let fs_key = format!("FileCreated|{}|{}", downloads.to_string_lossy(), "*.zip");
-            atlas.register_ordinance(fs_key, fs_nodes);
+            atlas.register_ordinance(
+                fs_key,
+                arbiter_core::ordinance::Ordinance {
+                    nodes: fs_nodes,
+                    presence_config: arbiter_core::ordinance::PresenceConfig::default(),
+                },
+            );
         }
     }
 

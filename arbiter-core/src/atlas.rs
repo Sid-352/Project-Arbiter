@@ -14,7 +14,7 @@ use std::{
 use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, error, info, warn};
 
-use crate::ordinance::{push_log, ExecData, LogEntry, NodeKind, OrdNode, RunEvent, Summons};
+use crate::ordinance::{push_log, ExecData, LogEntry, NodeKind, OrdNode, Ordinance, PresenceConfig, RunEvent, Summons};
 
 #[cfg(feature = "presence")]
 use crate::presence::PresenceSignal;
@@ -34,25 +34,6 @@ pub enum EngineState {
     Faulted,
 }
 
-// ── Presence Configuration ────────────────────────────────────────────────────
-
-#[derive(Debug, Clone)]
-pub struct PresenceConfig {
-    /// If true, mouse movement/clicks will not trigger a yield.
-    pub ignore_mouse: bool,
-    /// If true, keyboard input will not trigger a yield.
-    pub ignore_keyboard: bool,
-}
-
-impl Default for PresenceConfig {
-    fn default() -> Self {
-        Self {
-            ignore_mouse: false,
-            ignore_keyboard: false,
-        }
-    }
-}
-
 // ── Atlas ─────────────────────────────────────────────────────────────────────
 
 /// The Atlas: owns engine state, registry, and drives sequence execution.
@@ -60,8 +41,8 @@ pub struct Atlas {
     pub state: EngineState,
     pub engine_logs: Arc<Mutex<Vec<LogEntry>>>,
     pub last_start: Option<Instant>,
-    pub registry: HashMap<String, Vec<OrdNode>>,
-    pub presence_config: PresenceConfig,
+    pub registry: HashMap<String, Ordinance>,
+    pub active_presence_config: PresenceConfig,
 
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
@@ -79,15 +60,15 @@ impl Atlas {
             engine_logs: logs,
             last_start: None,
             registry: HashMap::new(),
-            presence_config: PresenceConfig::default(),
+            active_presence_config: PresenceConfig::default(),
             active_abort: None,
         }
     }
 
     /// Register a sequence to a trigger key.
-    pub fn register_ordinance(&mut self, summons_key: String, nodes: Vec<OrdNode>) {
+    pub fn register_ordinance(&mut self, summons_key: String, ordinance: Ordinance) {
         info!(%summons_key, "Atlas: registering ordinance");
-        self.registry.insert(summons_key, nodes);
+        self.registry.insert(summons_key, ordinance);
     }
 
     /// The main async event loop.
@@ -118,7 +99,7 @@ impl Atlas {
                 Some(summons) = vigil_rx.recv() => {
                     if self.state == EngineState::Idle {
                         let key = summons.to_registry_key();
-                        if let Some(nodes) = self.registry.get(&key).cloned() {
+                        if let Some(ordinance) = self.registry.get(&key).cloned() {
                             info!(%key, "Atlas: summons matched, dispatching sequence");
                             let msg = format!("Summons matched: {}", key);
                             push_log(&self.engine_logs, "ATLAS", &msg, false);
@@ -126,6 +107,7 @@ impl Atlas {
 
                             self.state = EngineState::Executing;
                             self.last_start = Some(Instant::now());
+                            self.active_presence_config = ordinance.presence_config.clone();
 
                             let (abort_tx, abort_rx) = oneshot::channel();
                             self.active_abort = Some(abort_tx);
@@ -141,8 +123,9 @@ impl Atlas {
                             };
 
                             let exec_data = ExecData {
-                                nodes,
+                                nodes: ordinance.nodes,
                                 context,
+                                presence_config: ordinance.presence_config,
                                 abort_rx,
                             };
 
@@ -167,13 +150,13 @@ impl Atlas {
                 } => {
                     if let Some(signal) = res {
                         if self.state == EngineState::Executing {
-                            // Sensitivity Filter
+                            // Sensitivity Filter (Scope-bound)
                             #[cfg(feature = "presence")]
                             {
                                 use crate::presence::PresenceSignal;
                                 match signal {
-                                    PresenceSignal::MouseInput if self.presence_config.ignore_mouse => continue,
-                                    PresenceSignal::KeyboardInput if self.presence_config.ignore_keyboard => continue,
+                                    PresenceSignal::MouseInput if self.active_presence_config.ignore_mouse => continue,
+                                    PresenceSignal::KeyboardInput if self.active_presence_config.ignore_keyboard => continue,
                                     _ => {}
                                 }
                             }

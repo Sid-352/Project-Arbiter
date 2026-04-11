@@ -63,7 +63,34 @@ pub struct Action {
     pub delay_ms: u64,
 }
 
+// ── Presence Configuration ────────────────────────────────────────────────────
+
+/// Configuration for human presence detection during sequence execution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PresenceConfig {
+    /// If true, mouse movement/clicks will not trigger a yield.
+    pub ignore_mouse: bool,
+    /// If true, keyboard input will not trigger a yield.
+    pub ignore_keyboard: bool,
+}
+
+impl Default for PresenceConfig {
+    fn default() -> Self {
+        Self {
+            ignore_mouse: false,
+            ignore_keyboard: false,
+        }
+    }
+}
+
 // ── Ordinance Nodes (Sequence Graph) ─────────────────────────────────────────
+
+/// A full Ordinance definition: the nodes and its execution configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Ordinance {
+    pub nodes: Vec<OrdNode>,
+    pub presence_config: PresenceConfig,
+}
 
 /// The kind of node in an Ordinance sequence graph.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -170,6 +197,7 @@ pub enum RunEvent {
 pub struct ExecData {
     pub nodes: Vec<OrdNode>,
     pub context: EnvContext,
+    pub presence_config: PresenceConfig,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
 }
 
