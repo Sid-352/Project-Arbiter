@@ -19,7 +19,7 @@ pub mod sys;
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 
-use crate::ordinance::{EnvContext, Summons};
+use crate::ordinance::{EnvContext, Summons, WardConfig, WardLayer};
 
 // ── Shared Event Channel ──────────────────────────────────────────────────────
 
@@ -84,21 +84,31 @@ pub mod fs {
     use super::*;
     use notify::{recommended_watcher, Event, EventKind, RecursiveMode, Watcher};
 
-    /// Spawn a file-system watcher on `watch_path` and forward matching
-    /// `FileCreated` events into `tx`.
+    /// Spawn a file-system watcher for the Ward described by `ward` and forward
+    /// matching `FileCreated` events into `tx`.
     ///
     /// The watcher thread applies:
     ///   1. Temporary-file filter (`is_temp_file`)
     ///   2. Successive size check (`is_write_complete`)
     ///
+    /// The `EnvContext` attached to each `Summons` will have `integrity_scan`
+    /// set when `ward.layer == WardLayer::Analytical`, enabling the lazy
+    /// SHA-256 / MIME resolver in `EnvContext::resolve`.
+    ///
+    /// **Policy note:** This function makes no security decisions itself —
+    /// the caller (`main.rs`) is responsible for setting the correct `WardLayer`.
+    ///
     /// The thread runs until `tx` is dropped.
     pub fn spawn_watcher(
-        watch_path: String,
-        glob: String,
+        ward: WardConfig,
         filter: crate::filter::ArbiterFilter,
         tx: mpsc::Sender<Summons>,
     ) -> std::thread::JoinHandle<()> {
-        info!(%watch_path, %glob, "Vigil-fs: spawning watcher");
+        let watch_path = ward.path.clone();
+        let glob = ward.glob.clone();
+        let analytical = ward.layer == WardLayer::Analytical;
+
+        info!(%glob, path = %watch_path.display(), analytical, "Vigil-fs: spawning watcher");
 
         std::thread::spawn(move || {
             let (ntx, nrx) = std::sync::mpsc::channel::<notify::Result<Event>>();
@@ -111,10 +121,8 @@ pub mod fs {
                 }
             };
 
-            if let Err(e) =
-                watcher.watch(std::path::Path::new(&watch_path), RecursiveMode::Recursive)
-            {
-                warn!(%e, %watch_path, "Vigil-fs: failed to watch path");
+            if let Err(e) = watcher.watch(&watch_path, RecursiveMode::Recursive) {
+                warn!(%e, path = %watch_path.display(), "Vigil-fs: failed to watch path");
                 return;
             }
 
@@ -165,8 +173,13 @@ pub mod fs {
                                 &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()),
                             );
 
+                            // Wire up the lazy resolver: store the real PathBuf
+                            // and propagate the Ward's permission layer.
+                            context.source_path = Some(path.clone());
+                            context.integrity_scan = analytical;
+
                             let summons = Summons::FileCreated {
-                                watch_path: watch_path.clone().into(),
+                                watch_path: watch_path.clone(),
                                 glob: glob.clone(),
                                 context,
                             };                            if tx.blocking_send(summons).is_err() {

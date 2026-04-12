@@ -16,7 +16,7 @@ mod tray;
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 use arbiter_core::atlas::Atlas;
-use arbiter_core::ordinance::{NodeKind, OrdNode};
+use arbiter_core::ordinance::{NodeKind, OrdNode, WardConfig, WardLayer};
 use serde_json;
 use std::io::Write;
 use std::fs::{File, OpenOptions};
@@ -262,9 +262,16 @@ fn main() {
 
     // Just an example to prove compilation and logic — assumes Downloads exist.
     if let Some(downloads) = dirs::download_dir() {
+        // Construct the Ward with Surface access (Layer 1).
+        // Upgrade layer to WardLayer::Analytical to enable SHA-256 / MIME
+        // extraction for ordinances that request ${env.content_sha256} etc.
+        let ward = WardConfig {
+            path: downloads.clone(),
+            glob: "*.zip".into(),
+            layer: WardLayer::Surface,
+        };
         arbiter_core::vigil::fs::spawn_watcher(
-            downloads.to_string_lossy().to_string(),
-            "*.zip".into(),
+            ward,
             filter.clone(),
             vigil_tx.clone(),
         );

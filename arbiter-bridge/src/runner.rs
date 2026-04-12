@@ -45,6 +45,39 @@ fn interpolate_str(text: &str, ctx: &EnvContext) -> String {
     result
 }
 
+// ── Windows Idle Detection ───────────────────────────────────────────────────
+
+/// Returns the number of seconds since the user last touched a keyboard or mouse.
+///
+/// Uses `GetLastInputInfo` + `GetTickCount` from the Win32 API.
+/// Logged by the Runner before executing a sequence as an observability data point.
+#[cfg(windows)]
+fn get_idle_secs() -> u64 {
+    use windows::Win32::{
+        System::SystemInformation::GetTickCount,
+        UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO},
+    };
+    let mut lii = LASTINPUTINFO {
+        cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32,
+        dwTime: 0,
+    };
+    unsafe {
+        if GetLastInputInfo(&mut lii).as_bool() {
+            let now = GetTickCount();
+            // wrapping_sub handles the u32 DWORD tick counter rollover (~49 days).
+            (now.wrapping_sub(lii.dwTime) / 1000) as u64
+        } else {
+            0
+        }
+    }
+}
+
+/// Stub for non-Windows platforms — always reports 0 idle seconds.
+#[cfg(not(windows))]
+fn get_idle_secs() -> u64 {
+    0
+}
+
 fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
     match action {
         ActionType::Type(ref mut s) | ActionType::Navigate(ref mut s) => {
@@ -118,7 +151,12 @@ pub fn spawn_runner(
                         }
                     }
 
-                    info!("Runner: beginning ordinance");
+                    // Idle Telemetry: Log how long the user has been idle before
+                    // starting. Informational only — the Presence system handles
+                    // active-user abortion. Wrapped in cfg(windows) internally.
+                    let idle = get_idle_secs();
+                    info!(idle_secs = idle, "Runner: user idle time at sequence start");
+
 
                     for (idx, node) in nodes.iter().enumerate() {
                         // Check for abort signal before every node
