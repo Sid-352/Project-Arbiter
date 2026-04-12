@@ -12,7 +12,9 @@
 //!
 //! Salvaged from: lithos-core/src/hardware.rs (full port, zero changes to logic).
 
-use enigo::{Axis, Button, Coordinate, Direction, Enigo, Keyboard, Mouse, Settings};
+use enigo::{
+    Axis, Button, Coordinate, Direction, Enigo, Keyboard, Mouse, Settings,
+};
 use tracing::{debug, warn};
 use arbiter_core::ordinance::{Action, ActionType};
 
@@ -54,11 +56,6 @@ impl HardwareBridge {
             debug!(x = pt.x, y = pt.y, "The Hand: mouse positioned");
         }
 
-        // Pre-action delay (The Queue pacing gate)
-        if action.delay_ms > 0 {
-            std::thread::sleep(std::time::Duration::from_millis(action.delay_ms));
-        }
-
         match &action.action_type {
             ActionType::Click => {
                 self.enigo
@@ -69,7 +66,7 @@ impl HardwareBridge {
                 self.enigo
                     .button(Button::Left, Direction::Click)
                     .map_err(|e| format!("The Hand: double-click (1) failed: {e:?}"))?;
-                std::thread::sleep(std::time::Duration::from_millis(80));
+                std::thread::sleep(std::time::Duration::from_millis(80)); // Fine-grained internal click-speed delay
                 self.enigo
                     .button(Button::Left, Direction::Click)
                     .map_err(|e| format!("The Hand: double-click (2) failed: {e:?}"))?;
@@ -90,16 +87,62 @@ impl HardwareBridge {
                     .map_err(|e| format!("The Hand: scroll failed: {e:?}"))?;
             }
             ActionType::Navigate(keys) => {
-                // OS-native navigation: pass keystrokes directly to enigo
-                // e.g. "ctrl+shift+s", "super+s", "alt+tab"
-                self.enigo
-                    .text(keys)
-                    .map_err(|e| format!("The Hand: navigate failed: {e:?}"))?;
+                // OS-native navigation: parse and press keys
+                let keys_lower = keys.to_lowercase();
+                let parts: Vec<&str> = keys_lower.split('+').collect();
+                let mut modifiers = Vec::new();
+                let mut target_key = None;
+
+                for part in parts {
+                    match part.trim() {
+                        "ctrl" | "control" => modifiers.push(enigo::Key::Control),
+                        "alt" => modifiers.push(enigo::Key::Alt),
+                        "shift" => modifiers.push(enigo::Key::Shift),
+                        "super" | "win" | "command" | "meta" => modifiers.push(enigo::Key::Meta),
+                        "return" | "enter" => target_key = Some(enigo::Key::Return),
+                        "esc" | "escape" => target_key = Some(enigo::Key::Escape),
+                        "tab" => target_key = Some(enigo::Key::Tab),
+                        "space" => target_key = Some(enigo::Key::Space),
+                        "backspace" => target_key = Some(enigo::Key::Backspace),
+                        "delete" => target_key = Some(enigo::Key::Delete),
+                        "up" => target_key = Some(enigo::Key::UpArrow),
+                        "down" => target_key = Some(enigo::Key::DownArrow),
+                        "left" => target_key = Some(enigo::Key::LeftArrow),
+                        "right" => target_key = Some(enigo::Key::RightArrow),
+                        s if s.len() == 1 => {
+                            target_key = Some(enigo::Key::Unicode(s.chars().next().unwrap()));
+                        }
+                        other => {
+                            warn!(%other, "The Hand: unknown navigation key - ignoring");
+                        }
+                    }
+                }
+
+                // Execute key sequence
+                for &mod_key in &modifiers {
+                    self.enigo
+                        .key(mod_key, Direction::Press)
+                        .map_err(|e| format!("The Hand: modifier press failed: {e:?}"))?;
+                }
+
+                if let Some(k) = target_key {
+                    self.enigo
+                        .key(k, Direction::Click)
+                        .map_err(|e| format!("The Hand: key click failed: {e:?}"))?;
+                }
+
+                for &mod_key in modifiers.iter().rev() {
+                    self.enigo
+                        .key(mod_key, Direction::Release)
+                        .map_err(|e| format!("The Hand: modifier release failed: {e:?}"))?;
+                }
+
+                debug!(%keys, "The Hand: navigation executed");
             }
-            ActionType::Wait(ms) => {
-                std::thread::sleep(std::time::Duration::from_millis(*ms));
+            ActionType::Wait(_) => {
+                // No-op here: waits are now handled asynchronously by the Runner
             }
-            // File & Shell actions are handled directly by the Executor, not The Hand.
+            // File & Shell actions are handled directly by the Runner, not The Hand.
             _ => {
                 warn!("The Hand received a non-somatic action — ignoring");
             }
@@ -121,10 +164,28 @@ impl HardwareBridge {
             return Err(msg);
         }
         Ok(())
-    }
-}
+        }
+        }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+        impl Drop for HardwareBridge {
+        fn drop(&mut self) {
+        // Safety: Release all possible modifiers to avoid leaving the user's
+        // keyboard in a "stuck" state if the engine panics or is dropped mid-action.
+        let modifiers = [
+            enigo::Key::Control,
+            enigo::Key::Alt,
+            enigo::Key::Shift,
+            enigo::Key::Meta,
+        ];
+
+        for &key in &modifiers {
+            let _ = self.enigo.key(key, Direction::Release);
+        }
+        debug!("The Hand: safety release executed (all modifiers up)");
+        }
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {

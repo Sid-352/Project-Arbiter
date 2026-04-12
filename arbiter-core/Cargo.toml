@@ -13,10 +13,13 @@ vigil-keys = ["dep:global-hotkey"]
 vigil-sys  = ["dep:sysinfo"]
 presence   = ["dep:rdev"]
 signet     = ["dep:aes-gcm", "dep:base64", "dep:hostname", "dep:typenum"]
+# Layer 2 (Analytical) content extraction: SHA-256 hashing and MIME detection.
+vigil-deep = ["dep:sha2", "dep:infer"]
 
 [dependencies]
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
+toml       = { workspace = true }
 tracing    = "0.1"
 tokio      = { version = "1", features = ["rt", "sync", "macros", "time"] }
 regex      = "1"
@@ -38,3 +41,7 @@ aes-gcm = { version = "0.10", optional = true }
 base64  = { version = "0.22", optional = true }
 hostname = { version = "0.4", optional = true }
 typenum  = { version = "1.17", optional = true }
+
+# Feature: vigil-deep
+sha2  = { version = "0.10", optional = true }
+infer = { version = "0.16", optional = true }

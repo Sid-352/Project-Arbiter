@@ -36,3 +36,938 @@
 2026-04-11T03:44:07.940124Z  INFO Tray: Spawning Terminal user interface
 2026-04-11T03:44:25.895162Z  INFO Tray: Quit selected — initiating shutdown
 2026-04-11T03:44:25.895476Z  INFO Arbiter shutting down — the servant is dismissed.
+2026-04-11T11:52:07.144191Z  INFO ╔═══════════════════════════════╗
+2026-04-11T11:52:07.144446Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T11:52:07.144717Z  INFO ╚═══════════════════════════════╝
+2026-04-11T11:52:07.145122Z  INFO The duty is performed.
+2026-04-11T11:52:07.145671Z  INFO Signet: vault not found, using default configuration
+2026-04-11T11:52:07.145869Z  INFO Signet config loaded
+2026-04-11T11:52:07.146275Z  INFO Executor task started
+2026-04-11T11:52:07.176698Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T11:52:07.179337Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T11:52:07.179772Z  INFO Presence monitor spawned
+2026-04-11T11:52:07.180147Z  INFO Presence monitor active
+2026-04-11T11:52:07.180475Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:52:07.181130Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T11:52:07.181429Z  INFO Atlas: run loop started
+2026-04-11T11:52:07.243612Z  INFO Tray icon built and visible
+2026-04-11T11:52:07.243918Z  INFO Arbiter tray event loop starting
+2026-04-11T11:52:12.275459Z  INFO Tray: Spawning Terminal user interface
+2026-04-11T11:57:58.412850Z  INFO ╔═══════════════════════════════╗
+2026-04-11T11:57:58.413098Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T11:57:58.413364Z  INFO ╚═══════════════════════════════╝
+2026-04-11T11:57:58.413612Z  INFO The duty is performed.
+2026-04-11T11:57:58.414237Z  INFO Signet: vault not found, using default configuration
+2026-04-11T11:57:58.414516Z  INFO Signet config loaded
+2026-04-11T11:57:58.414990Z  INFO Executor task started
+2026-04-11T11:57:58.449426Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T11:57:58.452018Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T11:57:58.452329Z  INFO Presence monitor spawned
+2026-04-11T11:57:58.452612Z  INFO Presence monitor active
+2026-04-11T11:57:58.452956Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:57:58.453478Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T11:57:58.453739Z  INFO Atlas: run loop started
+2026-04-11T11:57:58.521564Z  INFO Tray icon built and visible
+2026-04-11T11:57:58.521765Z  INFO Arbiter tray event loop starting
+2026-04-11T11:58:01.711720Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:01.712056Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:01.712295Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:01.712548Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:01.719485Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:01.719671Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:01.987992Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:01.988222Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:01.988383Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:01.988580Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:06.399063Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:06.399326Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:06.399677Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:06.399973Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:06.401503Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:06.401726Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:06.404359Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:06.404588Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:06.404763Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:06.404966Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:06.523343Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:06.523697Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:06.524025Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:06.524315Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:06.525360Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:06.525589Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:06.528009Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:06.528200Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:06.528360Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:06.528556Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:08.080855Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:08.081202Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:08.081519Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:08.081881Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:08.082985Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:08.083206Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:08.085878Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:08.086096Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:08.086261Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:08.086458Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:08.142822Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:08.143236Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:08.143565Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:08.143881Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:08.144856Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:08.145044Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:08.147299Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:08.147507Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:08.147668Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:08.147874Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:24.763919Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:24.764338Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:24.764688Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:24.765016Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:24.765791Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:24.765984Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:24.768003Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:24.768199Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:24.768372Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:24.768559Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:24.824950Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:24.825213Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:24.825419Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:24.825641Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:24.826345Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:24.826569Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:24.828184Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:24.828380Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:24.828534Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:24.828718Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:26.872873Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:26.873238Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:26.873631Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:26.874019Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:26.875337Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:26.875606Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:26.878443Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:26.878635Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:26.878798Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:26.879000Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:26.935063Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:26.935552Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:26.935883Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:26.936135Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:26.936846Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:26.937109Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:26.938484Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:26.938761Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:26.938937Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:26.939195Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:27.742185Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:27.742639Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:27.742983Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:27.743393Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:27.744550Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:27.744766Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:27.747374Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:27.747575Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:27.747740Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:27.747960Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:27.804470Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:27.804713Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:27.804946Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:27.805259Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:27.806108Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:27.806300Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:27.808406Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:27.808741Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:27.808923Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:27.809111Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.300948Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:28.301380Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:28.301683Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:28.302147Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:28.303627Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:28.303805Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:28.307056Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:28.307247Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:28.307408Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.307620Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.363750Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:28.364078Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:28.364402Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:28.364675Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:28.365741Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:28.365929Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:28.368093Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:28.368291Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:28.368450Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.368654Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.799581Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:28.800099Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:28.800459Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:28.800741Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:28.802310Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:28.802603Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:28.805642Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:28.805849Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:28.806022Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.806227Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.862255Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:28.862691Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:28.863075Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:28.863367Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:28.864311Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:28.864543Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:28.866843Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:28.867048Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:28.867230Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:28.867435Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:29.109045Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:29.109402Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:29.109924Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:29.110343Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:29.111658Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:29.111932Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:29.114871Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:29.115096Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:29.115265Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:29.115477Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:29.479708Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:29.479969Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:29.480186Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:29.480418Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:29.481125Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:29.481343Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:29.483255Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:29.483466Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:29.483628Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:29.483830Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:29.853048Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:29.853543Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:29.854053Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:29.854530Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:29.855820Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:29.856035Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:29.858684Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:29.858880Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:29.859095Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:29.859324Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.351551Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.352071Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.352494Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.352899Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.354525Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.354708Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.357600Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.357804Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.357965Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.358169Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.414114Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.414344Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.414541Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.414736Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.415481Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.415681Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.418871Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.419109Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.419298Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.419516Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.477256Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.477690Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.477898Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.478202Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.478476Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.478763Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.479105Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.479492Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.479828Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.480290Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.665508Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.665780Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.665961Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.666149Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.667097Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.667311Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.669282Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.669473Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.669620Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.669796Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.725951Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.726281Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.726592Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.726918Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.727778Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.727968Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.730058Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.730257Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.730411Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.730603Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.788836Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.789232Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.789565Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.789881Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.791151Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.791428Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.793213Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.793445Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.793615Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.793801Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.850873Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:30.851294Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:30.851629Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:30.851865Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:30.852911Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:30.853129Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:30.855426Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:30.855623Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:30.855776Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:30.855958Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:38.083068Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:38.083448Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:38.083845Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:38.084253Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:38.085539Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:38.085729Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:38.088285Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:38.088474Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:38.088627Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:38.088825Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:38.145556Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:38.145890Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:38.146145Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:38.146451Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:38.147364Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:38.147565Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:38.149104Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:38.149302Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:38.149461Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:38.149643Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:39.501865Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:39.502373Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:39.502787Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:39.503164Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:39.504337Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:39.504563Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:39.506888Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:39.507092Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:39.507273Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:39.507480Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:39.563989Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:39.564405Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:39.564757Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:39.564970Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:39.565727Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:39.565937Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:39.568308Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:39.568538Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:39.568746Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:39.568984Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:40.061740Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:40.062204Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:40.062626Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:40.062995Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:40.064290Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:40.064531Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:40.066951Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:40.067149Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:40.067330Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:40.067524Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:40.123994Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:40.124405Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:40.124640Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:40.124884Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:40.125785Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:40.125994Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:40.128036Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:40.128241Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:40.128396Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:40.128577Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:40.992782Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:40.993258Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:40.993665Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:40.994041Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:40.995175Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:40.995478Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:40.997851Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:40.998046Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:40.998218Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:40.998438Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:41.055554Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:41.055870Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:41.056099Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:41.056403Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:41.057605Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:41.057864Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:41.060362Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:41.060560Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:41.060728Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:41.060936Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:41.618142Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:41.618643Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:41.619046Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:41.619417Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:41.620749Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:41.621058Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:41.623450Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:41.623653Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:41.623814Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:41.624009Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:41.679699Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:41.680072Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:41.680297Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:41.680662Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:41.681644Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:41.681857Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:41.684200Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:41.684403Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:41.684572Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:41.684782Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.115088Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.115486Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.115932Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.116281Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.117736Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.117932Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.121131Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.121348Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.121510Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.121710Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.618158Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.618679Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.619171Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.619529Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.621021Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.621201Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.623986Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.624180Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.624355Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.624555Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.680114Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.680413Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.680621Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.680812Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.681601Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.681806Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.685211Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.685419Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.685594Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.685791Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.742427Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.742668Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.742864Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.743063Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.743783Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.743985Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.746631Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.746847Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.747018Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.747234Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.805492Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.805782Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.806072Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.806440Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.807775Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.807986Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.810696Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.810915Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.811148Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.811387Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.868982Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.869391Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.869726Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.870011Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.870869Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.871069Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.873083Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.873281Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.873437Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.873622Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.931753Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.932146Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.932531Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.932922Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.934358Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.934563Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.936857Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.937052Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.937240Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.937433Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.994677Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:42.995056Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:42.995413Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:42.995720Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:42.996716Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:42.996900Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:42.999196Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:42.999402Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:42.999557Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:42.999762Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.057837Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:43.058225Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:43.058586Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:43.058846Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:43.060075Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:43.060302Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:43.063633Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:43.063825Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:43.063999Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.064211Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.181727Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:43.182155Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:43.182487Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:43.182808Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:43.183975Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:43.184190Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:43.186418Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:43.186612Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:43.186785Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.186961Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.614829Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:43.615280Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:43.615657Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:43.616034Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:43.617244Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:43.617532Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:43.619761Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:43.619960Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:43.620124Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.620315Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.676257Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:43.676626Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:43.676956Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:43.677293Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:43.678172Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:43.678370Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:43.680499Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:43.680698Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:43.680855Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.681038Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.990619Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:43.991192Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:43.991585Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:43.991983Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:43.993543Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:43.993742Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:43.996357Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:43.996558Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:43.996721Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:43.996917Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:44.303310Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:44.303668Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:44.304013Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:44.304289Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:44.305662Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:44.306033Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:44.308506Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:44.308688Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:44.308842Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:44.309041Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:44.676235Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:44.676681Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:44.677124Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:44.677514Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:44.679151Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:44.679475Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:44.682437Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:44.682629Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:44.682805Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:44.683003Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:44.737710Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:44.738037Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:44.738270Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:44.738554Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:44.739465Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:44.739724Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:44.741091Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:44.741280Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:44.741437Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:44.741616Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:49.527448Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:49.527786Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:49.528229Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:49.528663Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:49.529872Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:49.530082Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:49.532102Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:49.532292Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:49.532453Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:49.532656Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:49.589413Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:49.589676Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:49.589934Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:49.590252Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:49.591312Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:49.591547Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:49.593139Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:49.593344Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:49.593500Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:49.593689Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.083368Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:50.083905Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:50.084238Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:50.084607Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:50.085452Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:50.085660Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:50.088226Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:50.088428Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:50.088597Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.088797Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.191359Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:50.191580Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:50.191752Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:50.191945Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:50.192681Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:50.192875Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:50.195231Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:50.195432Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:50.195594Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.195779Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.609128Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:50.609550Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:50.609945Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:50.610296Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:50.611767Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:50.611988Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:50.614699Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:50.614902Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:50.615066Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.615271Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.670918Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:50.671304Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:50.671598Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:50.671823Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:50.672912Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:50.673123Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:50.675207Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:50.675404Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:50.675569Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:50.675756Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:53.768305Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:53.768766Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:53.769170Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:53.769556Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:53.770938Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:53.771141Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:53.774286Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:53.774472Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:53.774633Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:53.774849Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:53.830158Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:53.830476Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:53.830670Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:53.830859Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:53.831495Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:53.831678Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:53.833856Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:53.834081Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:53.834239Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:53.834434Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.392013Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:54.392463Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:54.392830Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:54.393235Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:54.394782Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:54.395101Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:54.398052Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:54.398256Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:54.398429Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.398618Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.453902Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:54.454337Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:54.454734Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:54.454975Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:54.455984Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:54.456277Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:54.458054Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:54.458231Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:54.458481Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.458662Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.702698Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:54.703132Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:54.703519Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:54.703953Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:54.705452Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:54.705699Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:54.708468Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:54.708682Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:54.708844Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.709043Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.811094Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:54.811450Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:54.811839Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:54.812228Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:54.813113Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:54.813317Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:54.815276Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:54.815473Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:54.815631Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.815813Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:54.995968Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:54.996435Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:54.996917Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:54.997305Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:54.998433Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:54.998679Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:55.002382Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:55.002581Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:55.002743Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:55.002974Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:55.119841Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T11:58:55.120213Z  INFO Executor: acquiring queue lock
+2026-04-11T11:58:55.120557Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T11:58:55.120836Z  INFO Executor: beginning ordinance
+2026-04-11T11:58:55.122029Z  INFO Atlas: human presence detected, yielding
+2026-04-11T11:58:55.122310Z  WARN Atlas yielded to human presence
+2026-04-11T11:58:55.124451Z  WARN Executor: sequence aborted by yield
+2026-04-11T11:58:55.124675Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T11:58:55.124834Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T11:58:55.125020Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:00:30.122101Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:00:30.122468Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:00:30.122720Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:00:30.122907Z  INFO The duty is performed.
+2026-04-11T12:00:30.123629Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:00:30.123844Z  INFO Signet config loaded
+2026-04-11T12:00:30.124336Z  INFO Executor task started
+2026-04-11T12:00:30.155331Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:00:30.157825Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:00:30.158115Z  INFO Presence monitor spawned
+2026-04-11T12:00:30.158361Z  INFO Presence monitor active
+2026-04-11T12:00:30.158638Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:00:30.159184Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:00:30.159438Z  INFO Atlas: run loop started
+2026-04-11T12:00:30.217341Z  INFO Tray icon built and visible
+2026-04-11T12:00:30.217563Z  INFO Arbiter tray event loop starting
+2026-04-11T12:00:32.373326Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:00:32.373756Z  INFO Executor: acquiring queue lock
+2026-04-11T12:00:32.374250Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:00:32.374706Z  INFO Executor: beginning ordinance
+2026-04-11T12:00:32.415020Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:00:32.415238Z  WARN Atlas yielded to human presence
+2026-04-11T12:00:33.375405Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:00:33.375830Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:00:33.376228Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:00:33.376639Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:00:38.438153Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:00:38.438656Z  INFO Executor: acquiring queue lock
+2026-04-11T12:00:38.439057Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:00:38.439411Z  INFO Executor: beginning ordinance
+2026-04-11T12:00:38.479005Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:00:38.479200Z  WARN Atlas yielded to human presence
+2026-04-11T12:00:39.440494Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:00:39.440884Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:00:39.441321Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:00:39.441740Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:00:42.119015Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:00:42.119414Z  INFO Executor: acquiring queue lock
+2026-04-11T12:00:42.119833Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:00:42.120171Z  INFO Executor: beginning ordinance
+2026-04-11T12:00:42.159019Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:00:42.159230Z  WARN Atlas yielded to human presence
+2026-04-11T12:00:43.120871Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:00:43.121243Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:00:43.121644Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:00:43.122040Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:02:19.334331Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:02:19.334535Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:02:19.334752Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:02:19.335046Z  INFO The duty is performed.
+2026-04-11T12:02:19.335796Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:02:19.336018Z  INFO Signet config loaded
+2026-04-11T12:02:19.336628Z  INFO Executor task started
+2026-04-11T12:02:19.365508Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:02:19.367933Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:02:19.368228Z  INFO Presence monitor spawned
+2026-04-11T12:02:19.368463Z  INFO Presence monitor active
+2026-04-11T12:02:19.368727Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:02:19.369322Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:02:19.369573Z  INFO Atlas: run loop started
+2026-04-11T12:02:19.431319Z  INFO Tray icon built and visible
+2026-04-11T12:02:19.431594Z  INFO Arbiter tray event loop starting
+2026-04-11T12:02:32.334604Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:02:32.335118Z  INFO Executor: acquiring queue lock
+2026-04-11T12:02:32.335663Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:02:32.336079Z  INFO Executor: beginning ordinance
+2026-04-11T12:02:33.338317Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:02:33.338745Z  WARN Atlas yielded to human presence
+2026-04-11T12:02:33.342108Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:02:33.342395Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:02:33.342784Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:02:33.343005Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:02:37.487328Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:02:37.487807Z  INFO Executor: acquiring queue lock
+2026-04-11T12:02:37.488249Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:02:37.488732Z  INFO Executor: beginning ordinance
+2026-04-11T12:02:38.490385Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:02:38.490924Z  WARN Atlas yielded to human presence
+2026-04-11T12:02:38.493507Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:02:38.493808Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:02:38.493960Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:02:38.494208Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:02:42.646382Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:02:42.646897Z  INFO Executor: acquiring queue lock
+2026-04-11T12:02:42.647407Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:02:42.647891Z  INFO Executor: beginning ordinance
+2026-04-11T12:02:43.649649Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:02:43.650125Z  WARN Atlas yielded to human presence
+2026-04-11T12:02:43.653443Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:02:43.653688Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:02:43.653877Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:02:43.654084Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:06:50.808244Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:06:50.808417Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:06:50.808552Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:06:50.808775Z  INFO The duty is performed.
+2026-04-11T12:06:50.809311Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:06:50.809503Z  INFO Signet config loaded
+2026-04-11T12:06:50.809862Z  INFO Executor task started
+2026-04-11T12:06:50.840239Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:06:50.842779Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:06:50.843140Z  INFO Presence monitor spawned
+2026-04-11T12:06:50.843384Z  INFO Presence monitor active
+2026-04-11T12:06:50.843706Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:06:50.844294Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:06:50.844528Z  INFO Atlas: run loop started
+2026-04-11T12:06:50.882751Z  INFO Tray icon built and visible
+2026-04-11T12:06:50.883151Z  INFO Arbiter tray event loop starting
+2026-04-11T12:07:08.000027Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:07:08.000452Z  INFO Executor: acquiring queue lock
+2026-04-11T12:07:08.000777Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:07:08.001174Z  INFO Executor: beginning ordinance
+2026-04-11T12:07:09.003887Z  INFO Atlas: human presence detected, yielding
+2026-04-11T12:07:09.004198Z  WARN Atlas yielded to human presence
+2026-04-11T12:07:09.304574Z  WARN Executor: sequence aborted by yield
+2026-04-11T12:07:09.305055Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:07:09.305509Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:07:09.305971Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:08:06.501288Z  INFO Tray: Quit selected — initiating shutdown
+2026-04-11T12:08:06.501464Z  INFO Arbiter shutting down — the servant is dismissed.
+2026-04-11T12:09:21.043980Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:09:21.044311Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:09:21.044695Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:09:21.045047Z  INFO The duty is performed.
+2026-04-11T12:09:21.046004Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:09:21.046352Z  INFO Signet config loaded
+2026-04-11T12:09:21.046928Z  INFO Executor task started
+2026-04-11T12:09:21.074934Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:09:21.077669Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:09:21.078160Z  INFO Presence monitor spawned
+2026-04-11T12:09:21.078410Z  INFO Presence monitor active
+2026-04-11T12:09:21.078826Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:09:21.079445Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:09:21.079905Z  INFO Atlas: run loop started
+2026-04-11T12:09:21.137637Z  INFO Tray icon built and visible
+2026-04-11T12:09:21.137917Z  INFO Arbiter tray event loop starting
+2026-04-11T12:09:27.384654Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:09:27.385253Z  INFO Executor: acquiring queue lock
+2026-04-11T12:09:27.385678Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:09:27.385998Z  INFO Executor: beginning ordinance
+2026-04-11T12:09:29.150684Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:09:29.150983Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:09:46.382699Z  INFO Tray: Spawning Terminal user interface
+2026-04-11T12:09:57.182935Z  INFO Tray: Quit selected — initiating shutdown
+2026-04-11T12:09:57.183566Z  INFO Arbiter shutting down — the servant is dismissed.
+2026-04-11T12:11:17.892348Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:11:17.892714Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:11:17.892980Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:11:17.893169Z  INFO The duty is performed.
+2026-04-11T12:11:17.893812Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:11:17.894005Z  INFO Signet config loaded
+2026-04-11T12:11:17.894464Z  INFO Executor task started
+2026-04-11T12:11:17.923318Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:11:17.925987Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:11:17.926340Z  INFO Presence monitor spawned
+2026-04-11T12:11:17.926652Z  INFO Presence monitor active
+2026-04-11T12:11:17.927167Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:11:17.927903Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:11:17.928323Z  INFO Atlas: run loop started
+2026-04-11T12:11:17.965870Z  INFO Tray icon built and visible
+2026-04-11T12:11:17.966134Z  INFO Arbiter tray event loop starting
+2026-04-11T12:11:30.477674Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:11:30.478151Z  INFO Executor: acquiring queue lock
+2026-04-11T12:11:30.478569Z  INFO Executor: lock acquired, checking hibernation guard
+2026-04-11T12:11:30.478972Z  INFO Executor: beginning ordinance
+2026-04-11T12:11:32.800085Z  INFO Executor: ordinance complete, releasing lock
+2026-04-11T12:11:32.800334Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:16:18.935385Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:16:18.935709Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:16:18.936003Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:16:18.936249Z  INFO The duty is performed.
+2026-04-11T12:16:18.936715Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:16:18.936892Z  INFO Signet config loaded
+2026-04-11T12:16:18.937234Z  INFO Runner task started
+2026-04-11T12:16:18.965950Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:16:18.968295Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:16:18.968578Z  INFO Presence monitor spawned
+2026-04-11T12:16:18.968858Z  INFO Presence monitor active
+2026-04-11T12:16:18.969118Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:16:18.969649Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:16:18.969882Z  INFO Atlas: run loop started
+2026-04-11T12:16:19.025957Z  INFO Tray icon built and visible
+2026-04-11T12:16:19.026250Z  INFO Arbiter tray event loop starting
+2026-04-11T12:16:38.303485Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:16:38.303891Z  INFO Runner: acquiring queue lock
+2026-04-11T12:16:38.304168Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-11T12:16:38.304590Z  INFO Runner: beginning ordinance
+2026-04-11T12:16:40.690430Z  INFO Runner: ordinance complete, releasing lock
+2026-04-11T12:16:40.690733Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:16:55.256808Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:16:55.257373Z  INFO Runner: acquiring queue lock
+2026-04-11T12:16:55.257782Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-11T12:16:55.258074Z  INFO Runner: beginning ordinance
+2026-04-11T12:16:57.365904Z  INFO Runner: ordinance complete, releasing lock
+2026-04-11T12:16:57.366376Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:54:12.722261Z  INFO ╔═══════════════════════════════╗
+2026-04-11T12:54:12.722487Z  INFO ║   A R B I T E R  v0.1.0          ║
+2026-04-11T12:54:12.722698Z  INFO ╚═══════════════════════════════╝
+2026-04-11T12:54:12.722942Z  INFO The duty is performed.
+2026-04-11T12:54:12.723564Z  INFO Signet: vault not found, using default configuration
+2026-04-11T12:54:12.723757Z  INFO Signet config loaded
+2026-04-11T12:54:12.725070Z  INFO Runner: detected display resolution screen_width=1920 screen_height=1080
+2026-04-11T12:54:12.725544Z  INFO Runner task started
+2026-04-11T12:54:12.758095Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T12:54:12.760949Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T12:54:12.761209Z  INFO Presence monitor spawned
+2026-04-11T12:54:12.761537Z  INFO Presence monitor active
+2026-04-11T12:54:12.761854Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:54:12.762368Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T12:54:12.762625Z  INFO Atlas: run loop started
+2026-04-11T12:54:12.824287Z  INFO Tray icon built and visible
+2026-04-11T12:54:12.824523Z  INFO Arbiter tray event loop starting
+2026-04-11T12:54:18.642223Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:54:18.642691Z  INFO Runner: acquiring queue lock
+2026-04-11T12:54:18.643120Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-11T12:54:18.643524Z  INFO Runner: beginning ordinance
+2026-04-11T12:54:21.074719Z  INFO Runner: ordinance complete, releasing lock
+2026-04-11T12:54:21.075020Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:54:28.555909Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:54:28.556399Z  INFO Runner: acquiring queue lock
+2026-04-11T12:54:28.556855Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-11T12:54:28.557324Z  INFO Runner: beginning ordinance
+2026-04-11T12:54:30.693614Z  INFO Runner: ordinance complete, releasing lock
+2026-04-11T12:54:30.693954Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:54:33.945822Z  INFO Atlas: summons matched, dispatching sequence key=Hotkey|Ctrl+Shift+D
+2026-04-11T12:54:33.946292Z  INFO Runner: acquiring queue lock
+2026-04-11T12:54:33.946628Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-11T12:54:33.946915Z  INFO Runner: beginning ordinance
+2026-04-11T12:54:36.080908Z  INFO Runner: ordinance complete, releasing lock
+2026-04-11T12:54:36.081435Z  INFO Atlas sequence complete — returning to Idle
+2026-04-11T12:54:51.672939Z  INFO Tray: Reset requested
+2026-04-11T12:54:51.673434Z  INFO Atlas: run loop started
+2026-04-11T12:54:55.357026Z  INFO Tray: Spawning Terminal user interface
+2026-04-11T12:54:55.357805Z ERROR Failed to spawn Terminal process e=The system cannot find the file specified. (os error 2)
+2026-04-11T13:39:03.030017Z  INFO Status: Initialising mechanical bridges...
+2026-04-11T13:39:03.030615Z  INFO Signet: vault not found, using default configuration
+2026-04-11T13:39:03.030823Z  INFO Signet: secure configuration loaded
+2026-04-11T13:39:03.045188Z  INFO Runner: display boundaries mapped to 1920x1080
+2026-04-11T13:39:03.045610Z  INFO Runner task started
+2026-04-11T13:39:03.106742Z  INFO Vigil-keys: hotkey registered combo=Ctrl+Shift+D
+2026-04-11T13:39:03.109098Z  INFO Vigil-fs: spawning watcher watch_path=C:\Users\user\Downloads glob=*.zip
+2026-04-11T13:39:03.109361Z  INFO Presence monitor spawned
+2026-04-11T13:39:03.109618Z  INFO Vigil: presence monitoring active
+2026-04-11T13:39:03.109820Z  INFO Atlas: engine core ready (Sensitivity: Keyboard Only)
+2026-04-11T13:39:03.110065Z  INFO Atlas: registering ordinance summons_key=Hotkey|Ctrl+Shift+D
+2026-04-11T13:39:03.110537Z  INFO Atlas: registering ordinance summons_key=FileCreated|C:\Users\user\Downloads|*.zip
+2026-04-11T13:39:03.110756Z  INFO Atlas: run loop started
+2026-04-11T13:39:04.700333Z  INFO Tray icon built and visible
+2026-04-11T13:39:04.700703Z  INFO Arbiter tray event loop starting
+2026-04-11T13:39:58.196286Z  INFO Tray: Spawning Terminal user interface
+2026-04-11T13:40:38.701237Z  INFO Tray: Quit selected — initiating shutdown
+2026-04-11T13:40:38.701629Z  INFO Arbiter shutting down — the servant is dismissed.

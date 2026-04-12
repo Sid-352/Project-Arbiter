@@ -29,6 +29,8 @@ pub enum TrayAppEvent {
     StatusUpdate(String),
     /// Graceful shutdown requested by an engine thread.
     Shutdown,
+    /// Reset requested via tray menu.
+    Reset,
 }
 
 // ── Icon Builder ──────────────────────────────────────────────────────────────
@@ -37,23 +39,38 @@ pub enum TrayAppEvent {
 ///
 /// The returned `TrayIcon` must be kept alive for the icon to remain visible.
 pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
-    // Minimal 16×16 RGBA icon — accent-blue placeholder.
-    // Replaced with a real .ico asset in the UI phase.
-    let icon_rgba: Vec<u8> = {
-        let mut px = Vec::with_capacity(16 * 16 * 4);
-        for _ in 0..(16 * 16) {
-            px.extend_from_slice(&[0x00, 0x96, 0xFF, 0xFF]); // #0096FF accent
+    // Attempt to load the real icon.ico from the forge assets
+    let mut icon_path = std::path::Path::new("arbiter-forge")
+        .join("ui")
+        .join("icon.ico");
+
+    // Fallback for dev environment running from project root
+    if !icon_path.exists() {
+        icon_path = std::path::Path::new("ui").join("icon.ico");
+    }
+
+    let icon = if icon_path.exists() {
+        match image::open(icon_path) {
+            Ok(img) => {
+                let rgba = img.to_rgba8();
+                let (width, height) = rgba.dimensions();
+                tray_icon::Icon::from_rgba(rgba.into_raw(), width, height)?
+            }
+            Err(_) => build_fallback_icon()?,
         }
-        px
+    } else {
+        build_fallback_icon()?
     };
-    let icon = tray_icon::Icon::from_rgba(icon_rgba, 16, 16)?;
 
     let menu = Menu::new();
     let status_item = MenuItem::with_id("status", "Arbiter — Standing By", false, None);
+    let reset_item = MenuItem::with_id("reset", "Reset Engine", true, None);
     let open_item = MenuItem::with_id("terminal", "Open Terminal", true, None);
     let quit_item = MenuItem::with_id("quit", "Quit Arbiter", true, None);
 
     menu.append(&status_item)?;
+    menu.append(&PredefinedMenuItem::separator())?;
+    menu.append(&reset_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
     menu.append(&open_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
@@ -69,6 +86,14 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
     Ok(tray)
 }
 
+fn build_fallback_icon() -> Result<tray_icon::Icon, Box<dyn std::error::Error>> {
+    let mut px = Vec::with_capacity(16 * 16 * 4);
+    for _ in 0..(16 * 16) {
+        px.extend_from_slice(&[0x63, 0x66, 0xF1, 0xFF]); // Arbiter Accent Blue
+    }
+    Ok(tray_icon::Icon::from_rgba(px, 16, 16)?)
+}
+
 // ── Event Loop ────────────────────────────────────────────────────────────────
 
 /// Run the tray event loop — **blocks the calling thread** until quit.
@@ -76,7 +101,7 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
 /// Must be called on the main thread (Windows COM / Cocoa requirement).
 /// `on_quit` is a `FnOnce` consumed exactly once from whichever exit branch
 /// fires first (menu Quit or engine-initiated Shutdown).
-pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
+pub fn run_event_loop(on_event: impl Fn(TrayAppEvent) + 'static) {
     use tao::event::Event;
     use tray_icon::menu::MenuEvent;
 
@@ -87,9 +112,6 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
 
     info!("Arbiter tray event loop starting");
 
-    // Wrap in Option so the FnOnce can be taken from either exit branch.
-    let mut on_quit = Some(on_quit);
-
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
@@ -99,20 +121,32 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
 
             if id == "quit" {
                 info!("Tray: Quit selected — initiating shutdown");
-                if let Some(f) = on_quit.take() {
-                    f();
-                }
+                on_event(TrayAppEvent::Shutdown);
                 *control_flow = ControlFlow::Exit;
                 return;
             }
 
+            if id == "reset" {
+                info!("Tray: Reset requested");
+                on_event(TrayAppEvent::Reset);
+            }
+
             if id == "terminal" {
                 info!("Tray: Spawning Terminal user interface");
-                let term_path = if cfg!(debug_assertions) {
-                    "target/debug/arbiter-forge.exe"
-                } else {
-                    "arbiter-forge.exe"
-                };
+                
+                let mut term_path = std::env::current_exe()
+                    .unwrap_or_default()
+                    .parent()
+                    .unwrap_or(std::path::Path::new("."))
+                    .join("arbiter-forge.exe");
+
+                // Fallback for dev environment if not in the same folder (e.g. running via cargo)
+                if !term_path.exists() {
+                    let dev_path = std::path::Path::new("target").join("debug").join("arbiter-forge.exe");
+                    if dev_path.exists() {
+                        term_path = dev_path;
+                    }
+                }
 
                 if let Err(e) = std::process::Command::new(term_path).spawn() {
                     tracing::error!(%e, "Failed to spawn Terminal process");
@@ -129,10 +163,11 @@ pub fn run_event_loop(on_quit: impl FnOnce() + 'static) {
                 }
                 TrayAppEvent::Shutdown => {
                     info!("Tray: engine-initiated shutdown");
-                    if let Some(f) = on_quit.take() {
-                        f();
-                    }
+                    on_event(TrayAppEvent::Shutdown);
                     *control_flow = ControlFlow::Exit;
+                }
+                TrayAppEvent::Reset => {
+                    on_event(TrayAppEvent::Reset);
                 }
             }
         }

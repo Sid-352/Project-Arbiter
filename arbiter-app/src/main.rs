@@ -3,7 +3,7 @@
 //! The binary is a silent background service. On launch it:
 //!   1. Initialises structured logging (tracing).
 //!   2. Starts the tokio runtime on background threads.
-//!   3. Boots The Atlas, The Executor, and opens watcher channels.
+//!   3. Boots The Atlas, The Runner, and opens watcher channels.
 //!   4. Parks the main thread inside the tray event loop (OS requirement).
 //!
 //! No splash screen. No console window in release builds.
@@ -13,10 +13,82 @@
 
 mod tray;
 
-use tracing::info;
-use tracing_subscriber::{fmt, EnvFilter};
+use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
 use arbiter_core::atlas::Atlas;
-use arbiter_core::ordinance::{NodeKind, OrdNode};
+use arbiter_core::ordinance::{NodeKind, OrdNode, WardConfig, WardLayer};
+use serde_json;
+use std::io::Write;
+use std::fs::{File, OpenOptions};
+use std::path::PathBuf;
+use chrono::Local;
+
+// ── Custom Rolling Writer ─────────────────────────────────────────────────────
+
+/// A simple rolling file writer that follows the pattern: arbiter.YYYY-MM-DD.log
+struct ArbiterRollingWriter {
+    log_dir: PathBuf,
+    current_date: Option<String>,
+    current_file: Option<File>,
+}
+
+impl ArbiterRollingWriter {
+    fn new(dir: impl Into<PathBuf>) -> Self {
+        Self {
+            log_dir: dir.into(),
+            current_date: None,
+            current_file: None,
+        }
+    }
+}
+
+impl Write for ArbiterRollingWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let date = Local::now().format("%Y-%m-%d").to_string();
+
+        // Roll to a new file if the date has changed (or on first write)
+        if self.current_date.as_ref() != Some(&date) {
+            let filename = format!("arbiter.{}.log", date);
+            let path = self.log_dir.join(filename);
+            
+            // Create directory if missing
+            if !self.log_dir.exists() {
+                std::fs::create_dir_all(&self.log_dir)?;
+            }
+
+            let file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)?;
+            
+            self.current_file = Some(file);
+            self.current_date = Some(date);
+        }
+
+        if let Some(ref mut file) = self.current_file {
+            file.write(buf)
+        } else {
+            Ok(0)
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        if let Some(ref mut file) = self.current_file {
+            file.flush()
+        } else {
+            Ok(())
+        }
+    }
+}
+
+fn banner(title: impl std::fmt::Display, subtitle: impl std::fmt::Display) {
+    let width = 56;
+
+    println!("╔{}╗", "═".repeat(width - 2));
+    println!("│{:^54}│", title);
+    println!("│{:^54}│", subtitle);
+    println!("╚{}╝", "═".repeat(width - 2));
+}
 
 fn main() {
     // ── Logging ───────────────────────────────────────────────────────────────
@@ -27,7 +99,8 @@ fn main() {
         .compact();
 
     // Persistent file log for the UI (arbiter-forge) to tail
-    let file_appender = tracing_appender::rolling::never("doc/logs", "arbiter.log");
+    // Custom daily rolling: arbiter.YYYY-MM-DD.log
+    let file_appender = ArbiterRollingWriter::new("arbiter-data/logs");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     let file_log = tracing_subscriber::fmt::layer()
         .with_writer(non_blocking)
@@ -43,10 +116,12 @@ fn main() {
         
     tracing::subscriber::set_global_default(subscriber).expect("Unable to set global tracing subscriber");
 
-    info!("╔═══════════════════════════════╗");
-    info!("║   A R B I T E R  v{}          ║", env!("CARGO_PKG_VERSION"));
-    info!("╚═══════════════════════════════╝");
-    info!("The duty is performed.");
+    banner(
+        format!("ARBITER v{}", env!("CARGO_PKG_VERSION")),
+        "Command & Control Orchestration Engine",
+    );
+
+    info!("Status: Initialising mechanical bridges...");
 
     // ── Tokio Runtime ─────────────────────────────────────────────────────────
     let rt = tokio::runtime::Builder::new_multi_thread()
@@ -61,35 +136,116 @@ fn main() {
 
     // Load Signet vault
     let signet_config = arbiter_core::signet::load().unwrap_or_default();
-    info!("Signet config loaded");
+    info!("Signet: secure configuration loaded");
 
     // The Filter
     let filter = arbiter_core::filter::ArbiterFilter::new();
 
     // Channels
-    let (vigil_tx, vigil_rx) = arbiter_core::vigil::channel(64);
-    let (presence_tx, presence_rx) = tokio::sync::mpsc::channel(8);
+    let (vigil_tx, mut vigil_rx) = arbiter_core::vigil::channel(64);
+    let (presence_tx, mut presence_rx) = tokio::sync::mpsc::channel(8);
     let (atlas_exec_tx, mut atlas_exec_rx) =
         tokio::sync::mpsc::channel::<arbiter_core::ordinance::ExecData>(16);
     let (exec_cmd_tx, exec_cmd_rx) = tokio::sync::mpsc::channel(16);
-    let (run_event_tx, run_event_rx) = tokio::sync::mpsc::channel(32);
-    let (atlas_shutdown_tx, atlas_shutdown_rx) = tokio::sync::oneshot::channel();
+    let (run_event_tx, mut run_event_rx) = tokio::sync::mpsc::channel(32);
+    let (atlas_shutdown_tx, mut atlas_shutdown_rx) = tokio::sync::oneshot::channel();
+    let (reset_tx, mut reset_rx) = tokio::sync::mpsc::channel(8);
 
-    // 1. Spawn Executor
-    arbiter_bridge::executor::spawn_executor(
+    // IPC: Named Pipe Server for real-time telemetry
+    let (log_broadcast_tx, _) = tokio::sync::broadcast::channel::<arbiter_core::ordinance::LogEntry>(1024);
+    let ipc_broadcast = log_broadcast_tx.clone();
+    
+    tokio::spawn(async move {
+        use tokio::net::windows::named_pipe::ServerOptions;
+        use tokio_util::codec::{FramedWrite, LinesCodec};
+        use futures::SinkExt;
+
+        let pipe_name = r"\\.\pipe\arbiter_telemetry";
+        
+        loop {
+            let server = match ServerOptions::new()
+                .first_pipe_instance(true)
+                .create(pipe_name) 
+            {
+                Ok(s) => s,
+                Err(e) => {
+                    error!(%e, "IPC: telemetry pipe creation failed");
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+            };
+
+            // Wait for a client to connect
+            if server.connect().await.is_ok() {
+                let mut rx = ipc_broadcast.subscribe();
+                let (_, writer) = tokio::io::split(server);
+                let mut framed = FramedWrite::new(writer, LinesCodec::new());
+
+                tokio::spawn(async move {
+                    while let Ok(entry) = rx.recv().await {
+                        if let Ok(json) = serde_json::to_string(&entry) {
+                            if framed.send(json).await.is_err() {
+                                break; // Client disconnected
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create subsequent instances for more clients
+            loop {
+                let server = match ServerOptions::new().create(pipe_name) {
+                    Ok(s) => s,
+                    Err(_) => break,
+                };
+                if server.connect().await.is_ok() {
+                    let mut rx = ipc_broadcast.subscribe();
+                    let (_, writer) = tokio::io::split(server);
+                    let mut framed = FramedWrite::new(writer, LinesCodec::new());
+                    tokio::spawn(async move {
+                        while let Ok(entry) = rx.recv().await {
+                            if let Ok(json) = serde_json::to_string(&entry) {
+                                if framed.send(json).await.is_err() {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    });
+
+    // 1. Spawn Runner
+    let (screen_width, screen_height) = {
+        #[cfg(windows)]
+        {
+            use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
+            unsafe {
+                (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN))
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            (1920, 1080) // Fallback for other OS or headless
+        }
+    };
+    info!("Runner: display boundaries mapped to {}x{}", screen_width, screen_height);
+
+    arbiter_bridge::runner::spawn_runner(
         exec_cmd_rx,
-        1920,
-        1080, // Hardcoded display resolution for Phase 2
+        screen_width,
+        screen_height,
         filter.clone(),
     );
 
-    // 2. Spawn Mapping loop (Atlas -> Executor)
+    // 2. Spawn Mapping loop (Atlas -> Runner)
     let map_run_event_tx = run_event_tx.clone();
     let map_trusted = signet_config.trusted_paths.clone();
     let map_baton = signet_config.baton_allowed.clone();
     tokio::spawn(async move {
         while let Some(exec_data) = atlas_exec_rx.recv().await {
-            let cmd = arbiter_bridge::executor::ExecCmd::Run {
+            let cmd = arbiter_bridge::runner::ExecCmd::Run {
                 nodes: exec_data.nodes,
                 context: exec_data.context,
                 abort_rx: exec_data.abort_rx,
@@ -106,19 +262,27 @@ fn main() {
 
     // Just an example to prove compilation and logic — assumes Downloads exist.
     if let Some(downloads) = dirs::download_dir() {
+        // Construct the Ward with Surface access (Layer 1).
+        // Upgrade layer to WardLayer::Analytical to enable SHA-256 / MIME
+        // extraction for ordinances that request ${env.content_sha256} etc.
+        let ward = WardConfig {
+            path: downloads.clone(),
+            glob: "*.zip".into(),
+            layer: WardLayer::Surface,
+        };
         arbiter_core::vigil::fs::spawn_watcher(
-            downloads.to_string_lossy().to_string(),
-            "*.zip".into(),
+            ward,
             filter.clone(),
             vigil_tx.clone(),
         );
     }
 
-    arbiter_core::presence::spawn_monitor(presence_tx);
-    info!("Presence monitor active");
+    arbiter_core::presence::spawn_monitor(presence_tx, filter.clone());
+    info!("Vigil: presence monitoring active");
 
     // 4. Initialise & Configure Atlas
     let mut atlas = Atlas::new();
+    info!("Atlas: engine core ready");
 
     // Smoke Test 1: The Macro
     let macro_nodes = vec![
@@ -127,6 +291,13 @@ fn main() {
             label: "Start".into(),
             kind: NodeKind::Entry,
             internal_state: "".into(),
+            next_nodes: [("Next".into(), "7".into())].into(),
+        },
+        OrdNode {
+            id: "7".into(),
+            label: "Presence Buffer".into(),
+            kind: NodeKind::Action,
+            internal_state: r#"{"action_type":{"Wait":1500},"point":null,"delay_ms":0}"#.into(),
             next_nodes: [("Next".into(), "2".into())].into(),
         },
         OrdNode {
@@ -141,7 +312,7 @@ fn main() {
             id: "3".into(),
             label: "Wait".into(),
             kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Wait":300},"point":null,"delay_ms":0}"#.into(),
+            internal_state: r#"{"action_type":{"Wait":500},"point":null,"delay_ms":0}"#.into(),
             next_nodes: [("Next".into(), "4".into())].into(),
         },
         OrdNode {
@@ -156,7 +327,7 @@ fn main() {
             id: "5".into(),
             label: "Wait".into(),
             kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Wait":200},"point":null,"delay_ms":0}"#.into(),
+            internal_state: r#"{"action_type":{"Wait":800},"point":null,"delay_ms":0}"#.into(),
             next_nodes: [("Next".into(), "6".into())].into(),
         },
         OrdNode {
@@ -168,7 +339,16 @@ fn main() {
             next_nodes: [].into(),
         },
     ];
-    atlas.register_ordinance("Hotkey|Ctrl+Shift+D".into(), macro_nodes);
+    atlas.register_ordinance(
+        "Hotkey|Ctrl+Shift+D".into(),
+        arbiter_core::ordinance::Ordinance {
+            nodes: macro_nodes,
+            presence_config: arbiter_core::ordinance::PresenceConfig {
+                ignore_mouse: true, // Specific scope: ignore mouse for the Discord macro
+                ignore_keyboard: false,
+            },
+        },
+    );
 
     // Smoke Test 2: The Organiser
     if let Some(archive_dir) = dirs::document_dir().map(|d| d.join("Arbiter_Archives")) {
@@ -198,37 +378,73 @@ fn main() {
 
         if let Some(downloads) = dirs::download_dir() {
             let fs_key = format!("FileCreated|{}|{}", downloads.to_string_lossy(), "*.zip");
-            atlas.register_ordinance(fs_key, fs_nodes);
+            atlas.register_ordinance(
+                fs_key,
+                arbiter_core::ordinance::Ordinance {
+                    nodes: fs_nodes,
+                    presence_config: arbiter_core::ordinance::PresenceConfig::default(),
+                },
+            );
         }
     }
 
     // 5. Spawn Atlas loop
+    let atlas_broadcast = log_broadcast_tx.clone();
     tokio::spawn(async move {
-        atlas
-            .run(
-                vigil_rx,
-                presence_rx,
-                run_event_rx,
-                atlas_exec_tx,
-                atlas_shutdown_rx,
-            )
-            .await;
-        info!("Atlas loop terminated cleanly");
+        loop {
+            tokio::select! {
+                _ = atlas.run(
+                    &mut vigil_rx,
+                    #[cfg(feature = "presence")]
+                    &mut presence_rx,
+                    #[cfg(not(feature = "presence"))]
+                    &mut tokio::sync::mpsc::channel(1).1,
+                    &mut run_event_rx,
+                    atlas_exec_tx.clone(),
+                    &mut atlas_shutdown_rx,
+                    atlas_broadcast.clone(),
+                ) => {
+                    info!("Atlas loop terminated cleanly");
+                    break;
+                }
+                _ = reset_rx.recv() => {
+                    if atlas.state == arbiter_core::atlas::EngineState::Faulted {
+                        info!("Atlas: reset signal received, clearing Faulted state");
+                        atlas.state = arbiter_core::atlas::EngineState::Idle;
+                        let _ = atlas_broadcast.send(arbiter_core::ordinance::LogEntry {
+                            tag: "ATLAS".into(),
+                            message: "Engine fault cleared manually.".into(),
+                            is_error: false,
+                        });
+                    }
+                }
+            }
+        }
     });
 
     // Store the shutdown transmitter globally so the tray can signal it
     // We cheat a bit by keeping an Option in a Mutex, since run_event_loop takes FnOnce
     use std::sync::{Arc, Mutex};
     let shutdown_cell = Arc::new(Mutex::new(Some(atlas_shutdown_tx)));
+    let reset_cell = Arc::new(Mutex::new(reset_tx));
 
     // ── Tray (blocks main thread) ─────────────────────────────────────────────
-    tray::run_event_loop(move || {
-        info!("Arbiter shutting down — the servant is dismissed.");
-        if let Ok(mut cell) = shutdown_cell.lock() {
-            if let Some(tx) = cell.take() {
-                let _ = tx.send(());
+    tray::run_event_loop(move |event| {
+        match event {
+            tray::TrayAppEvent::Shutdown => {
+                info!("Arbiter shutting down — the servant is dismissed.");
+                if let Ok(mut cell) = shutdown_cell.lock() {
+                    if let Some(tx) = cell.take() {
+                        let _ = tx.send(());
+                    }
+                }
             }
+            tray::TrayAppEvent::Reset => {
+                if let Ok(cell) = reset_cell.lock() {
+                    let _ = cell.try_send(());
+                }
+            }
+            _ => {}
         }
-        rt.shutdown_background();
     });
 }

@@ -8,6 +8,7 @@
 //!
 //! Compiled only when the `presence` feature is enabled.
 
+use crate::filter::ArbiterFilter;
 use tokio::sync::mpsc;
 use tracing::{debug, info};
 
@@ -30,7 +31,10 @@ pub enum PresenceSignal {
 /// The Atlas is expected to call `yield_to_presence()` upon receiving it.
 ///
 /// The thread exits when `tx` is dropped.
-pub fn spawn_monitor(tx: mpsc::Sender<PresenceSignal>) -> std::thread::JoinHandle<()> {
+pub fn spawn_monitor(
+    tx: mpsc::Sender<PresenceSignal>,
+    filter: ArbiterFilter,
+) -> std::thread::JoinHandle<()> {
     info!("Presence monitor spawned");
 
     std::thread::spawn(move || {
@@ -42,6 +46,11 @@ pub fn spawn_monitor(tx: mpsc::Sender<PresenceSignal>) -> std::thread::JoinHandl
             .expect("Presence: tokio runtime failed");
 
         let callback = move |event: Event| {
+            // Early exit if the engine is currently generating its own input.
+            if filter.is_inhibited() {
+                return;
+            }
+
             let signal = match event.event_type {
                 EventType::MouseMove { .. }
                 | EventType::ButtonPress(_)
