@@ -166,11 +166,10 @@ pub mod fs {
                             );
 
                             let summons = Summons::FileCreated {
-                                watch_path: watch_path.clone(),
+                                watch_path: watch_path.clone().into(),
                                 glob: glob.clone(),
                                 context,
-                            };
-                            if tx.blocking_send(summons).is_err() {
+                            };                            if tx.blocking_send(summons).is_err() {
                                 break; // Channel closed — watcher done
                             }
                         }

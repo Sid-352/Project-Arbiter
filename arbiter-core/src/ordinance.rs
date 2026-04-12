@@ -7,6 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -32,11 +33,11 @@ pub enum ActionType {
     Wait(u64),
     // ── File Operations (Inscribe) ──────────────────────────────────────────
     /// Move a file from `source` to `destination`.
-    InscribeMove { source: String, destination: String },
+    InscribeMove { source: PathBuf, destination: PathBuf },
     /// Copy a file from `source` to `destination`.
-    InscribeCopy { source: String, destination: String },
+    InscribeCopy { source: PathBuf, destination: PathBuf },
     /// Delete a target file.
-    InscribeDelete { target: String },
+    InscribeDelete { target: PathBuf },
     // ── Shell Execution (Baton) ─────────────────────────────────────────────
     /// Execute a shell command.
     Shell {
@@ -129,7 +130,7 @@ pub enum Summons {
     /// A file matching `glob` finished writing inside `watch_path`.
     #[cfg(feature = "vigil-fs")]
     FileCreated {
-        watch_path: String,
+        watch_path: PathBuf,
         glob: String,
         context: EnvContext,
     },
@@ -148,7 +149,7 @@ impl Summons {
             #[cfg(feature = "vigil-fs")]
             Self::FileCreated {
                 watch_path, glob, ..
-            } => format!("FileCreated|{}|{}", watch_path, glob),
+            } => format!("FileCreated|{}|{}", watch_path.display(), glob),
             #[cfg(feature = "vigil-keys")]
             Self::Hotkey { combo, .. } => format!("Hotkey|{}", combo),
             Self::ProcessAppeared { name, .. } => format!("ProcessAppeared|{}", name),

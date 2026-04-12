@@ -3,7 +3,7 @@
 //! Owns The Hand, interfaces with The Inscribe and The Baton, and
 //! processes instructions sequentially under a Singleton Queue Lock.
 
-use std::{collections::HashSet, path::Path, sync::Arc};
+use std::{collections::HashSet, sync::Arc};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tracing::{error, info, warn};
 
@@ -58,11 +58,14 @@ fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
             source,
             destination,
         } => {
-            *source = interpolate_str(source, ctx);
-            *destination = interpolate_str(destination, ctx);
+            let src_str = interpolate_str(&source.to_string_lossy(), ctx);
+            let dst_str = interpolate_str(&destination.to_string_lossy(), ctx);
+            *source = src_str.into();
+            *destination = dst_str.into();
         }
         ActionType::InscribeDelete { target } => {
-            *target = interpolate_str(target, ctx);
+            let tgt_str = interpolate_str(&target.to_string_lossy(), ctx);
+            *target = tgt_str.into();
         }
         ActionType::Shell { command, args, .. } => {
             *command = interpolate_str(command, ctx);
@@ -166,35 +169,33 @@ pub fn spawn_runner(
                                         source,
                                         destination,
                                     } => {
-                                        let copy_tgt = Path::new(&destination);
-                                        filter.mark(copy_tgt);
+                                        filter.mark(&destination);
                                         let r = inscribe::move_file(
-                                            Path::new(&source),
-                                            copy_tgt,
+                                            source,
+                                            &destination,
                                             &trusted_roots,
                                         )
                                         .map_err(|e| e.to_string());
-                                        filter.unmark(copy_tgt);
+                                        filter.unmark(&destination);
                                         r
                                     }
                                     ActionType::InscribeCopy {
                                         source,
                                         destination,
                                     } => {
-                                        let copy_tgt = Path::new(&destination);
-                                        filter.mark(copy_tgt);
+                                        filter.mark(&destination);
                                         let r = inscribe::copy_file(
-                                            Path::new(&source),
-                                            copy_tgt,
+                                            source,
+                                            &destination,
                                             &trusted_roots,
                                         )
                                         .map(|_| ())
                                         .map_err(|e| e.to_string());
-                                        filter.unmark(copy_tgt);
+                                        filter.unmark(&destination);
                                         r
                                     }
                                     ActionType::InscribeDelete { target } => {
-                                        inscribe::delete_file(Path::new(&target), &trusted_roots)
+                                        inscribe::delete_file(target, &trusted_roots)
                                             .map_err(|e| e.to_string())
                                     }
 

@@ -100,7 +100,7 @@ fn main() {
 
     // Persistent file log for the UI (arbiter-forge) to tail
     // Custom daily rolling: arbiter.YYYY-MM-DD.log
-    let file_appender = ArbiterRollingWriter::new("doc/logs");
+    let file_appender = ArbiterRollingWriter::new("arbiter-data/logs");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     let file_log = tracing_subscriber::fmt::layer()
         .with_writer(non_blocking)

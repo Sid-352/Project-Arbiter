@@ -13,6 +13,9 @@ authors = ["Chameleon Sid-352"]
 license = "MIT"
 description = "Industrial-grade deterministic system orchestration."
 
+[workspace.dependencies]
+toml = "0.8"
+
 [profile.release]
 opt-level = "z"
 lto = true

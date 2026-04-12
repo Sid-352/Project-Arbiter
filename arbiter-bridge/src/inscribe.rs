@@ -42,7 +42,8 @@ impl From<std::io::Error> for InscribeError {
 }
 
 /// Verify a path is under at least one trusted root before any write.
-fn assert_trusted(path: &Path, trusted_roots: &[String]) -> Result<(), InscribeError> {
+fn assert_trusted(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
+    let path = path.as_ref();
     let path_str = path.to_string_lossy();
     if trusted_roots
         .iter()
@@ -80,7 +81,9 @@ where
 }
 
 /// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn move_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<(), InscribeError> {
+pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
+    let src = src.as_ref();
+    let dst = dst.as_ref();
     assert_trusted(dst, trusted_roots)?;
 
     if !src.exists() {
@@ -105,7 +108,9 @@ pub fn move_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<(),
 }
 
 /// Copy `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn copy_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<u64, InscribeError> {
+pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<u64, InscribeError> {
+    let src = src.as_ref();
+    let dst = dst.as_ref();
     assert_trusted(dst, trusted_roots)?;
 
     if !src.exists() {
@@ -122,7 +127,8 @@ pub fn copy_file(src: &Path, dst: &Path, trusted_roots: &[String]) -> Result<u64
 }
 
 /// Delete a file, verifying it is in a trusted directory.
-pub fn delete_file(path: &Path, trusted_roots: &[String]) -> Result<(), InscribeError> {
+pub fn delete_file(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
+    let path = path.as_ref();
     assert_trusted(path, trusted_roots)?;
 
     if !path.exists() {

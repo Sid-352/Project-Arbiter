@@ -164,10 +164,28 @@ impl HardwareBridge {
             return Err(msg);
         }
         Ok(())
-    }
-}
+        }
+        }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+        impl Drop for HardwareBridge {
+        fn drop(&mut self) {
+        // Safety: Release all possible modifiers to avoid leaving the user's
+        // keyboard in a "stuck" state if the engine panics or is dropped mid-action.
+        let modifiers = [
+            enigo::Key::Control,
+            enigo::Key::Alt,
+            enigo::Key::Shift,
+            enigo::Key::Meta,
+        ];
+
+        for &key in &modifiers {
+            let _ = self.enigo.key(key, Direction::Release);
+        }
+        debug!("The Hand: safety release executed (all modifiers up)");
+        }
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
