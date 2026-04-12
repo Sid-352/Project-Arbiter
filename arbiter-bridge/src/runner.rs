@@ -10,7 +10,7 @@ use tracing::{error, info, warn};
 use crate::{hand::HardwareBridge, inscribe, shell};
 use arbiter_core::{
     filter::ArbiterFilter,
-    ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent},
+    ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent, LogEntry},
 };
 
 // ── Runner Commands ────────────────────────────────────────────────────────
@@ -25,6 +25,7 @@ pub enum ExecCmd {
         // Signet contextual data
         trusted_roots: Vec<String>,
         baton_allowed: HashSet<String>,
+        ordinance_id: Option<String>,
     },
 }
 
@@ -75,39 +76,6 @@ fn interpolate_str(text: &str, ctx: &EnvContext) -> String {
     result
 }
 
-// ── Windows Idle Detection ───────────────────────────────────────────────────
-
-/// Returns the number of seconds since the user last touched a keyboard or mouse.
-///
-/// Uses `GetLastInputInfo` + `GetTickCount` from the Win32 API.
-/// Logged by the Runner before executing a sequence as an observability data point.
-#[cfg(windows)]
-fn get_idle_secs() -> u64 {
-    use windows::Win32::{
-        System::SystemInformation::GetTickCount,
-        UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO},
-    };
-    let mut lii = LASTINPUTINFO {
-        cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32,
-        dwTime: 0,
-    };
-    unsafe {
-        if GetLastInputInfo(&mut lii).as_bool() {
-            let now = GetTickCount();
-            // wrapping_sub handles the u32 DWORD tick counter rollover (~49 days).
-            (now.wrapping_sub(lii.dwTime) / 1000) as u64
-        } else {
-            0
-        }
-    }
-}
-
-/// Stub for non-Windows platforms — always reports 0 idle seconds.
-#[cfg(not(windows))]
-fn get_idle_secs() -> u64 {
-    0
-}
-
 fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
     match action {
         ActionType::Type(ref mut s) | ActionType::Navigate(ref mut s) => {
@@ -140,11 +108,45 @@ fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
     }
 }
 
-// ── Execution Task ───────────────────────────────────────────────────────────
+// ── Windows Idle Detection ───────────────────────────────────────────────────
 
-/// Spawns the runner background task.
-pub fn spawn_runner(
-    mut cmd_rx: mpsc::Receiver<ExecCmd>,
+/// Returns the number of seconds since the user last touched a keyboard or mouse.
+///
+/// Uses `GetLastInputInfo` + `GetTickCount` from the Win32 API.
+/// Logged by the Runner before executing a sequence as an observability data point.
+#[cfg(windows)]
+fn get_idle_secs() -> u64 {
+    use windows::Win32::{
+        System::SystemInformation::GetTickCount,
+        UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO},
+    };
+    let mut lii = LASTINPUTINFO {
+        cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32,
+        dwTime: 0,
+    };
+    unsafe {
+        if GetLastInputInfo(&mut lii).as_bool() {
+            let now = GetTickCount();
+            // wrapping_sub handles the u32 DWORD tick counter rollover (~49 days).
+            (now.wrapping_sub(lii.dwTime) / 1000) as u64
+        } else {
+            0
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn get_idle_secs() -> u64 {
+    0
+}
+
+// ── Runner Task ──────────────────────────────────────────────────────────────
+
+/// Spawn the long-running background Runner task.
+///
+/// This task owns `The Hand` and processes `ExecCmd` requests one at a time.
+pub fn spawn(
+    mut rx: mpsc::Receiver<ExecCmd>,
     screen_width: i32,
     screen_height: i32,
     filter: ArbiterFilter,
@@ -155,172 +157,171 @@ pub fn spawn_runner(
         // The Hand is owned locally by this task and only used while holding QUEUE_LOCK
         let mut hand = HardwareBridge::new(screen_width, screen_height);
 
-        while let Some(cmd) = cmd_rx.recv().await {
-            match cmd {
-                ExecCmd::Run {
-                    nodes,
-                    context,
-                    mut abort_rx,
-                    event_tx,
-                    trusted_roots,
-                    baton_allowed,
-                } => {
-                    info!("Runner: acquiring queue lock");
-                    let _guard = QUEUE_LOCK.lock().await;
-                    info!("Runner: lock acquired, checking hibernation guard");
+        while let Some(cmd) = rx.recv().await {
+            let ExecCmd::Run {
+                nodes,
+                context,
+                mut abort_rx,
+                event_tx,
+                trusted_roots,
+                baton_allowed,
+                ordinance_id,
+            } = cmd;
 
-                    // The Hibernation Guard: Discard stale events > 5s
-                    if let Some(ts_str) = context.variables.get("timestamp") {
-                        if let Ok(ts) = ts_str.parse::<u64>() {
-                            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
-                            if now > ts + 5 {
-                                warn!("Runner: Hibernation Guard triggered — dropping stale event (age > 5s)");
-                                let _ = event_tx.send(RunEvent::Done).await;
-                                continue; // bypass processing
-                            }
-                        }
+            info!("Runner: acquiring queue lock");
+            let _guard = QUEUE_LOCK.lock().await;
+            info!("Runner: lock acquired, checking hibernation guard");
+
+            // The Hibernation Guard: Discard stale events > 5s
+            if let Some(ts_str) = context.variables.get("timestamp") {
+                if let Ok(ts) = ts_str.parse::<u64>() {
+                    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+                    if now > ts + 5 {
+                        warn!("Runner: Hibernation Guard triggered — dropping stale event (age > 5s)");
+                        let _ = event_tx.send(RunEvent::Done).await;
+                        continue; // bypass processing
                     }
+                }
+            }
 
-                    // Idle Telemetry: Log how long the user has been idle before
-                    // starting. Informational only — the Presence system handles
-                    // active-user abortion. Wrapped in cfg(windows) internally.
-                    let idle = get_idle_secs();
-                    info!(idle_secs = idle, "Runner: user idle time at sequence start");
+            // Idle Telemetry: Log how long the user has been idle before
+            // starting. Informational only.
+            let idle = get_idle_secs();
+            info!(idle_secs = idle, "Runner: user idle time at sequence start");
 
+            let _ = event_tx.send(RunEvent::Log(LogEntry {
+                tag: "HAND".into(),
+                message: format!("Macro iteration started (Last User Input: {}s ago)", idle),
+                is_error: false,
+                ordinance_id: ordinance_id.clone(),
+            })).await;
 
-                    for (idx, node) in nodes.iter().enumerate() {
-                        // Check for abort signal before every node
-                        if abort_rx.try_recv().is_ok() {
-                            warn!("Runner: sequence aborted by yield");
-                            let _ = event_tx.send(RunEvent::Done).await;
-                            break;
+            let mut current_idx = 0;
+            let total = nodes.len();
+
+            for (idx, node) in nodes.iter().enumerate() {
+                current_idx = idx;
+                // Check for abort signal before every node
+                if abort_rx.try_recv().is_ok() {
+                    warn!("Runner: sequence aborted by yield");
+                    break;
+                }
+
+                if node.kind != NodeKind::Action {
+                    continue;
+                }
+
+                // Parse the internal state into an Action
+                let parsed: Result<Action, _> = serde_json::from_str(&node.internal_state);
+                match parsed {
+                    Ok(mut action) => {
+                        interpolate_action(&mut action.action_type, &context);
+
+                        // Pacing: Handle pre-action delay asynchronously
+                        if action.delay_ms > 0 {
+                            tokio::time::sleep(std::time::Duration::from_millis(action.delay_ms)).await;
                         }
 
-                        if node.kind != NodeKind::Action {
+                        // Async Wait: Handle ActionType::Wait without blocking
+                        if let ActionType::Wait(ms) = action.action_type {
+                            tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                            let _ = event_tx.send(RunEvent::Progress(idx)).await;
                             continue;
                         }
 
-                        // Parse the internal state into an Action
-                        let parsed: Result<Action, _> = serde_json::from_str(&node.internal_state);
-                        match parsed {
-                            Ok(mut action) => {
-                                interpolate_action(&mut action.action_type, &context);
+                        let exec_result = match action.action_type {
+                            // Somatic actions
+                            ActionType::Click
+                            | ActionType::DoubleClick
+                            | ActionType::RightClick
+                            | ActionType::Type(_)
+                            | ActionType::Scroll(_)
+                            | ActionType::Navigate(_) => {
+                                filter.inhibit_presence();
+                                let res = hand.execute(&action);
+                                filter.resume_presence();
+                                res
+                            }
 
-                                // Pacing: Handle pre-action delay asynchronously
-                                if action.delay_ms > 0 {
-                                    tokio::time::sleep(std::time::Duration::from_millis(action.delay_ms)).await;
-                                }
+                            // Inscribe actions
+                            ActionType::InscribeMove {
+                                ref source,
+                                ref destination,
+                            } => {
+                                filter.mark(destination);
+                                let r = inscribe::move_file(
+                                    source,
+                                    destination,
+                                    &trusted_roots,
+                                )
+                                .map_err(|e| e.to_string());
+                                filter.unmark(destination);
+                                r
+                            }
+                            ActionType::InscribeCopy {
+                                ref source,
+                                ref destination,
+                            } => {
+                                filter.mark(destination);
+                                let r = inscribe::copy_file(
+                                    source,
+                                    destination,
+                                    &trusted_roots,
+                                )
+                                .map(|_| ())
+                                .map_err(|e| e.to_string());
+                                filter.unmark(destination);
+                                r
+                            }
+                            ActionType::InscribeDelete { ref target } => {
+                                inscribe::delete_file(target, &trusted_roots)
+                                    .map_err(|e| e.to_string())
+                            }
 
-                                // Async Wait: Handle ActionType::Wait without blocking
-                                if let ActionType::Wait(ms) = action.action_type {
-                                    tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
-                                    let _ = event_tx.send(RunEvent::Progress(idx)).await;
-                                    continue;
-                                }
-
-                                let exec_result = match action.action_type {
-                                    // Somatic actions
-                                    ActionType::Click
-                                    | ActionType::DoubleClick
-                                    | ActionType::RightClick
-                                    | ActionType::Type(_)
-                                    | ActionType::Scroll(_)
-                                    | ActionType::Navigate(_) => {
-                                        filter.inhibit_presence();
-                                        let res = hand.execute(&action);
-                                        filter.resume_presence();
-                                        res
-                                    }
-
-                                    // Inscribe actions
-                                    ActionType::InscribeMove {
-                                        source,
-                                        destination,
-                                    } => {
-                                        filter.mark(&destination);
-                                        let r = inscribe::move_file(
-                                            source,
-                                            &destination,
-                                            &trusted_roots,
-                                        )
-                                        .map_err(|e| e.to_string());
-                                        filter.unmark(&destination);
-                                        r
-                                    }
-                                    ActionType::InscribeCopy {
-                                        source,
-                                        destination,
-                                    } => {
-                                        filter.mark(&destination);
-                                        let r = inscribe::copy_file(
-                                            source,
-                                            &destination,
-                                            &trusted_roots,
-                                        )
+                            // Shell actions
+                            ActionType::Shell {
+                                ref command,
+                                ref args,
+                                detached,
+                            } => {
+                                let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+                                if detached {
+                                    shell::spawn_detached(command, command, &arg_refs, &baton_allowed)
+                                        .map_err(|e| e.to_string())
+                                } else {
+                                    shell::run(command, command, &arg_refs, &baton_allowed)
                                         .map(|_| ())
-                                        .map_err(|e| e.to_string());
-                                        filter.unmark(&destination);
-                                        r
-                                    }
-                                    ActionType::InscribeDelete { target } => {
-                                        inscribe::delete_file(target, &trusted_roots)
-                                            .map_err(|e| e.to_string())
-                                    }
-
-                                    // Shell actions
-                                    ActionType::Shell {
-                                        command,
-                                        args,
-                                        detached,
-                                    } => {
-                                        let arg_refs: Vec<&str> =
-                                            args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
-                                        if detached {
-                                            shell::spawn_detached(
-                                                &command,
-                                                &command,
-                                                &arg_refs,
-                                                &baton_allowed,
-                                            )
-                                            .map_err(|e| e.to_string())
-                                        } else {
-                                            shell::run(
-                                                &command,
-                                                &command,
-                                                &arg_refs,
-                                                &baton_allowed,
-                                            )
-                                            .map(|_| ())
-                                            .map_err(|e| e.to_string())
-                                        }
-                                    }
-                                    ActionType::Wait(_) => unreachable!("Wait handled async above"),
-                                };
-
-                                if let Err(e) = exec_result {
-                                    error!(%e, "Runner: action failed");
-                                    let _ = event_tx.send(RunEvent::Panic(e)).await;
-                                    break;
+                                        .map_err(|e| e.to_string())
                                 }
+                            }
+                            _ => Ok(()),
+                        };
 
-                                let _ = event_tx.send(RunEvent::Progress(idx)).await;
-                            }
-                            Err(e) => {
-                                error!(%e, id = %node.id, "Runner: failed to parse JSON action");
-                                let _ = event_tx
-                                    .send(RunEvent::Panic(format!("Parse failure: {}", e)))
-                                    .await;
-                                break;
-                            }
+                        if let Err(e) = exec_result {
+                            error!(%e, id = %node.id, "Runner: action failed");
+                            let _ = event_tx.send(RunEvent::Panic(format!("Step '{}' failed: {}", node.label, e))).await;
+                            break;
                         }
-                    } // end for
-
-                    info!("Runner: ordinance complete, releasing lock");
-                    let _ = event_tx.send(RunEvent::Done).await;
+                    }
+                    Err(e) => {
+                        error!(%e, id = %node.id, "Runner: failed to parse JSON action");
+                        let _ = event_tx.send(RunEvent::Log(LogEntry {
+                            tag: "HAND".into(),
+                            message: format!("Corrupt Action data in step '{}'", node.label),
+                            is_error: true,
+                            ordinance_id: ordinance_id.clone(),
+                        })).await;
+                        let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed ordinance data".into())).await;
+                        break;
+                    }
                 }
+
+                let _ = event_tx.send(RunEvent::Progress(idx)).await;
+            }
+
+            if current_idx == total - 1 || total == 0 {
+                let _ = event_tx.send(RunEvent::Done).await;
             }
         }
-
-        info!("Runner task shutting down");
     });
 }

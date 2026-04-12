@@ -43,6 +43,7 @@ pub struct Atlas {
     pub last_start: Option<Instant>,
     pub registry: HashMap<String, Ordinance>,
     pub active_presence_config: PresenceConfig,
+    pub active_ordinance_id: Option<String>,
 
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
@@ -54,6 +55,7 @@ impl Atlas {
             tag: "ATLAS".into(),
             message: "Engine boot sequence initiated.".into(),
             is_error: false,
+            ordinance_id: None,
         }]));
         Self {
             state: EngineState::Idle,
@@ -61,6 +63,7 @@ impl Atlas {
             last_start: None,
             registry: HashMap::new(),
             active_presence_config: PresenceConfig::default(),
+            active_ordinance_id: None,
             active_abort: None,
         }
     }
@@ -79,6 +82,7 @@ impl Atlas {
         presence_rx: &mut mpsc::Receiver<PresenceSignalInner>,
         run_event_rx: &mut mpsc::Receiver<RunEvent>,
         run_tx: mpsc::Sender<ExecData>,
+        reset_rx: &mut mpsc::Receiver<()>,
         shutdown_rx: &mut oneshot::Receiver<()>,
         log_broadcast: tokio::sync::broadcast::Sender<LogEntry>,
     ) {
@@ -95,15 +99,36 @@ impl Atlas {
                     break;
                 }
 
+                // ── Process Manual Reset ──
+                Some(_) = reset_rx.recv() => {
+                    if self.state == EngineState::Faulted {
+                        info!("Atlas: reset signal received, clearing Faulted state");
+                        self.state = EngineState::Idle;
+                        let _ = log_broadcast.send(LogEntry {
+                            tag: "ATLAS".into(),
+                            message: "Engine fault cleared manually.".into(),
+                            is_error: false,
+                            ordinance_id: None,
+                        });
+                    }
+                }
+
                 // 2. Process incoming Triggers (Summons)
                 Some(summons) = vigil_rx.recv() => {
                     if self.state == EngineState::Idle {
                         let key = summons.to_registry_key();
                         if let Some(ordinance) = self.registry.get(&key).cloned() {
                             info!(%key, "Atlas: summons matched, dispatching sequence");
+                            self.active_ordinance_id = Some(key.clone());
+
                             let msg = format!("Summons matched: {}", key);
-                            push_log(&self.engine_logs, "ATLAS", &msg, false);
-                            let _ = log_broadcast.send(LogEntry { tag: "ATLAS".into(), message: msg, is_error: false });
+                            push_log(&self.engine_logs, "ATLAS", &msg, false, self.active_ordinance_id.clone());
+                            let _ = log_broadcast.send(LogEntry { 
+                                tag: "ATLAS".into(), 
+                                message: msg, 
+                                is_error: false, 
+                                ordinance_id: self.active_ordinance_id.clone() 
+                            });
 
                             self.state = EngineState::Executing;
                             self.last_start = Some(Instant::now());
@@ -126,6 +151,7 @@ impl Atlas {
                                 nodes: ordinance.nodes,
                                 context,
                                 presence_config: ordinance.presence_config,
+                                ordinance_id: Some(key),
                                 abort_rx,
                             };
 
@@ -148,9 +174,6 @@ impl Atlas {
                     #[cfg(not(feature = "presence"))]
                     { std::future::pending::<Option<()>>().await; None::<PresenceSignalInner> }
                 } => {
-                    // `signal` is used inside the #[cfg(feature = "presence")] block below.
-                    // The allow suppresses the lint when that feature is off and the match
-                    // arm is compiled out, leaving the binding technically unused.
                     #[allow(unused_variables)]
                     if let Some(signal) = res {
                         if self.state == EngineState::Executing {
@@ -166,7 +189,6 @@ impl Atlas {
                             }
 
                             // Grace Period: Ignore presence for 1500ms after summons
-                            // Allows user to release hotkeys and settle mouse without immediate abort.
                             if let Some(start) = self.last_start {
                                 if start.elapsed().as_millis() < 1500 {
                                     debug!("Atlas: ignoring presence during 1500ms grace period");
@@ -198,8 +220,14 @@ impl Atlas {
             "PRESN",
             msg,
             false,
+            self.active_ordinance_id.clone(),
         );
-        let _ = log_broadcast.send(LogEntry { tag: "PRESN".into(), message: msg.into(), is_error: false });
+        let _ = log_broadcast.send(LogEntry { 
+            tag: "PRESN".into(), 
+            message: msg.into(), 
+            is_error: false,
+            ordinance_id: self.active_ordinance_id.clone(),
+        });
         warn!("Atlas yielded to human presence");
     }
 
@@ -215,18 +243,29 @@ impl Atlas {
                 debug!(idx, "Atlas: node execution complete");
             }
             RunEvent::Panic(msg) => {
-                push_log(&self.engine_logs, "ATLAS", &msg, true);
-                let _ = log_broadcast.send(LogEntry { tag: "ATLAS".into(), message: msg.clone(), is_error: true });
+                push_log(&self.engine_logs, "ATLAS", &msg, true, self.active_ordinance_id.clone());
+                let _ = log_broadcast.send(LogEntry { 
+                    tag: "ATLAS".into(), 
+                    message: msg.clone(), 
+                    is_error: true,
+                    ordinance_id: self.active_ordinance_id.clone(),
+                });
                 error!(%msg, "Atlas entered Faulted state");
                 self.state = EngineState::Faulted;
                 self.active_abort = None;
             }
             RunEvent::Done => {
                 let msg = "Sequence complete.";
-                push_log(&self.engine_logs, "ATLAS", msg, false);
-                let _ = log_broadcast.send(LogEntry { tag: "ATLAS".into(), message: msg.into(), is_error: false });
+                push_log(&self.engine_logs, "ATLAS", msg, false, self.active_ordinance_id.clone());
+                let _ = log_broadcast.send(LogEntry { 
+                    tag: "ATLAS".into(), 
+                    message: msg.into(), 
+                    is_error: false,
+                    ordinance_id: self.active_ordinance_id.clone(),
+                });
                 info!("Atlas sequence complete — returning to Idle");
                 self.state = EngineState::Idle;
+                self.active_ordinance_id = None;
                 self.active_abort = None;
             }
         }
@@ -239,7 +278,7 @@ impl Default for Atlas {
     }
 }
 
-// ── Graph Compiler & IO ───────────────────────────────────────────────────────
+// ── Graph Compiler ──────────────────────────────────────────────────────────
 
 pub fn compile_sequence(nodes_map: &HashMap<String, OrdNode>) -> Option<Vec<OrdNode>> {
     let entry = nodes_map.values().find(|n| n.kind == NodeKind::Entry)?;

@@ -86,9 +86,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let decree_model  = DECREE_MODEL.with(|m| m.clone());
     let step_model    = STEP_MODEL.with(|m| m.clone());
 
-    ui.set_telemetry_logs(ModelRc::from(log_model));
+    ui.set_telemetry_logs(ModelRc::from(log_model.clone()));
     ui.set_decree_list(ModelRc::from(decree_model.clone()));
     ui.set_decree_steps(ModelRc::from(step_model.clone()));
+
+    // Seed a startup log
+    log_model.push(LogEntry {
+        time: chrono::Local::now().format("%H:%M:%S").to_string().into(),
+        tag: "FORGE".into(),
+        tag_color: Color::from_rgb_u8(99, 102, 241),
+        msg: "Terminal interface active. Waiting for telemetry pipe...".into(),
+        ordinance_id: "".into(),
+    });
 
     // Select the first decree by default
     ui.set_active_decree_id("decree-1".into());
@@ -101,8 +110,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         use tokio_util::codec::{FramedRead, LinesCodec};
         use futures::StreamExt;
         use arbiter_core::ordinance::LogEntry as CoreLogEntry;
+        use tokio::time::timeout;
 
         let pipe_name = r"\\.\pipe\arbiter_telemetry";
+        let watchdog_duration = Duration::from_secs(2);
 
         loop {
             let client = match ClientOptions::new().open(pipe_name) {
@@ -115,35 +126,58 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let mut framed = FramedRead::new(client, LinesCodec::new());
 
-            while let Some(Ok(line)) = framed.next().await {
-                if let Ok(core_entry) = serde_json::from_str::<CoreLogEntry>(&line) {
-                    let ui_copy = ui_handle_telemetry.clone();
+            // The Watchdog: If we get zero data for 30s, the engine is dead.
+            loop {
+                match timeout(watchdog_duration, framed.next()).await {
+                    Ok(Some(Ok(line))) => {
+                        match serde_json::from_str::<CoreLogEntry>(&line) {
+                            Ok(core_entry) => {
+                                let ui_copy = ui_handle_telemetry.clone();
 
-                    let tag_color = match core_entry.tag.as_str() {
-                        "VIGIL" | "Vigil-fs" | "Vigil-keys" => Color::from_rgb_u8(99, 102, 241),
-                        "ATLAS" | "Atlas"                    => Color::from_rgb_u8(245, 158, 11),
-                        "RUNNER" | "Runner"                  => Color::from_rgb_u8(16, 185, 129),
-                        "BATON" | "Baton"                    => Color::from_rgb_u8(244, 63, 94),
-                        "ERROR"                              => Color::from_rgb_u8(244, 63, 94),
-                        "WARN"                               => Color::from_rgb_u8(245, 158, 11),
-                        _                                    => Color::from_rgb_u8(161, 161, 170),
-                    };
+                                let tag_color = match core_entry.tag.as_str() {
+                                    "VIGIL" | "Vigil-fs" | "Vigil-keys" => Color::from_rgb_u8(99, 102, 241),
+                                    "ATLAS" | "Atlas"                    => Color::from_rgb_u8(245, 158, 11),
+                                    "RUNNER" | "Runner"                  => Color::from_rgb_u8(16, 185, 129),
+                                    "BATON" | "Baton"                    => Color::from_rgb_u8(244, 63, 94),
+                                    "ERROR"                              => Color::from_rgb_u8(244, 63, 94),
+                                    "WARN"                               => Color::from_rgb_u8(245, 158, 11),
+                                    _                                    => Color::from_rgb_u8(161, 161, 170),
+                                };
 
-                    let entry = LogEntry {
-                        time:      chrono::Local::now().format("%H:%M:%S").to_string().into(),
-                        tag:       core_entry.tag.into(),
-                        msg:       core_entry.message.into(),
-                        tag_color,
-                    };
+                                let entry = LogEntry {
+                                    time:      chrono::Local::now().format("%H:%M:%S").to_string().into(),
+                                    tag:       core_entry.tag.into(),
+                                    msg:       core_entry.message.into(),
+                                    tag_color,
+                                    ordinance_id: core_entry.ordinance_id.unwrap_or_default().into(),
+                                };
 
-                    let _ = ui_copy.upgrade_in_event_loop(move |_ui| {
-                        LOG_MODEL.with(|m| {
-                            m.push(entry);
-                            if m.row_count() > 50 {
-                                m.remove(0);
+                                let _ = ui_copy.upgrade_in_event_loop(move |_ui| {
+                                    LOG_MODEL.with(|m| {
+                                        m.push(entry);
+                                        if m.row_count() > 50 {
+                                            m.remove(0);
+                                        }
+                                    });
+                                });
                             }
-                        });
-                    });
+                            Err(e) => {
+                                tracing::error!("Forge: failed to parse telemetry JSON: {} | Line: {}", e, line);
+                            }
+                        }
+                    }
+                    Ok(Some(Err(e))) => {
+                        tracing::error!("Forge: telemetry pipe error: {}", e);
+                        break; // Trigger reconnection
+                    }
+                    Ok(None) => {
+                        tracing::warn!("Forge: telemetry pipe closed by engine.");
+                        break; // Trigger reconnection / exit
+                    }
+                    Err(_) => {
+                        tracing::error!("Forge: Watchdog expired (30s silence). Engine likely terminated. Exiting.");
+                        std::process::exit(0);
+                    }
                 }
             }
 

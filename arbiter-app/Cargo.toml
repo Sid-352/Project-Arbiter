@@ -30,3 +30,6 @@ tokio-util    = { version = "0.7", features = ["net", "codec"] }
 futures       = "0.3"
 serde_json    = "1.0"
 chrono        = "0.4"
+
+[build-dependencies]
+winres = "0.1"

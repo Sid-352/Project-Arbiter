@@ -31,6 +31,7 @@ export struct LogEntry {
     tag: string,
     tag-color: color,
     msg: string,
+    ordinance-id: string,
 }
 
 /// A decree entry shown in the sidebar list.
@@ -1209,7 +1210,7 @@ export component ArbiterForge inherits Window {
 
                                 Text {
                                     text: entry.msg;
-                                    color: Theme.text-muted;
+                                    color: Theme.text-secondary;
                                     font-size: 9px;
                                     vertical-alignment: center;
                                     height: 16px;

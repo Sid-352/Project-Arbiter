@@ -375,6 +375,7 @@ pub struct ExecData {
     pub nodes: Vec<OrdNode>,
     pub context: EnvContext,
     pub presence_config: PresenceConfig,
+    pub ordinance_id: Option<String>,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
 }
 
@@ -385,10 +386,18 @@ pub struct LogEntry {
     pub tag: String,
     pub message: String,
     pub is_error: bool,
+    /// The ID of the ordinance currently executing, if any.
+    pub ordinance_id: Option<String>,
 }
 
 /// Helper: push a log entry into a shared log buffer, capping at 1 000 lines.
-pub fn push_log(logs: &Arc<Mutex<Vec<LogEntry>>>, tag: &str, msg: &str, is_error: bool) {
+pub fn push_log(
+    logs: &Arc<Mutex<Vec<LogEntry>>>,
+    tag: &str,
+    msg: &str,
+    is_error: bool,
+    ordinance_id: Option<String>,
+) {
     if let Ok(mut v) = logs.lock() {
         if v.len() >= 1_000 {
             v.remove(0);
@@ -397,6 +406,7 @@ pub fn push_log(logs: &Arc<Mutex<Vec<LogEntry>>>, tag: &str, msg: &str, is_error
             tag: tag.into(),
             message: msg.into(),
             is_error,
+            ordinance_id,
         });
     }
 }

@@ -1,243 +1,178 @@
-//! main.rs — Arbiter Engine entry point.
+//! main.rs — Arbiter background service entry point.
 //!
-//! The binary is a silent background service. On launch it:
-//!   1. Initialises structured logging (tracing).
-//!   2. Starts the tokio runtime on background threads.
-//!   3. Boots The Atlas, The Runner, and opens watcher channels.
-//!   4. Parks the main thread inside the tray event loop (OS requirement).
-//!
-//! No splash screen. No console window in release builds.
-//! The only user-facing presence is the system tray icon.
+//! Responsibilities:
+//!   - Initialise the Tokio async runtime.
+//!   - Setup structured logging (Stdout + Daily Rolling File).
+//!   - Start The Atlas (Brain), The Runner (Muscle), and The Vigil (Senses).
+//!   - Expose real-time IPC telemetry via Windows Named Pipes.
+//!   - Host the system tray lifecycle (blocking main thread).
 
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use std::{sync::Arc, time::Duration};
+use tokio::sync::{broadcast, mpsc};
+use tokio_util::codec::{FramedWrite, LinesCodec};
+use futures::SinkExt;
+use tracing::info;
+use tracing_subscriber::{prelude::*, EnvFilter};
+
+use arbiter_core::{
+    atlas::Atlas,
+    filter::ArbiterFilter,
+    ordinance::{ExecData, LogEntry, NodeKind, OrdNode, WardConfig, WardLayer},
+};
 
 mod tray;
 
-use tracing::{error, info};
-use tracing_subscriber::EnvFilter;
-use arbiter_core::atlas::Atlas;
-use arbiter_core::ordinance::{NodeKind, OrdNode, WardConfig, WardLayer};
-use serde_json;
-use std::io::Write;
-use std::fs::{File, OpenOptions};
-use std::path::PathBuf;
-use chrono::Local;
+// ── Daily Rolling Writer ──────────────────────────────────────────────────────
 
-// ── Custom Rolling Writer ─────────────────────────────────────────────────────
-
-/// A simple rolling file writer that follows the pattern: arbiter.YYYY-MM-DD.log
+/// A simple daily rolling writer for tracing-appender.
 struct ArbiterRollingWriter {
-    log_dir: PathBuf,
-    current_date: Option<String>,
-    current_file: Option<File>,
+    base_dir: std::path::PathBuf,
 }
 
 impl ArbiterRollingWriter {
-    fn new(dir: impl Into<PathBuf>) -> Self {
-        Self {
-            log_dir: dir.into(),
-            current_date: None,
-            current_file: None,
-        }
+    fn new(dir: &str) -> Self {
+        Self { base_dir: dir.into() }
     }
 }
 
-impl Write for ArbiterRollingWriter {
+impl std::io::Write for ArbiterRollingWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let date = Local::now().format("%Y-%m-%d").to_string();
+        let now = chrono::Local::now();
+        let filename = format!("arbiter.{}.log", now.format("%Y-%m-%d"));
+        let path = self.base_dir.join(filename);
 
-        // Roll to a new file if the date has changed (or on first write)
-        if self.current_date.as_ref() != Some(&date) {
-            let filename = format!("arbiter.{}.log", date);
-            let path = self.log_dir.join(filename);
-            
-            // Create directory if missing
-            if !self.log_dir.exists() {
-                std::fs::create_dir_all(&self.log_dir)?;
-            }
-
-            let file = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path)?;
-            
-            self.current_file = Some(file);
-            self.current_date = Some(date);
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
         }
 
-        if let Some(ref mut file) = self.current_file {
-            file.write(buf)
-        } else {
-            Ok(0)
-        }
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)?;
+        file.write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        if let Some(ref mut file) = self.current_file {
-            file.flush()
-        } else {
-            Ok(())
-        }
+        Ok(())
     }
 }
 
-fn banner(title: impl std::fmt::Display, subtitle: impl std::fmt::Display) {
-    let width = 56;
+// ── Main Entry ────────────────────────────────────────────────────────────────
 
-    println!("╔{}╗", "═".repeat(width - 2));
-    println!("│{:^54}│", title);
-    println!("│{:^54}│", subtitle);
-    println!("╚{}╝", "═".repeat(width - 2));
-}
-
-fn main() {
-    // ── Logging ───────────────────────────────────────────────────────────────
-    // Optional local terminal output for development
-    let stdout_log = tracing_subscriber::fmt::layer()
-        .with_target(false)
-        .with_thread_names(true)
-        .compact();
-
-    // Persistent file log for the UI (arbiter-forge) to tail
-    // Custom daily rolling: arbiter.YYYY-MM-DD.log
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 0. Logging & Professional Banner
     let file_appender = ArbiterRollingWriter::new("arbiter-data/logs");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-    let file_log = tracing_subscriber::fmt::layer()
-        .with_writer(non_blocking)
+    let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);
+    
+    let file_layer = tracing_subscriber::fmt::layer()
+        .with_writer(non_blocking_file)
         .with_ansi(false)
         .with_target(false)
         .compact();
 
-    use tracing_subscriber::layer::SubscriberExt;
-    let subscriber = tracing_subscriber::registry()
-        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("arbiter=info,warn")))
-        .with(stdout_log)
-        .with(file_log);
-        
-    tracing::subscriber::set_global_default(subscriber).expect("Unable to set global tracing subscriber");
+    let stdout_layer = tracing_subscriber::fmt::layer()
+        .with_writer(std::io::stdout)
+        .with_target(false)
+        .compact();
 
-    banner(
-        format!("ARBITER v{}", env!("CARGO_PKG_VERSION")),
-        "Command & Control Orchestration Engine",
-    );
+    tracing_subscriber::registry()
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info,arbiter=debug")))
+        .with(file_layer)
+        .with(stdout_layer)
+        .init();
 
-    info!("Status: Initialising mechanical bridges...");
-
-    // ── Tokio Runtime ─────────────────────────────────────────────────────────
-    let rt = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
-        .thread_name("arbiter-worker")
-        .enable_all()
-        .build()
-        .expect("Failed to build Tokio runtime");
-
-    // ── Engine Boot ───────────────────────────────────────────────────────────
-    let _guard = rt.enter();
-
-    // Load Signet vault
-    let signet_config = arbiter_core::signet::load().unwrap_or_default();
-    info!("Signet: secure configuration loaded");
-
-    // The Filter
-    let filter = arbiter_core::filter::ArbiterFilter::new();
-
-    // Channels
-    let (vigil_tx, mut vigil_rx) = arbiter_core::vigil::channel(64);
-    let (presence_tx, mut presence_rx) = tokio::sync::mpsc::channel(8);
-    let (atlas_exec_tx, mut atlas_exec_rx) =
-        tokio::sync::mpsc::channel::<arbiter_core::ordinance::ExecData>(16);
-    let (exec_cmd_tx, exec_cmd_rx) = tokio::sync::mpsc::channel(16);
-    let (run_event_tx, mut run_event_rx) = tokio::sync::mpsc::channel(32);
-    let (atlas_shutdown_tx, mut atlas_shutdown_rx) = tokio::sync::oneshot::channel();
-    let (reset_tx, mut reset_rx) = tokio::sync::mpsc::channel(8);
-
-    // IPC: Named Pipe Server for real-time telemetry
-    let (log_broadcast_tx, _) = tokio::sync::broadcast::channel::<arbiter_core::ordinance::LogEntry>(1024);
-    let ipc_broadcast = log_broadcast_tx.clone();
+    println!(r#"
     
+    █▀▀█ █▀▀█ █▀▀█ ░▀░ ▀▀█▀▀ █▀▀ █▀▀█
+    █▄▄█ █▄▄▀ █▀▀▄ ▀█▀ ░░█░░ █▀▀ █▄▄▀
+    ▀  ▀ ▀ ▀▀ ▀▀▀▀ ▀▀▀ ░░▀░░ ▀▀▀ ▀ ▀▀
+    Deterministic System Orchestration
+    
+    "#);
+    info!("Arbiter Engine: booting version 0.1.0");
+
+    // ── Infrastructure ────────────────────────────────────────────────────────
+    let filter = ArbiterFilter::new();
+    let signet_config = arbiter_core::signet::load().unwrap_or_default();
+    
+    let (vigil_tx, mut vigil_rx) = mpsc::channel(100);
+    let (presence_tx, mut presence_rx) = mpsc::channel(100);
+    let (run_event_tx, mut run_event_rx) = mpsc::channel(100);
+    let (exec_cmd_tx, exec_cmd_rx) = mpsc::channel(100);
+    
+    let (atlas_shutdown_tx, mut atlas_shutdown_rx) = tokio::sync::oneshot::channel();
+    let (atlas_exec_tx, mut atlas_exec_rx) = mpsc::channel::<ExecData>(100);
+    let (reset_tx, mut reset_rx) = mpsc::channel::<()>(1);
+
+    // IPC Broadcast for Named Pipe consumers
+    let (log_broadcast_tx, _) = broadcast::channel::<LogEntry>(1024);
+
+    // ── Components ────────────────────────────────────────────────────────────
+
+    // IPC Server: Named Pipe \\.\pipe\arbiter_telemetry
+    let ipc_broadcast = log_broadcast_tx.clone();
     tokio::spawn(async move {
         use tokio::net::windows::named_pipe::ServerOptions;
-        use tokio_util::codec::{FramedWrite, LinesCodec};
-        use futures::SinkExt;
-
         let pipe_name = r"\\.\pipe\arbiter_telemetry";
         
         loop {
-            let server = match ServerOptions::new()
+            let server = ServerOptions::new()
                 .first_pipe_instance(true)
-                .create(pipe_name) 
-            {
-                Ok(s) => s,
-                Err(e) => {
-                    error!(%e, "IPC: telemetry pipe creation failed");
-                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                    continue;
-                }
-            };
-
-            // Wait for a client to connect
-            if server.connect().await.is_ok() {
-                let mut rx = ipc_broadcast.subscribe();
-                let (_, writer) = tokio::io::split(server);
-                let mut framed = FramedWrite::new(writer, LinesCodec::new());
-
-                tokio::spawn(async move {
-                    while let Ok(entry) = rx.recv().await {
-                        if let Ok(json) = serde_json::to_string(&entry) {
-                            if framed.send(json).await.is_err() {
-                                break; // Client disconnected
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Create subsequent instances for more clients
-            loop {
-                let server = match ServerOptions::new().create(pipe_name) {
-                    Ok(s) => s,
-                    Err(_) => break,
-                };
+                .create(pipe_name)
+                .or_else(|_| ServerOptions::new().create(pipe_name));
+            
+            if let Ok(server) = server {
                 if server.connect().await.is_ok() {
                     let mut rx = ipc_broadcast.subscribe();
                     let (_, writer) = tokio::io::split(server);
                     let mut framed = FramedWrite::new(writer, LinesCodec::new());
-                    tokio::spawn(async move {
-                        while let Ok(entry) = rx.recv().await {
-                            if let Ok(json) = serde_json::to_string(&entry) {
-                                if framed.send(json).await.is_err() {
-                                    break;
-                                }
-                            }
+                    while let Ok(entry) = rx.recv().await {
+                        if let Ok(json) = serde_json::to_string(&entry) {
+                            if framed.send(json).await.is_err() { break; }
                         }
-                    });
+                    }
                 }
             }
+            tokio::time::sleep(Duration::from_millis(200)).await;
         }
     });
 
     // 1. Spawn Runner
+    // ...
+    info!("Arbiter Engine: standing by");
+    let _ = log_broadcast_tx.send(LogEntry {
+        tag: "ATLAS".into(),
+        message: "Arbiter Engine: system services active and standing by.".into(),
+        is_error: false,
+        ordinance_id: None,
+    });
+
+    // Heartbeat task
+    let heartbeat_broadcast = log_broadcast_tx.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(1));
+        loop {
+            interval.tick().await;
+            let _ = heartbeat_broadcast.send(LogEntry {
+                tag: "VIGIL".into(),
+                message: "Heartbeat: Watchers operational.".into(),
+                is_error: false,
+                ordinance_id: None,
+            });
+        }
+    });
     let (screen_width, screen_height) = {
         #[cfg(windows)]
         {
             use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
-            unsafe {
-                (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN))
-            }
+            unsafe { (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) }
         }
         #[cfg(not(windows))]
-        {
-            (1920, 1080) // Fallback for other OS or headless
-        }
+        { (1920, 1080) }
     };
-    info!("Runner: display boundaries mapped to {}x{}", screen_width, screen_height);
-
-    arbiter_bridge::runner::spawn_runner(
-        exec_cmd_rx,
-        screen_width,
-        screen_height,
-        filter.clone(),
-    );
+    info!("Runner: mapping display boundaries to {}x{}", screen_width, screen_height);
+    arbiter_bridge::runner::spawn(exec_cmd_rx, screen_width, screen_height, filter.clone());
 
     // 2. Spawn Mapping loop (Atlas -> Runner)
     let map_run_event_tx = run_event_tx.clone();
@@ -252,6 +187,7 @@ fn main() {
                 event_tx: map_run_event_tx.clone(),
                 trusted_roots: map_trusted.iter().cloned().collect(),
                 baton_allowed: map_baton.clone(),
+                ordinance_id: exec_data.ordinance_id,
             };
             let _ = exec_cmd_tx.send(cmd).await;
         }
@@ -259,31 +195,23 @@ fn main() {
 
     // 3. Spawn Watchers
     let _ = arbiter_core::vigil::keys::register_hotkey("Ctrl+Shift+D".into(), vigil_tx.clone());
+    info!("Vigil: hotkey monitor active (Ctrl+Shift+D)");
 
-    // Just an example to prove compilation and logic — assumes Downloads exist.
     if let Some(downloads) = dirs::download_dir() {
-        // Construct the Ward with Surface access (Layer 1).
-        // Upgrade layer to WardLayer::Analytical to enable SHA-256 / MIME
-        // extraction for ordinances that request ${env.content_sha256} etc.
-        let ward = WardConfig {
-            path: downloads.clone(),
-            glob: "*.zip".into(),
-            layer: WardLayer::Surface,
-        };
         arbiter_core::vigil::fs::spawn_watcher(
-            ward,
+            WardConfig { path: downloads.clone(), glob: "*.zip".into(), layer: WardLayer::Surface },
             filter.clone(),
             vigil_tx.clone(),
         );
+        info!("Vigil: filesystem watcher active on {:?}", downloads);
     }
-
+    
     arbiter_core::presence::spawn_monitor(presence_tx, filter.clone());
     info!("Vigil: presence monitoring active");
 
-    // 4. Initialise & Configure Atlas
+    // 4. Initialise Atlas
     let mut atlas = Atlas::new();
-    info!("Atlas: engine core ready");
-
+    
     // Smoke Test 1: The Macro
     let macro_nodes = vec![
         OrdNode {
@@ -304,8 +232,7 @@ fn main() {
             id: "2".into(),
             label: "Open Start".into(),
             kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Navigate":"super"},"point":null,"delay_ms":0}"#
-                .into(),
+            internal_state: r#"{"action_type":{"Navigate":"super"},"point":null,"delay_ms":0}"#.into(),
             next_nodes: [("Next".into(), "3".into())].into(),
         },
         OrdNode {
@@ -319,8 +246,7 @@ fn main() {
             id: "4".into(),
             label: "Type Discord".into(),
             kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Type":"discord"},"point":null,"delay_ms":0}"#
-                .into(),
+            internal_state: r#"{"action_type":{"Type":"discord"},"point":null,"delay_ms":0}"#.into(),
             next_nodes: [("Next".into(), "5".into())].into(),
         },
         OrdNode {
@@ -334,8 +260,7 @@ fn main() {
             id: "6".into(),
             label: "Enter".into(),
             kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Navigate":"return"},"point":null,"delay_ms":0}"#
-                .into(),
+            internal_state: r#"{"action_type":{"Navigate":"return"},"point":null,"delay_ms":0}"#.into(),
             next_nodes: [].into(),
         },
     ];
@@ -344,107 +269,74 @@ fn main() {
         arbiter_core::ordinance::Ordinance {
             nodes: macro_nodes,
             presence_config: arbiter_core::ordinance::PresenceConfig {
-                ignore_mouse: true, // Specific scope: ignore mouse for the Discord macro
+                ignore_mouse: true,
                 ignore_keyboard: false,
             },
         },
     );
-
-    // Smoke Test 2: The Organiser
-    if let Some(archive_dir) = dirs::document_dir().map(|d| d.join("Arbiter_Archives")) {
-        let archive_path = archive_dir.to_string_lossy().to_string();
-        // A bit hacky escaping for the JSON, but sufficient for the smoke test
-        let internal_json = format!(
-            r#"{{"action_type":{{"InscribeMove":{{"source":"${{env.file_path}}","destination":"{}\\\\${{env.file_name}}"}}}}}},"point":null,"delay_ms":0}}"#,
-            archive_path.replace("\\", "\\\\")
-        );
-
-        let fs_nodes = vec![
-            OrdNode {
-                id: "1".into(),
-                label: "Start".into(),
-                kind: NodeKind::Entry,
-                internal_state: "".into(),
-                next_nodes: [("Next".into(), "2".into())].into(),
-            },
-            OrdNode {
-                id: "2".into(),
-                label: "Move File".into(),
-                kind: NodeKind::Action,
-                internal_state: internal_json,
-                next_nodes: [].into(),
-            },
-        ];
-
-        if let Some(downloads) = dirs::download_dir() {
-            let fs_key = format!("FileCreated|{}|{}", downloads.to_string_lossy(), "*.zip");
-            atlas.register_ordinance(
-                fs_key,
-                arbiter_core::ordinance::Ordinance {
-                    nodes: fs_nodes,
-                    presence_config: arbiter_core::ordinance::PresenceConfig::default(),
-                },
-            );
-        }
-    }
+    info!("Atlas: engine core ready");
 
     // 5. Spawn Atlas loop
     let atlas_broadcast = log_broadcast_tx.clone();
+    let atlas_loop_broadcast = atlas_broadcast.clone();
     tokio::spawn(async move {
-        loop {
-            tokio::select! {
-                _ = atlas.run(
-                    &mut vigil_rx,
-                    #[cfg(feature = "presence")]
-                    &mut presence_rx,
-                    #[cfg(not(feature = "presence"))]
-                    &mut tokio::sync::mpsc::channel(1).1,
-                    &mut run_event_rx,
-                    atlas_exec_tx.clone(),
-                    &mut atlas_shutdown_rx,
-                    atlas_broadcast.clone(),
-                ) => {
-                    info!("Atlas loop terminated cleanly");
-                    break;
-                }
-                _ = reset_rx.recv() => {
-                    if atlas.state == arbiter_core::atlas::EngineState::Faulted {
-                        info!("Atlas: reset signal received, clearing Faulted state");
-                        atlas.state = arbiter_core::atlas::EngineState::Idle;
-                        let _ = atlas_broadcast.send(arbiter_core::ordinance::LogEntry {
-                            tag: "ATLAS".into(),
-                            message: "Engine fault cleared manually.".into(),
-                            is_error: false,
-                        });
-                    }
-                }
-            }
-        }
+        atlas.run(
+            &mut vigil_rx,
+            #[cfg(feature = "presence")] &mut presence_rx,
+            #[cfg(not(feature = "presence"))] &mut tokio::sync::mpsc::channel(1).1,
+            &mut run_event_rx,
+            atlas_exec_tx.clone(),
+            &mut reset_rx,
+            &mut atlas_shutdown_rx,
+            atlas_loop_broadcast.clone(),
+        ).await;
+        info!("Atlas: run loop terminated cleanly");
     });
 
-    // Store the shutdown transmitter globally so the tray can signal it
-    // We cheat a bit by keeping an Option in a Mutex, since run_event_loop takes FnOnce
-    use std::sync::{Arc, Mutex};
-    let shutdown_cell = Arc::new(Mutex::new(Some(atlas_shutdown_tx)));
-    let reset_cell = Arc::new(Mutex::new(reset_tx));
+    let shutdown_cell = Arc::new(std::sync::Mutex::new(Some(atlas_shutdown_tx)));
+    let reset_cell = Arc::new(std::sync::Mutex::new(reset_tx));
 
     // ── Tray (blocks main thread) ─────────────────────────────────────────────
-    tray::run_event_loop(move |event| {
+    let tray_broadcast = atlas_broadcast.clone();
+    tray::run_event_loop(move |event, proxy| {
         match event {
             tray::TrayAppEvent::Shutdown => {
-                info!("Arbiter shutting down — the servant is dismissed.");
                 if let Ok(mut cell) = shutdown_cell.lock() {
-                    if let Some(tx) = cell.take() {
-                        let _ = tx.send(());
-                    }
+                    if let Some(tx) = cell.take() { let _ = tx.send(()); }
                 }
             }
             tray::TrayAppEvent::Reset => {
-                if let Ok(cell) = reset_cell.lock() {
-                    let _ = cell.try_send(());
-                }
+                if let Ok(cell) = reset_cell.lock() { let _ = cell.try_send(()); }
             }
             _ => {}
         }
+
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        let proxy_atlas = proxy.clone();
+        let atlas_logs = tray_broadcast.clone();
+        ONCE.call_once(move || {
+            let mut log_rx = atlas_logs.subscribe();
+            tokio::spawn(async move {
+                while let Ok(entry) = log_rx.recv().await {
+                    match entry.tag.as_str() {
+                        "ATLAS" => {
+                            if entry.message.contains("matched") {
+                                if let Some(id) = entry.ordinance_id {
+                                    let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate(format!("Executing: {}", id)));
+                                }
+                            } else if entry.message.contains("complete") {
+                                let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate("Standing By".into()));
+                            }
+                        }
+                        "PRESN" => {
+                            let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate("Yielded".into()));
+                        }
+                        _ => {}
+                    }
+                }
+            });
+        });
     });
+
+    Ok(())
 }
