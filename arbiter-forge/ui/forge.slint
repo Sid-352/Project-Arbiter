@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  ARBITER FORGE — Slint UI
 // ============================================================
 
@@ -31,6 +31,34 @@ export struct LogEntry {
     tag: string,
     tag-color: color,
     msg: string,
+}
+
+/// A decree entry shown in the sidebar list.
+export struct DecreeEntry {
+    id:     string,
+    label:  string,
+    /// 0 = inactive · 1 = active/ok · 2 = warning · 3 = error
+    status: int,
+}
+
+/// A single step in a decree's execution sequence.
+/// Fields are intentionally flat — Slint's VecModel requires simple value types
+/// so Rust can call set_row_data() when the user edits a field.
+export struct DecreeStep {
+    id:            string,
+    title:         string,
+    subtext:       string,
+    /// 0=Inscribe · 1=Shell · 2=Somatic · 3=Steady(Wait)
+    step-type:     int,
+    baton-required: bool,
+    is-active:     bool,
+    /// arg-a / arg-b are the two editable fields per step type.
+    /// Inscribe : arg-a=source, arg-b=destination
+    /// Shell    : arg-a=command, arg-b=args string
+    /// Somatic  : arg-a=action label, arg-b=value
+    /// Steady   : unused
+    arg-a: string,
+    arg-b: string,
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -677,21 +705,54 @@ component ModalDialog inherits Rectangle {
 
 // ── Root Window ───────────────────────────────────────────────────────────────
 export component ArbiterForge inherits Window {
-    callback save-decree;
     title: "Arbiter Forge";
+    icon: @image-url("icon.ico");
     preferred-width: 1120px;
     preferred-height: 780px;
     background: Theme.bg-app;
     default-font-family: "Inter";
 
-    // State for the modal
-    property <bool> show-modal: false;
-    property <string> modal-title: "";
-    property <string> modal-message: "";
-    property <string> modal-action-type: ""; // Optional: useful for telling your Rust backend WHICH action to take when confirmed
-    
-    // Dynamic Telemetry
+    // ── Navigation ──────────────────────────────────────────────────────────────
+    /// 0=Forge  1=Conservatory  2=Signet
+    in-out property <int> active-page: 0;
+
+    // ── Modal overlay state ─────────────────────────────────────────────────────
+    property <bool>   show-modal:        false;
+    property <string> modal-title:       "";
+    property <string> modal-message:     "";
+    /// Tells the Rust confirmed-handler which action to execute.
+    property <string> modal-action-type: "";
+
+    // ── Active decree identity ──────────────────────────────────────────────────
+    in-out property <string> active-decree-id:    "";
+    in-out property <string> active-decree-label: "Untitled Decree";
+
+    // ── Sidebar decree list (Rust pushes a VecModel<DecreeEntry>) ───────────────
+    in property <[DecreeEntry]> decree-list: [];
+
+    // ── Step sequence (Rust pushes a VecModel<DecreeStep>) ─────────────────────
+    in property <[DecreeStep]>  decree-steps: [];
+
+    // ── Summons config (two-way: Rust reads these on save) ──────────────────────
+    /// 0=FileSystem  1=Hotkey  2=ProcessAppeared
+    in-out property <int>    summons-trigger-type: 0;
+    in-out property <string> summons-path:         "";
+    in-out property <string> summons-glob:         "";
+    in-out property <string> summons-combo:        "";
+    in-out property <string> summons-process:      "";
+    /// 0=Surface  1=Analytical (WardLayer)
+    in-out property <int>    summons-ward-layer:   0;
+
+    // ── Telemetry ───────────────────────────────────────────────────────────────
     in property <[LogEntry]> telemetry-logs: [];
+
+    // ── Callbacks Rust listens to ───────────────────────────────────────────────
+    callback save-decree;
+    callback new-decree;
+    callback select-decree(string);  // arg: decree id
+    callback append-step(int);       // arg: step-type to add (0–3)
+    callback remove-step(string);    // arg: step id
+
     HorizontalLayout {
 
         // ── Sidebar ───────────────────────────────────────────────────────────
@@ -731,19 +792,24 @@ export component ArbiterForge inherits Window {
 
                     SidebarItem {
                         label: "Forge";
-                        active: true;
+                        active: root.active-page == 0;
                         icon-commands: "M 2 6 h 10 v 4 H 2 z M 9 10 l 4 8 M 13 4 l 4 4 M 14 5 l 3 -3 2 2 -3 3";
-                        icon-color: Theme.accent;
+                        icon-color: root.active-page == 0 ? Theme.accent : Theme.text-secondary;
+                        clicked => { root.active-page = 0; }
                     }
 
                     SidebarItem {
                         label: "Conservatory";
+                        active: root.active-page == 1;
                         icon-commands: "M 3 9 l 9 -7 l 9 7 v 11 a 2 2 0 0 1 -2 2 H 5 a 2 2 0 0 1 -2 -2 z M 9 22 V 12 h 6 v 10";
+                        clicked => { root.active-page = 1; }
                     }
 
                     SidebarItem {
                         label: "Signet";
+                        active: root.active-page == 2;
                         icon-commands: "M 12 2 L 3 7 v 5 c 0 5.25 3.75 10.15 9 11.25 C 17.25 22.15 21 17.25 21 12 V 7 z";
+                        clicked => { root.active-page = 2; }
                     }
                 }
 
@@ -781,7 +847,9 @@ export component ArbiterForge inherits Window {
                                 height: 24px;
                             }
 
-                            TouchArea { }
+                            TouchArea {
+                                clicked => { root.new-decree(); }
+                            }
                         }
                     }
 
@@ -789,15 +857,12 @@ export component ArbiterForge inherits Window {
                         height: 4px;
                     }
 
-                    SidebarItem {
-                        label: "Archive Automation";
-                        active: true;
-                        decree-status: 1;
-                    }
-
-                    SidebarItem {
-                        label: "Registry Scrubber";
-                        decree-status: 2;
+                    // ── Dynamic decree list ─────────────────────────────────────
+                    for item in root.decree-list: SidebarItem {
+                        label: item.label;
+                        active: item.id == root.active-decree-id;
+                        decree-status: item.status;
+                        clicked => { root.select-decree(item.id); }
                     }
                 }
 
@@ -975,7 +1040,11 @@ export component ArbiterForge inherits Window {
                                 font-size: 10px;
                             }
 
-                            SummonsBlock { }
+                            // trigger-type is two-way bound to root so tab
+                            // selection survives theme toggles and rebuilds.
+                            SummonsBlock {
+                                trigger-type <=> root.summons-trigger-type;
+                            }
                         }
 
                         // Decree sequence
@@ -1008,36 +1077,14 @@ export component ArbiterForge inherits Window {
                                 }
                             }
 
-                            OrdinanceStep {
-                                title: "Successive Size Check";
-                                subtext: "Awaiting stability pulse";
-                                step-type: 3;
-                                is-active: true;
-                            }
-
-                            OrdinanceStep {
-                                title: "Atomic Relocation";
-                                subtext: "Moving verified artifact to vault";
-                                baton-required: false;
-                                clip: false;
-                                is-active: false;
-                                is-editing: false;
-                                step-type: 0;
-                            }
-
-                            OrdinanceStep {
-                                title: "Shell Dispatch";
-                                subtext: "Firing post-process signal";
-                                step-type: 1;
-                                baton-required: true;
-                                is-editing: false;
-                            }
-
-                            OrdinanceStep {
-                                title: "Audit Verification";
-                                subtext: "Finalizing ledger entry";
-                                step-type: 3;
-                                is-last: true;
+                            // \u2500\u2500 Dynamic step sequence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                            for step[idx] in root.decree-steps: OrdinanceStep {
+                                title:          step.title;
+                                subtext:        step.subtext;
+                                step-type:      step.step-type;
+                                baton-required: step.baton-required;
+                                is-active:      step.is-active;
+                                is-last:        idx == root.decree-steps.length - 1;
                             }
 
                             Rectangle {
@@ -1057,8 +1104,13 @@ export component ArbiterForge inherits Window {
                                     height: 40px;
                                 }
 
-                                TouchArea { }
+                                TouchArea {
+                                    // Default to step-type 0 (Inscribe).
+                                    // Rust will show a picker in a future session.
+                                    clicked => { root.append-step(0); }
+                                }
                             }
+
                         }
                     }
                 }
@@ -1177,10 +1229,10 @@ export component ArbiterForge inherits Window {
         message: root.modal-message;
         confirm-text: "CONFIRM";
         confirmed => {
-            root.show-modal = false; 
-            // In Rust, you would listen to `modal-action-type` to know what to execute!
-            /* if (root.modal-action-type == "commit_decree") { ... }
-            */
+            root.show-modal = false;
+            if (root.modal-action-type == "commit_decree") {
+                root.save-decree();
+            }
         }
     }
 }

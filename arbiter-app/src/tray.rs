@@ -39,16 +39,28 @@ pub enum TrayAppEvent {
 ///
 /// The returned `TrayIcon` must be kept alive for the icon to remain visible.
 pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
-    // Minimal 16×16 RGBA icon — accent-blue placeholder.
-    // Replaced with a real .ico asset in the UI phase.
-    let icon_rgba: Vec<u8> = {
-        let mut px = Vec::with_capacity(16 * 16 * 4);
-        for _ in 0..(16 * 16) {
-            px.extend_from_slice(&[0x00, 0x96, 0xFF, 0xFF]); // #0096FF accent
+    // Attempt to load the real icon.ico from the forge assets
+    let mut icon_path = std::path::Path::new("arbiter-forge")
+        .join("ui")
+        .join("icon.ico");
+
+    // Fallback for dev environment running from project root
+    if !icon_path.exists() {
+        icon_path = std::path::Path::new("ui").join("icon.ico");
+    }
+
+    let icon = if icon_path.exists() {
+        match image::open(icon_path) {
+            Ok(img) => {
+                let rgba = img.to_rgba8();
+                let (width, height) = rgba.dimensions();
+                tray_icon::Icon::from_rgba(rgba.into_raw(), width, height)?
+            }
+            Err(_) => build_fallback_icon()?,
         }
-        px
+    } else {
+        build_fallback_icon()?
     };
-    let icon = tray_icon::Icon::from_rgba(icon_rgba, 16, 16)?;
 
     let menu = Menu::new();
     let status_item = MenuItem::with_id("status", "Arbiter — Standing By", false, None);
@@ -72,6 +84,14 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
 
     info!("Tray icon built and visible");
     Ok(tray)
+}
+
+fn build_fallback_icon() -> Result<tray_icon::Icon, Box<dyn std::error::Error>> {
+    let mut px = Vec::with_capacity(16 * 16 * 4);
+    for _ in 0..(16 * 16) {
+        px.extend_from_slice(&[0x63, 0x66, 0xF1, 0xFF]); // Arbiter Accent Blue
+    }
+    Ok(tray_icon::Icon::from_rgba(px, 16, 16)?)
 }
 
 // ── Event Loop ────────────────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ tracing       = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
 dirs          = "5.0"
+image         = "0.25"
 windows       = { version = "0.58", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation"] }
 tokio-util    = { version = "0.7", features = ["net", "codec"] }
 futures       = "0.3"

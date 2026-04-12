@@ -148,7 +148,11 @@ impl Atlas {
                     #[cfg(not(feature = "presence"))]
                     { std::future::pending::<Option<()>>().await; None::<PresenceSignalInner> }
                 } => {
-                    if let Some(_signal) = res {
+                    // `signal` is used inside the #[cfg(feature = "presence")] block below.
+                    // The allow suppresses the lint when that feature is off and the match
+                    // arm is compiled out, leaving the binding technically unused.
+                    #[allow(unused_variables)]
+                    if let Some(signal) = res {
                         if self.state == EngineState::Executing {
                             // Sensitivity Filter (Scope-bound)
                             #[cfg(feature = "presence")]
