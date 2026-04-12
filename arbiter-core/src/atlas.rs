@@ -148,7 +148,7 @@ impl Atlas {
                     #[cfg(not(feature = "presence"))]
                     { std::future::pending::<Option<()>>().await; None::<PresenceSignalInner> }
                 } => {
-                    if let Some(signal) = res {
+                    if let Some(_signal) = res {
                         if self.state == EngineState::Executing {
                             // Sensitivity Filter (Scope-bound)
                             #[cfg(feature = "presence")]

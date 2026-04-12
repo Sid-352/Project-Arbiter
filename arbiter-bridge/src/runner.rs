@@ -38,9 +38,39 @@ lazy_static::lazy_static! {
 // ── Interpolation ────────────────────────────────────────────────────────────
 
 fn interpolate_str(text: &str, ctx: &EnvContext) -> String {
+    // Two-pass approach:
+    //   1. Find every ${env.<key>} token present in the text.
+    //   2. Resolve each key through ctx.resolve(), which checks the static
+    //      variables map first, then triggers lazy computation (SHA-256, MIME)
+    //      if the key is a content variable and integrity_scan is true.
+    //
+    // This activates the OnceLock resolver chain built in ordinance.rs and
+    // enforces the Signet Guard — surface-only Wards return None for deep vars,
+    // leaving the token unreplaced (safe no-op).
     let mut result = text.to_string();
-    for (k, v) in &ctx.variables {
-        result = result.replace(&format!("${{env.{k}}}"), v);
+
+    // Collect unique env keys referenced in this string to avoid repeated scans.
+    let mut start = 0;
+    while let Some(open) = result[start..].find("${env.") {
+        let open_abs = start + open;
+        if let Some(close) = result[open_abs..].find('}') {
+            let close_abs = open_abs + close;
+            // The key sits between "${env." (6 chars) and '}'
+            let key = result[open_abs + 6..close_abs].to_string();
+            let token = format!("${{env.{key}}}");
+            if let Some(value) = ctx.resolve(&key) {
+                result = result.replacen(&token, value, 1);
+                // After replacement the string may be shorter; re-scan from
+                // where the replacement ended rather than after the token.
+                start = open_abs + value.len();
+            } else {
+                // Key unknown or Signet Guard blocked it — leave token as-is
+                // and advance past it so we don't loop forever.
+                start = close_abs + 1;
+            }
+        } else {
+            break; // Malformed token — stop scanning.
+        }
     }
     result
 }

@@ -159,6 +159,8 @@ pub mod fs {
                             }
 
                             let mut context = super::EnvContext::new();
+
+                            // ── Always-present identity variables ───────────────
                             context.insert("file_path", &path_str);
                             context.insert(
                                 "file_name",
@@ -166,17 +168,72 @@ pub mod fs {
                             );
                             context.insert(
                                 "file_ext",
-                                path.extension().and_then(|e| e.to_str()).unwrap_or(""),
+                                path.extension()
+                                    .and_then(|e| e.to_str())
+                                    .unwrap_or(""),
                             );
-                            context.insert(
-                                "timestamp",
-                                &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()),
-                            );
+                            // Trigger timestamp (when the event fired, not file mtime)
+                            let now_unix = std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_secs();
+                            context.insert("timestamp", &now_unix.to_string());
 
-                            // Wire up the lazy resolver: store the real PathBuf
-                            // and propagate the Ward's permission layer.
+                            // ── Layer 1: Physical Attributes (OS metadata) ───────
+                            // Free — no file handles opened, just stat() calls.
+                            if let Ok(meta) = std::fs::metadata(path) {
+                                // Size
+                                let bytes = meta.len();
+                                context.insert("file_size", &bytes.to_string());
+                                context.insert("file_size_human", &format_bytes(bytes));
+
+                                // Timestamps
+                                if let Ok(created) = meta.created() {
+                                    let unix = created
+                                        .duration_since(std::time::UNIX_EPOCH)
+                                        .unwrap_or_default()
+                                        .as_secs();
+                                    context.insert("file_created_unix", &unix.to_string());
+                                }
+                                if let Ok(modified) = meta.modified() {
+                                    let unix = modified
+                                        .duration_since(std::time::UNIX_EPOCH)
+                                        .unwrap_or_default()
+                                        .as_secs();
+                                    // ISO 8601 (UTC, seconds precision)
+                                    let iso = unix_to_iso8601(unix);
+                                    context.insert("file_modified_iso", &iso);
+                                }
+
+                                // Attributes
+                                let readonly = meta.permissions().readonly();
+                                context.insert("file_readonly", &readonly.to_string());
+
+                                #[cfg(windows)]
+                                {
+                                    use std::os::windows::fs::MetadataExt;
+                                    // FILE_ATTRIBUTE_HIDDEN = 0x2
+                                    let hidden = (meta.file_attributes() & 0x2) != 0;
+                                    context.insert("file_hidden", &hidden.to_string());
+                                }
+                                #[cfg(not(windows))]
+                                {
+                                    context.insert("file_hidden", "false");
+                                }
+                            }
+
+                            // Symlink / shortcut check (lstat — does not follow links)
+                            let is_link = std::fs::symlink_metadata(path)
+                                .map(|m| m.file_type().is_symlink())
+                                .unwrap_or(false);
+                            context.insert("file_is_link", &is_link.to_string());
+
+                            // ── Wire up the lazy resolver (Layer 2) ─────────────
+                            // Store the real PathBuf so resolve() can open the file
+                            // on demand. integrity_scan gates the Signet Guard.
                             context.source_path = Some(path.clone());
                             context.integrity_scan = analytical;
+
 
                             let summons = Summons::FileCreated {
                                 watch_path: watch_path.clone(),
@@ -206,7 +263,59 @@ pub mod fs {
             glob == name
         }
     }
-}
+
+    /// Format a byte count into a human-readable string (KB / MB / GB).
+    ///
+    /// Uses 1024-based units to match Windows Explorer conventions.
+    fn format_bytes(bytes: u64) -> String {
+        const KB: u64 = 1_024;
+        const MB: u64 = 1_024 * KB;
+        const GB: u64 = 1_024 * MB;
+        if bytes >= GB {
+            format!("{:.2} GB", bytes as f64 / GB as f64)
+        } else if bytes >= MB {
+            format!("{:.2} MB", bytes as f64 / MB as f64)
+        } else if bytes >= KB {
+            format!("{:.2} KB", bytes as f64 / KB as f64)
+        } else {
+            format!("{} B", bytes)
+        }
+    }
+
+    /// Convert a Unix timestamp (seconds since epoch) to an ISO 8601 UTC string.
+    ///
+    /// Produces the format `YYYY-MM-DDTHH:MM:SSZ` without any external crate.
+    fn unix_to_iso8601(unix: u64) -> String {
+        // Use std::time to derive wall-clock components without chrono.
+        // Simple approach: delegate to a manual decomposition.
+        let secs = unix;
+        let s = secs % 60;
+        let m = (secs / 60) % 60;
+        let h = (secs / 3600) % 24;
+        let days = secs / 86400; // days since 1970-01-01
+
+        // Gregorian calendar decomposition (handles leap years correctly).
+        let (year, month, day) = days_to_ymd(days);
+        format!("{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z")
+    }
+
+    /// Convert days-since-epoch to (year, month, day) using the proleptic Gregorian calendar.
+    fn days_to_ymd(days: u64) -> (u64, u64, u64) {
+        // Algorithm from http://howardhinnant.github.io/date_algorithms.html
+        let z = days + 719468;
+        let era = z / 146097;
+        let doe = z % 146097;
+        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        let y = yoe + era * 400;
+        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        let mp = (5 * doy + 2) / 153;
+        let d = doy - (153 * mp + 2) / 5 + 1;
+        let m = if mp < 10 { mp + 3 } else { mp - 9 };
+        let y = if m <= 2 { y + 1 } else { y };
+        (y, m, d)
+    }
+
+} // end pub mod fs
 
 // ── Global Hotkey Watcher (vigil-keys) ───────────────────────────────────────
 
