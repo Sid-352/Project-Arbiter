@@ -23,6 +23,7 @@ toml       = { workspace = true }
 tracing    = { workspace = true }
 tokio      = { workspace = true }
 regex      = { workspace = true }
+chrono     = { workspace = true }
 
 # Feature: vigil-fs
 notify = { workspace = true, optional = true }

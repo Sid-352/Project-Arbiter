@@ -753,6 +753,7 @@ export component ArbiterForge inherits Window {
     callback select-decree(string);  // arg: decree id
     callback append-step(int);       // arg: step-type to add (0–3)
     callback remove-step(string);    // arg: step id
+    callback request-close;
 
     HorizontalLayout {
 

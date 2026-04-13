@@ -175,8 +175,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         break; // Trigger reconnection / exit
                     }
                     Err(_) => {
-                        tracing::error!("Forge: Watchdog expired (30s silence). Engine likely terminated. Exiting.");
-                        std::process::exit(0);
+                        tracing::error!("Forge: Watchdog expired (2s silence). Engine likely terminated. Requesting graceful exit.");
+                        let _ = ui_handle_telemetry.upgrade_in_event_loop(|ui| {
+                            ui.invoke_request_close();
+                        });
+                        return;
                     }
                 }
             }
@@ -186,6 +189,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
+
+    ui.on_request_close(move || {
+        info!("Forge: Received close request. Terminating event loop.");
+        slint::quit_event_loop().unwrap();
+    });
 
     // COMMIT CHANGES → save-decree
     ui.on_save_decree({

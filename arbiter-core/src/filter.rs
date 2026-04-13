@@ -14,7 +14,9 @@ use std::{
 
 fn normalize_key(path: impl AsRef<Path>) -> String {
     let p = path.as_ref();
-    let abs = if p.is_absolute() {
+    let abs = if p.exists() {
+        std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
+    } else if p.is_absolute() {
         p.to_path_buf()
     } else {
         std::env::current_dir().unwrap_or_default().join(p)

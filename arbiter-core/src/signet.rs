@@ -72,8 +72,20 @@ pub fn save(config: &ArbiterConfig) -> Result<(), String> {
 /// Returns `true` if the given path is within a "Trusted Root".
 pub fn is_path_trusted(config: &ArbiterConfig, path: impl AsRef<Path>) -> bool {
     let path = path.as_ref();
+    
+    // Canonicalize target path (or its parent if it doesn't exist)
+    let canon_target = if path.exists() {
+        std::fs::canonicalize(path).ok()
+    } else {
+        path.parent().and_then(|p| std::fs::canonicalize(p).ok()).map(|p| p.join(path.file_name().unwrap_or_default()))
+    }.unwrap_or_else(|| path.to_path_buf());
+
+    let target_str = canon_target.to_string_lossy();
+
     for root in &config.trusted_paths {
-        if path.starts_with(root) {
+        // Also canonicalize the root for a fair comparison
+        let canon_root = std::fs::canonicalize(root).unwrap_or_else(|_| Path::new(root).to_path_buf());
+        if target_str.starts_with(&canon_root.to_string_lossy().as_ref()) {
             return true;
         }
     }
