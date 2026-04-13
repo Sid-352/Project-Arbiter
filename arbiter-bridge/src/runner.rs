@@ -4,6 +4,7 @@
 //! processes instructions sequentially under a Singleton Queue Lock.
 
 use std::{collections::HashSet, sync::Arc};
+use regex::Regex;
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tracing::{error, info, warn};
 
@@ -26,6 +27,7 @@ pub enum ExecCmd {
         trusted_roots: Vec<String>,
         baton_allowed: HashSet<String>,
         ordinance_id: Option<String>,
+        trigger_time: std::time::Instant,
     },
 }
 
@@ -38,42 +40,22 @@ lazy_static::lazy_static! {
 
 // ── Interpolation ────────────────────────────────────────────────────────────
 
-fn interpolate_str(text: &str, ctx: &EnvContext) -> String {
-    // Two-pass approach:
-    //   1. Find every ${env.<key>} token present in the text.
-    //   2. Resolve each key through ctx.resolve(), which checks the static
-    //      variables map first, then triggers lazy computation (SHA-256, MIME)
-    //      if the key is a content variable and integrity_scan is true.
-    //
-    // This activates the OnceLock resolver chain built in ordinance.rs and
-    // enforces the Signet Guard — surface-only Wards return None for deep vars,
-    // leaving the token unreplaced (safe no-op).
-    let mut result = text.to_string();
+lazy_static::lazy_static! {
+    /// Regex to match ${env.KEY} patterns.
+    static ref ENV_RE: Regex = Regex::new(r"\$\{env\.([^}]+)\}").unwrap();
+}
 
-    // Collect unique env keys referenced in this string to avoid repeated scans.
-    let mut start = 0;
-    while let Some(open) = result[start..].find("${env.") {
-        let open_abs = start + open;
-        if let Some(close) = result[open_abs..].find('}') {
-            let close_abs = open_abs + close;
-            // The key sits between "${env." (6 chars) and '}'
-            let key = result[open_abs + 6..close_abs].to_string();
-            let token = format!("${{env.{key}}}");
-            if let Some(value) = ctx.resolve(&key) {
-                result = result.replacen(&token, value, 1);
-                // After replacement the string may be shorter; re-scan from
-                // where the replacement ended rather than after the token.
-                start = open_abs + value.len();
-            } else {
-                // Key unknown or Signet Guard blocked it — leave token as-is
-                // and advance past it so we don't loop forever.
-                start = close_abs + 1;
-            }
+fn interpolate_str(text: &str, ctx: &EnvContext) -> String {
+    // Replaces all occurrences of ${env.key} with values from the context.
+    // If a key is unknown or the Signet Guard blocks it, the token is left as-is.
+    ENV_RE.replace_all(text, |caps: &regex::Captures| {
+        let key = &caps[1];
+        if let Some(value) = ctx.resolve(key) {
+            value.to_string()
         } else {
-            break; // Malformed token — stop scanning.
+            caps[0].to_string()
         }
-    }
-    result
+    }).into_owned()
 }
 
 fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
@@ -166,6 +148,7 @@ pub fn spawn(
                 trusted_roots,
                 baton_allowed,
                 ordinance_id,
+                trigger_time,
             } = cmd;
 
             info!("Runner: acquiring queue lock");
@@ -173,15 +156,10 @@ pub fn spawn(
             info!("Runner: lock acquired, checking hibernation guard");
 
             // The Hibernation Guard: Discard stale events > 5s
-            if let Some(ts_str) = context.variables.get("timestamp") {
-                if let Ok(ts) = ts_str.parse::<u64>() {
-                    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
-                    if now > ts + 5 {
-                        warn!("Runner: Hibernation Guard triggered — dropping stale event (age > 5s)");
-                        let _ = event_tx.send(RunEvent::Done).await;
-                        continue; // bypass processing
-                    }
-                }
+            if trigger_time.elapsed().as_secs() > 5 {
+                warn!("Runner: Hibernation Guard triggered — dropping stale event (age > 5s)");
+                let _ = event_tx.send(RunEvent::Done).await;
+                continue; // bypass processing
             }
 
             // Idle Telemetry: Log how long the user has been idle before

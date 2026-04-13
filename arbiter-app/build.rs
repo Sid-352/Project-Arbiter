@@ -4,8 +4,8 @@ fn main() {
     #[cfg(windows)]
     {
         let mut res = winres::WindowsResource::new();
-        // Since we are in arbiter-app/, we go up one level then into forge/ui/
-        res.set_icon("../arbiter-forge/ui/icon.ico");
+        // Since we are in arbiter-app/, we go to arbiter-data/
+        res.set_icon("../arbiter-data/icon.ico");
         res.compile().expect("Failed to embed Windows icon resource");
     }
 }

@@ -39,14 +39,13 @@ pub enum TrayAppEvent {
 ///
 /// The returned `TrayIcon` must be kept alive for the icon to remain visible.
 pub fn build_tray() -> Result<(TrayIcon, MenuItem), Box<dyn std::error::Error>> {
-    // Attempt to load the real icon.ico from the forge assets
-    let mut icon_path = std::path::Path::new("arbiter-forge")
-        .join("ui")
+    // Attempt to load the real icon.ico from the data directory
+    let mut icon_path = std::path::Path::new("arbiter-data")
         .join("icon.ico");
 
-    // Fallback for dev environment running from project root
+    // Fallback for dev environment running from inside arbiter-app/
     if !icon_path.exists() {
-        icon_path = std::path::Path::new("ui").join("icon.ico");
+        icon_path = std::path::Path::new("..").join("arbiter-data").join("icon.ico");
     }
 
     let icon = if icon_path.exists() {

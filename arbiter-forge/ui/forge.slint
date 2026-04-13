@@ -707,7 +707,7 @@ component ModalDialog inherits Rectangle {
 // ── Root Window ───────────────────────────────────────────────────────────────
 export component ArbiterForge inherits Window {
     title: "Arbiter Forge";
-    icon: @image-url("icon.ico");
+    icon: @image-url("../../arbiter-data/icon.ico");
     preferred-width: 1120px;
     preferred-height: 780px;
     background: Theme.bg-app;
@@ -718,7 +718,7 @@ export component ArbiterForge inherits Window {
     in-out property <int> active-page: 0;
 
     // ── Modal overlay state ─────────────────────────────────────────────────────
-    property <bool>   show-modal:        false;
+    property <bool> show-modal:        false;
     property <string> modal-title:       "";
     property <string> modal-message:     "";
     /// Tells the Rust confirmed-handler which action to execute.
@@ -732,17 +732,17 @@ export component ArbiterForge inherits Window {
     in property <[DecreeEntry]> decree-list: [];
 
     // ── Step sequence (Rust pushes a VecModel<DecreeStep>) ─────────────────────
-    in property <[DecreeStep]>  decree-steps: [];
+    in property <[DecreeStep]> decree-steps: [];
 
     // ── Summons config (two-way: Rust reads these on save) ──────────────────────
     /// 0=FileSystem  1=Hotkey  2=ProcessAppeared
-    in-out property <int>    summons-trigger-type: 0;
+    in-out property <int> summons-trigger-type: 0;
     in-out property <string> summons-path:         "";
     in-out property <string> summons-glob:         "";
     in-out property <string> summons-combo:        "";
     in-out property <string> summons-process:      "";
     /// 0=Surface  1=Analytical (WardLayer)
-    in-out property <int>    summons-ward-layer:   0;
+    in-out property <int> summons-ward-layer:   0;
 
     // ── Telemetry ───────────────────────────────────────────────────────────────
     in property <[LogEntry]> telemetry-logs: [];
@@ -796,21 +796,27 @@ export component ArbiterForge inherits Window {
                         active: root.active-page == 0;
                         icon-commands: "M 2 6 h 10 v 4 H 2 z M 9 10 l 4 8 M 13 4 l 4 4 M 14 5 l 3 -3 2 2 -3 3";
                         icon-color: root.active-page == 0 ? Theme.accent : Theme.text-secondary;
-                        clicked => { root.active-page = 0; }
+                        clicked => {
+                            root.active-page = 0;
+                        }
                     }
 
                     SidebarItem {
                         label: "Conservatory";
                         active: root.active-page == 1;
                         icon-commands: "M 3 9 l 9 -7 l 9 7 v 11 a 2 2 0 0 1 -2 2 H 5 a 2 2 0 0 1 -2 -2 z M 9 22 V 12 h 6 v 10";
-                        clicked => { root.active-page = 1; }
+                        clicked => {
+                            root.active-page = 1;
+                        }
                     }
 
                     SidebarItem {
                         label: "Signet";
                         active: root.active-page == 2;
                         icon-commands: "M 12 2 L 3 7 v 5 c 0 5.25 3.75 10.15 9 11.25 C 17.25 22.15 21 17.25 21 12 V 7 z";
-                        clicked => { root.active-page = 2; }
+                        clicked => {
+                            root.active-page = 2;
+                        }
                     }
                 }
 
@@ -849,7 +855,9 @@ export component ArbiterForge inherits Window {
                             }
 
                             TouchArea {
-                                clicked => { root.new-decree(); }
+                                clicked => {
+                                    root.new-decree();
+                                }
                             }
                         }
                     }
@@ -863,7 +871,9 @@ export component ArbiterForge inherits Window {
                         label: item.label;
                         active: item.id == root.active-decree-id;
                         decree-status: item.status;
-                        clicked => { root.select-decree(item.id); }
+                        clicked => {
+                            root.select-decree(item.id);
+                        }
                     }
                 }
 
@@ -1080,14 +1090,13 @@ export component ArbiterForge inherits Window {
 
                             // \u2500\u2500 Dynamic step sequence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
                             for step[idx] in root.decree-steps: OrdinanceStep {
-                                title:          step.title;
-                                subtext:        step.subtext;
-                                step-type:      step.step-type;
+                                title: step.title;
+                                subtext: step.subtext;
+                                step-type: step.step-type;
                                 baton-required: step.baton-required;
-                                is-active:      step.is-active;
-                                is-last:        idx == root.decree-steps.length - 1;
+                                is-active: step.is-active;
+                                is-last: idx == root.decree-steps.length - 1;
                             }
-
                             Rectangle {
                                 height: 40px;
                                 border-width: 1px;
@@ -1108,10 +1117,11 @@ export component ArbiterForge inherits Window {
                                 TouchArea {
                                     // Default to step-type 0 (Inscribe).
                                     // Rust will show a picker in a future session.
-                                    clicked => { root.append-step(0); }
+                                    clicked => {
+                                        root.append-step(0);
+                                    }
                                 }
                             }
-
                         }
                     }
                 }

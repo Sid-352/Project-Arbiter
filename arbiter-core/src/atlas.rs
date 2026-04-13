@@ -152,6 +152,7 @@ impl Atlas {
                                 context,
                                 presence_config: ordinance.presence_config,
                                 ordinance_id: Some(key),
+                                trigger_time: Instant::now(),
                                 abort_rx,
                             };
 

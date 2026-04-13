@@ -5,10 +5,12 @@
 //! used by The Atlas, The Vigil, and the UI terminal.
 
 use serde::{Deserialize, Serialize};
+use tracing::warn;
 use std::{
     collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
+    time::Instant,
 };
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -188,6 +190,59 @@ impl Summons {
     }
 }
 
+// ── Environment Keys ─────────────────────────────────────────────────────────
+
+/// Structured keys for environment variables available in macro interpolation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EnvKey {
+    // ── Layer 1: Surface (Always available for file triggers) ──
+    FilePath,
+    FileName,
+    FileExt,
+    FileSize,
+    FileCreated,
+    // ── Layer 2: Analytical (Gated by Integrity Ward) ──
+    ContentSha256,
+    ContentMd5,
+    ContentMime,
+}
+
+impl EnvKey {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::FilePath => "file_path",
+            Self::FileName => "file_name",
+            Self::FileExt => "file_ext",
+            Self::FileSize => "file_size",
+            Self::FileCreated => "file_created",
+            Self::ContentSha256 => "content_sha256",
+            Self::ContentMd5 => "content_md5",
+            Self::ContentMime => "content_mime",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "file_path" => Some(Self::FilePath),
+            "file_name" => Some(Self::FileName),
+            "file_ext" => Some(Self::FileExt),
+            "file_size" => Some(Self::FileSize),
+            "file_created" => Some(Self::FileCreated),
+            "content_sha256" => Some(Self::ContentSha256),
+            "content_md5" => Some(Self::ContentMd5),
+            "content_mime" => Some(Self::ContentMime),
+            _ => None,
+        }
+    }
+
+    pub fn is_analytical(&self) -> bool {
+        matches!(
+            self,
+            Self::ContentSha256 | Self::ContentMd5 | Self::ContentMime
+        )
+    }
+}
+
 // ── Environment Context ───────────────────────────────────────────────────────
 
 /// The payload associated with a fired trigger.
@@ -273,19 +328,22 @@ impl EnvContext {
     ///
     /// Returns `None` if the key is unknown, the Ward layer is insufficient,
     /// or the underlying computation failed (e.g. I/O error).
-    pub fn resolve(&self, key: &str) -> Option<&str> {
+    pub fn resolve(&self, key_str: &str) -> Option<&str> {
         // ── 1. Static map ────────────────────────────────────────────────────
-        if let Some(v) = self.variables.get(key) {
+        if let Some(v) = self.variables.get(key_str) {
             return Some(v.as_str());
         }
 
         // ── 2. Lazy / content-derived keys (Signet Guard) ────────────────────
+        let key = EnvKey::from_str(key_str)?;
+
+        if key.is_analytical() && !self.integrity_scan {
+            warn!(key = %key_str, "Signet Guard: Analytical variable requested but Ward layer is insufficient");
+            return None;
+        }
+
         match key {
-            "content_sha256" => {
-                if !self.integrity_scan {
-                    // Signet Guard: Layer 2 not granted for this Ward.
-                    return None;
-                }
+            EnvKey::ContentSha256 => {
                 self.sha256_cache
                     .get_or_init(|| {
                         self.source_path
@@ -294,10 +352,7 @@ impl EnvContext {
                     })
                     .as_deref()
             }
-            "content_mime" => {
-                if !self.integrity_scan {
-                    return None;
-                }
+            EnvKey::ContentMime => {
                 self.mime_cache
                     .get_or_init(|| {
                         self.source_path
@@ -376,6 +431,7 @@ pub struct ExecData {
     pub context: EnvContext,
     pub presence_config: PresenceConfig,
     pub ordinance_id: Option<String>,
+    pub trigger_time: Instant,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
 }
 

@@ -188,6 +188,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 trusted_roots: map_trusted.iter().cloned().collect(),
                 baton_allowed: map_baton.clone(),
                 ordinance_id: exec_data.ordinance_id,
+                trigger_time: exec_data.trigger_time,
             };
             let _ = exec_cmd_tx.send(cmd).await;
         }
