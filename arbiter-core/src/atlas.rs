@@ -78,11 +78,13 @@ impl Atlas {
     pub async fn run(
         &mut self,
         vigil_rx: &mut mpsc::Receiver<Summons>,
+        vigil_tx: mpsc::Sender<Summons>,
         #[cfg_attr(not(feature = "presence"), allow(unused_variables))]
         presence_rx: &mut mpsc::Receiver<PresenceSignalInner>,
         run_event_rx: &mut mpsc::Receiver<RunEvent>,
         run_tx: mpsc::Sender<ExecData>,
         reset_rx: &mut mpsc::Receiver<()>,
+        forge_cmd_rx: &mut mpsc::Receiver<crate::ordinance::ForgeCommand>,
         shutdown_rx: &mut oneshot::Receiver<()>,
         log_broadcast: tokio::sync::broadcast::Sender<LogEntry>,
     ) {
@@ -110,6 +112,75 @@ impl Atlas {
                             is_error: false,
                             ordinance_id: None,
                         });
+                    }
+                }
+
+                // ── Process Forge Commands ──
+                Some(cmd) = forge_cmd_rx.recv() => {
+                    match cmd {
+                        crate::ordinance::ForgeCommand::SaveDecree(def) => {
+                            info!(%def.id, "Atlas: received SaveDecree command");
+                            
+                            // 1. Update the Ledger on disk
+                            let mut ledger = crate::ledger::load().unwrap_or_default();
+                            // Update or insert
+                            if let Some(existing) = ledger.ordinances.iter_mut().find(|o| o.id == def.id) {
+                                *existing = def.clone();
+                            } else {
+                                ledger.ordinances.push(def.clone());
+                            }
+                            let _ = crate::ledger::save(&ledger);
+
+                            // 2. Hot-reload the registry entry
+                            let summons = match &def.summons {
+                                crate::ledger::SummonsDef::FileCreated { ward_id, glob } => {
+                                    let ward = ledger.wards.iter().find(|w| w.path.to_string_lossy() == *ward_id);
+                                    if let Some(w) = ward {
+                                        Summons::FileCreated {
+                                            watch_path: w.path.clone(),
+                                            glob: glob.clone(),
+                                            context: crate::ordinance::EnvContext::new(),
+                                        }
+                                    } else {
+                                        warn!(%def.id, ward_id, "Atlas: Ward not found for dynamic registration");
+                                        continue;
+                                    }
+                                }
+                                crate::ledger::SummonsDef::Hotkey { combo } => {
+                                    // For simplicity in the prototype, we re-register. 
+                                    // Note: vigil-keys should ideally handle duplicate cleanup.
+                                    let _ = crate::vigil::keys::register_hotkey(combo.clone(), vigil_tx.clone());
+                                    Summons::Hotkey {
+                                        combo: combo.clone(),
+                                        context: crate::ordinance::EnvContext::new(),
+                                    }
+                                }
+                                crate::ledger::SummonsDef::ProcessAppeared { name } => {
+                                    Summons::ProcessAppeared {
+                                        name: name.clone(),
+                                        context: crate::ordinance::EnvContext::new(),
+                                    }
+                                }
+                                crate::ledger::SummonsDef::Manual => Summons::Manual {
+                                    context: crate::ordinance::EnvContext::new(),
+                                },
+                            };
+
+                            self.register_ordinance(
+                                summons.to_registry_key(),
+                                Ordinance {
+                                    nodes: def.nodes,
+                                    presence_config: def.presence_config,
+                                },
+                            );
+
+                            let _ = log_broadcast.send(LogEntry {
+                                tag: "ATLAS".into(),
+                                message: format!("Decree '{}' registered and saved.", def.label),
+                                is_error: false,
+                                ordinance_id: Some(def.id),
+                            });
+                        }
                     }
                 }
 

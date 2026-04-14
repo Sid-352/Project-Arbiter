@@ -1,0 +1,39 @@
+{
+  "version": 0,
+  "wards": [],
+  "ordinances": [
+    {
+      "id": "id-1",
+      "label": "New Decree",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "",
+          "glob": ""
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "id-1"
+          }
+        },
+        {
+          "id": "id-1",
+          "label": "Move File",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:/Destination/\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": false,
+        "ignore_keyboard": false
+      }
+    }
+  ]
+}

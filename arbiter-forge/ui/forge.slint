@@ -185,8 +185,10 @@ component EnvChip inherits Rectangle {
 // ── InputPill ─────────────────────────────────────────────────────────────────
 // Defined here so SummonsBlock and OrdinanceStep (below) can both use it.
 component InputPill inherits Rectangle {
-    in property <string> value;
+    in-out property <string> value;
     in property <color> value-color: Theme.text-main;
+    callback committed(string);
+
     background: Theme.bg-input;
     border-radius: 5px;
     border-width: 1px;
@@ -197,12 +199,21 @@ component InputPill inherits Rectangle {
         padding-left: 12px;
         padding-right: 12px;
         alignment: stretch;
-        Text {
-            text: root.value;
+        TextInput {
+            text <=> root.value;
             color: root.value-color;
             font-size: 11px;
             vertical-alignment: center;
-            height: 34px;
+            single-line: true;
+            
+            accepted => {
+                root.committed(root.value);
+            }
+            changed has-focus => {
+                if (!self.has-focus) {
+                    root.committed(root.value);
+                }
+            }
         }
     }
 }
@@ -287,6 +298,12 @@ component TriggerTab inherits Rectangle {
 // ── SummonsBlock ──────────────────────────────────────────────────────────────
 component SummonsBlock inherits Rectangle {
     in-out property <int> trigger-type: 0;
+    in-out property <string> summons-path;
+    in-out property <string> summons-glob;
+    in-out property <string> summons-combo;
+    in-out property <string> summons-process;
+    in-out property <int> summons-ward-layer: 0;
+
     background: Theme.bg-card;
     border-radius: 10px;
     border-width: 1px;
@@ -338,25 +355,22 @@ component SummonsBlock inherits Rectangle {
             }
 
             InputPill {
-                value: "Z:/Downloads/*.zip";
+                value <=> root.summons-path;
+            }
+            InputPill {
+                value <=> root.summons-glob;
             }
         }
         if root.trigger-type == 1: HorizontalLayout {
             spacing: 10px;
             alignment: stretch;
             EventBadge {
-                label: "CTRL+ALT";
+                label: "CTRL+SHIFT";
                 width: 110px;
             }
 
-            EventBadge {
-                label: "F9";
-                width: 56px;
-            }
-
             InputPill {
-                value: "Trigger label (optional)";
-                value-color: Theme.text-muted;
+                value <=> root.summons-combo;
             }
         }
         if root.trigger-type == 2: HorizontalLayout {
@@ -368,22 +382,16 @@ component SummonsBlock inherits Rectangle {
             }
 
             InputPill {
-                value: "chrome.exe";
+                value <=> root.summons-process;
             }
         }
         if root.trigger-type == 0: HorizontalLayout {
             spacing: 6px;
             alignment: start;
             StatusChip {
-                label: "LAYER 1 \u{00B7} SURFACE";
-                chip-color: Theme.success;
+                label: root.summons-ward-layer == 0 ? "LAYER 1 \u{00B7} SURFACE" : "LAYER 2 \u{00B7} ANALYTICAL";
+                chip-color: root.summons-ward-layer == 0 ? Theme.success : Theme.warning;
                 width: 118px;
-            }
-
-            StatusChip {
-                label: "WARD \u{00B7} Z:/";
-                chip-color: Theme.accent;
-                width: 82px;
             }
         }
     }
@@ -398,6 +406,10 @@ component OrdinanceStep inherits Rectangle {
     in property <bool> is-editing: false;
     in property <int> step-type: 3;
     in property <bool> baton-required: false;
+    in-out property <string> arg-a;
+    in-out property <string> arg-b;
+    callback edited(string, string);
+
     property <color> type-color:
         root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : Theme.text-muted;
     property <string> type-label:
@@ -536,24 +548,27 @@ component OrdinanceStep inherits Rectangle {
                 spacing: 8px;
                 alignment: stretch;
                 InputPill {
-                    value: "Z:/Downloads/${env.file_name}";
+                    value <=> root.arg-a;
+                    committed(v) => { root.edited(v, root.arg-b); }
                 }
 
                 InputPill {
-                    value: "C:/Archive/";
-                    value-color: Theme.text-muted;
+                    value <=> root.arg-b;
+                    committed(v) => { root.edited(root.arg-a, v); }
                 }
             }
             if root.step-type == 1: HorizontalLayout {
                 spacing: 8px;
                 alignment: stretch;
                 InputPill {
-                    value: "ffmpeg.exe";
+                    value <=> root.arg-a;
                     width: 120px;
+                    committed(v) => { root.edited(v, root.arg-b); }
                 }
 
                 InputPill {
-                    value: "--input ${env.file_path} --output C:/out/";
+                    value <=> root.arg-b;
+                    committed(v) => { root.edited(root.arg-a, v); }
                 }
             }
             if root.step-type == 2: HorizontalLayout {
@@ -566,7 +581,8 @@ component OrdinanceStep inherits Rectangle {
                 }
 
                 InputPill {
-                    value: "Hello, ${env.file_name}";
+                    value <=> root.arg-a;
+                    committed(v) => { root.edited(v, root.arg-b); }
                 }
             }
             if root.step-type == 3: Text {
@@ -753,6 +769,7 @@ export component ArbiterForge inherits Window {
     callback select-decree(string);  // arg: decree id
     callback append-step(int);       // arg: step-type to add (0–3)
     callback remove-step(string);    // arg: step id
+    callback step-edited(int, string, string); // arg: idx, arg-a, arg-b
     callback request-close;
 
     HorizontalLayout {
@@ -970,7 +987,7 @@ export component ArbiterForge inherits Window {
                     VerticalLayout {
                         alignment: center;
                         Text {
-                            text: "Archive Automation";
+                            text: root.active-decree-label;
                             font-size: 15px;
                             font-weight: 600;
                             color: Theme.text-main;
@@ -1056,6 +1073,11 @@ export component ArbiterForge inherits Window {
                             // selection survives theme toggles and rebuilds.
                             SummonsBlock {
                                 trigger-type <=> root.summons-trigger-type;
+                                summons-path <=> root.summons-path;
+                                summons-glob <=> root.summons-glob;
+                                summons-combo <=> root.summons-combo;
+                                summons-process <=> root.summons-process;
+                                summons-ward-layer <=> root.summons-ward-layer;
                             }
                         }
 
@@ -1097,6 +1119,12 @@ export component ArbiterForge inherits Window {
                                 baton-required: step.baton-required;
                                 is-active: step.is-active;
                                 is-last: idx == root.decree-steps.length - 1;
+                                arg-a: step.arg-a;
+                                arg-b: step.arg-b;
+                                is-editing: true; 
+                                edited(a, b) => {
+                                    root.step-edited(idx, a, b);
+                                }
                             }
                             Rectangle {
                                 height: 40px;

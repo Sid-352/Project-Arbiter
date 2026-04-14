@@ -2,8 +2,8 @@ slint::include_modules!();
 
 use std::rc::Rc;
 use std::time::Duration;
-use slint::{ComponentHandle, Model, ModelRc, VecModel, Color};
-use tracing::info;
+use slint::{ComponentHandle, Model, ModelRc, VecModel, Color, SharedString};
+use tracing::{info, warn};
 
 thread_local! {
     static LOG_MODEL:    Rc<VecModel<LogEntry>>    = Rc::new(VecModel::default());
@@ -21,53 +21,129 @@ fn next_id() -> slint::SharedString {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Smoke-test seed data — replaced by ledger.json in Session 2.
+//  Commands
 // ─────────────────────────────────────────────────────────────────────────────
-fn seed_models() {
-    DECREE_MODEL.with(|m| {
-        m.push(DecreeEntry {
-            id:     "decree-1".into(),
-            label:  "Archive Automation".into(),
-            status: 1,
-        });
-        m.push(DecreeEntry {
-            id:     "decree-2".into(),
-            label:  "Registry Scrubber".into(),
-            status: 2,
-        });
+
+async fn send_command(cmd: &arbiter_core::ordinance::ForgeCommand) {
+    use tokio::net::windows::named_pipe::ClientOptions;
+    use tokio::io::AsyncWriteExt;
+    let pipe_name = r"\\.\pipe\arbiter_command";
+    if let Ok(mut client) = ClientOptions::new().open(pipe_name) {
+        if let Ok(json) = serde_json::to_string(cmd) {
+            let _ = client.write_all(json.as_bytes()).await;
+            let _ = client.write_all(b"\n").await;
+        }
+    }
+}
+
+fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::OrdinanceDef {
+    let id = ui.get_active_decree_id().to_string();
+    let label = ui.get_active_decree_label().to_string();
+    
+    let trigger_type = ui.get_summons_trigger_type();
+    let summons = match trigger_type {
+        0 => arbiter_core::ledger::SummonsDef::FileCreated {
+            ward_id: ui.get_summons_path().to_string(),
+            glob: ui.get_summons_glob().to_string(),
+        },
+        1 => arbiter_core::ledger::SummonsDef::Hotkey {
+            combo: ui.get_summons_combo().to_string(),
+        },
+        2 => arbiter_core::ledger::SummonsDef::ProcessAppeared {
+            name: ui.get_summons_process().to_string(),
+        },
+        _ => arbiter_core::ledger::SummonsDef::Manual,
+    };
+
+    let mut nodes = Vec::new();
+    // Entry node
+    nodes.push(arbiter_core::ordinance::OrdNode {
+        id: "entry".into(),
+        label: "Start".into(),
+        kind: arbiter_core::ordinance::NodeKind::Entry,
+        internal_state: "".into(),
+        next_nodes: std::collections::HashMap::new(),
     });
 
+    // Map DecreeStep -> OrdNode
     STEP_MODEL.with(|m| {
-        m.push(DecreeStep {
-            id:             "step-1".into(),
-            title:          "Successive Size Check".into(),
-            subtext:        "Awaiting stability pulse".into(),
-            step_type:      3,   // Steady
-            is_active:      true,
-            baton_required: false,
-            arg_a:          "".into(),
-            arg_b:          "".into(),
-        });
-        m.push(DecreeStep {
-            id:             "step-2".into(),
-            title:          "Atomic Relocation".into(),
-            subtext:        "Move verified artifact to vault".into(),
-            step_type:      0,   // Inscribe
-            is_active:      false,
-            baton_required: false,
-            arg_a:          "${env.file_path}".into(),
-            arg_b:          "C:/Archive/".into(),
-        });
-        m.push(DecreeStep {
-            id:             "step-3".into(),
-            title:          "Shell Dispatch".into(),
-            subtext:        "Firing post-process signal".into(),
-            step_type:      1,   // Shell
-            is_active:      false,
-            baton_required: true,
-            arg_a:          "7z.exe".into(),
-            arg_b:          "a archive.zip ${env.file_path}".into(),
-        });
+        for i in 0..m.row_count() {
+            if let Some(step) = m.row_data(i) {
+                let action_type = match step.step_type {
+                    0 => arbiter_core::ordinance::ActionType::InscribeMove {
+                        source: step.arg_a.to_string().into(),
+                        destination: step.arg_b.to_string().into(),
+                    },
+                    1 => arbiter_core::ordinance::ActionType::Shell {
+                        command: step.arg_a.to_string(),
+                        args: step.arg_b.split_whitespace().map(|s| s.to_string()).collect(),
+                        detached: true,
+                    },
+                    2 => arbiter_core::ordinance::ActionType::Type(step.arg_a.to_string()),
+                    _ => arbiter_core::ordinance::ActionType::Wait(1000),
+                };
+
+                let action = arbiter_core::ordinance::Action {
+                    action_type,
+                    point: None,
+                    delay_ms: 0,
+                };
+
+                let step_id = format!("id-{}", i + 1);
+                let next_id = if i + 1 < m.row_count() {
+                    format!("id-{}", i + 2)
+                } else {
+                    "".to_string()
+                };
+
+                let mut next_nodes = std::collections::HashMap::new();
+                if !next_id.is_empty() {
+                    next_nodes.insert("Next".into(), next_id);
+                }
+
+                nodes.push(arbiter_core::ordinance::OrdNode {
+                    id: step_id,
+                    label: step.title.to_string(),
+                    kind: arbiter_core::ordinance::NodeKind::Action,
+                    internal_state: serde_json::to_string(&action).unwrap_or_default(),
+                    next_nodes,
+                });
+            }
+        }
+    });
+
+    // Fix the first node link if we have steps
+    if nodes.len() > 1 {
+        if let Some(entry) = nodes.iter_mut().find(|n| n.kind == arbiter_core::ordinance::NodeKind::Entry) {
+            entry.next_nodes.insert("Next".into(), "id-1".into());
+        }
+    }
+
+    arbiter_core::ledger::OrdinanceDef {
+        id,
+        label,
+        summons,
+        nodes,
+        presence_config: arbiter_core::ordinance::PresenceConfig::default(),
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Ledger Logic
+// ─────────────────────────────────────────────────────────────────────────────
+
+fn load_ledger_into_ui() {
+    let ledger = arbiter_core::ledger::load().unwrap_or_default();
+    
+    DECREE_MODEL.with(|m| {
+        while m.row_count() > 0 { m.remove(0); }
+        for ord in &ledger.ordinances {
+            m.push(DecreeEntry {
+                id: SharedString::from(&ord.id),
+                label: SharedString::from(&ord.label),
+                status: 1, // Ok/Loaded
+            });
+        }
     });
 }
 
@@ -76,7 +152,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     info!("Arbiter Forge: Launching Slint Interface");
 
-    seed_models();
+    // Start with data from disk
+    load_ledger_into_ui();
 
     let ui = ArbiterForge::new()?;
     let ui_handle = ui.as_weak();
@@ -99,9 +176,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ordinance_id: "".into(),
     });
 
-    // Select the first decree by default
-    ui.set_active_decree_id("decree-1".into());
-    ui.set_active_decree_label("Archive Automation".into());
+    // Select the first decree by default if it exists
+    DECREE_MODEL.with(|m| {
+        if let Some(first) = m.row_data(0) {
+            ui.set_active_decree_id(first.id);
+            ui.set_active_decree_label(first.label);
+            // We manually trigger the selection logic below to populate steps
+        }
+    });
 
     // ── Telemetry: Named Pipe from arbiter-app ────────────────────────────────
     let ui_handle_telemetry = ui_handle.clone();
@@ -126,7 +208,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let mut framed = FramedRead::new(client, LinesCodec::new());
 
-            // The Watchdog: If we get zero data for 30s, the engine is dead.
             loop {
                 match timeout(watchdog_duration, framed.next()).await {
                     Ok(Some(Ok(line))) => {
@@ -168,11 +249,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     Ok(Some(Err(e))) => {
                         tracing::error!("Forge: telemetry pipe error: {}", e);
-                        break; // Trigger reconnection
+                        break; 
                     }
                     Ok(None) => {
                         tracing::warn!("Forge: telemetry pipe closed by engine.");
-                        break; // Trigger reconnection / exit
+                        break;
                     }
                     Err(_) => {
                         tracing::error!("Forge: Watchdog expired (2s silence). Engine likely terminated. Requesting graceful exit.");
@@ -183,7 +264,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
     });
@@ -197,21 +277,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // COMMIT CHANGES → save-decree
     ui.on_save_decree({
-        let step_model = step_model.clone();
-        let decree_model = decree_model.clone();
         let ui_handle = ui_handle.clone();
         move || {
-            let active_id = ui_handle.upgrade()
-                .map(|u| u.get_active_decree_id().to_string())
-                .unwrap_or_default();
-            let step_count = step_model.row_count();
-            info!(
-                decree_id = %active_id,
-                step_count,
-                "Forge: save-decree — persisting to ledger (Session 2)"
-            );
-            // TODO Session 2: serialize and send over arbiter_command pipe
-            let _ = decree_model; // silence unused warning until Session 2
+            if let Some(ui) = ui_handle.upgrade() {
+                let def = collect_ordinance_from_ui(&ui);
+                let cmd = arbiter_core::ordinance::ForgeCommand::SaveDecree(def);
+                tokio::spawn(async move {
+                    send_command(&cmd).await;
+                });
+                
+                // Refresh sidebar list to reflect any label changes
+                load_ledger_into_ui();
+            }
         }
     });
 
@@ -235,28 +312,99 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(ui) = ui_handle.upgrade() {
                 ui.set_active_decree_id(id);
                 ui.set_active_decree_label("New Decree".into());
+                // Reset summons properties for new decree
+                ui.set_summons_trigger_type(0);
+                ui.set_summons_path("".into());
+                ui.set_summons_glob("".into());
+                ui.set_summons_combo("".into());
+                ui.set_summons_process("".into());
             }
         }
     });
 
     // Sidebar item click → select-decree
     ui.on_select_decree({
-        let decree_model = decree_model.clone();
         let ui_handle    = ui_handle.clone();
         move |id| {
             info!(decree_id = %id, "Forge: select-decree");
-            // Find the label for the selected decree and update the topbar
-            let label = (0..decree_model.row_count())
-                .find_map(|i| {
-                    let d = decree_model.row_data(i)?;
-                    if d.id == id { Some(d.label) } else { None }
-                })
-                .unwrap_or_else(|| "Unknown".into());
-            if let Some(ui) = ui_handle.upgrade() {
-                ui.set_active_decree_id(id);
-                ui.set_active_decree_label(label);
+            let ledger = arbiter_core::ledger::load().unwrap_or_default();
+            if let Some(ord) = ledger.ordinances.iter().find(|o| id == o.id) {
+                if let Some(ui) = ui_handle.upgrade() {
+                    ui.set_active_decree_id(ord.id.clone().into());
+                    ui.set_active_decree_label(ord.label.clone().into());
+                    
+                    // Sync Summons
+                    match &ord.summons {
+                        arbiter_core::ledger::SummonsDef::FileCreated { ward_id, glob } => {
+                            ui.set_summons_trigger_type(0);
+                            ui.set_summons_path(ward_id.clone().into());
+                            ui.set_summons_glob(glob.clone().into());
+                        }
+                        arbiter_core::ledger::SummonsDef::Hotkey { combo } => {
+                            ui.set_summons_trigger_type(1);
+                            ui.set_summons_combo(combo.clone().into());
+                        }
+                        arbiter_core::ledger::SummonsDef::ProcessAppeared { name } => {
+                            ui.set_summons_trigger_type(2);
+                            ui.set_summons_process(name.clone().into());
+                        }
+                        arbiter_core::ledger::SummonsDef::Manual => {
+                            ui.set_summons_trigger_type(3);
+                        }
+                    }
+
+                    // Sync Steps
+                    STEP_MODEL.with(|m| {
+                        while m.row_count() > 0 { m.remove(0); }
+                        for node in &ord.nodes {
+                            if node.kind == arbiter_core::ordinance::NodeKind::Action {
+                                if let Ok(action) = serde_json::from_str::<arbiter_core::ordinance::Action>(&node.internal_state) {
+                                    let (step_type, arg_a, arg_b) = match &action.action_type {
+                                        arbiter_core::ordinance::ActionType::InscribeMove { source, destination } => {
+                                            (0, source.to_string_lossy().to_string(), destination.to_string_lossy().to_string())
+                                        }
+                                        arbiter_core::ordinance::ActionType::Shell { command, args, .. } => {
+                                            (1, command.clone(), args.join(" "))
+                                        }
+                                        arbiter_core::ordinance::ActionType::Type(s) => {
+                                            (2, s.clone(), "".to_string())
+                                        }
+                                        arbiter_core::ordinance::ActionType::Wait(ms) => {
+                                            (3, ms.to_string(), "".to_string())
+                                        }
+                                        _ => (3, "".to_string(), "".to_string()),
+                                    };
+
+                                    m.push(DecreeStep {
+                                        id: node.id.clone().into(),
+                                        title: node.label.clone().into(),
+                                        subtext: "".into(),
+                                        step_type,
+                                        is_active: false,
+                                        baton_required: step_type == 1,
+                                        arg_a: arg_a.into(),
+                                        arg_b: arg_b.into(),
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
             }
-            // TODO Session 2: load steps for this decree from the ledger
+        }
+    });
+
+    ui.on_step_edited({
+        let step_model = step_model.clone();
+        move |idx, a, b| {
+            if let Some(mut row) = step_model.row_data(idx as usize) {
+                if row.arg_a == a && row.arg_b == b {
+                    return;
+                }
+                row.arg_a = a;
+                row.arg_b = b;
+                step_model.set_row_data(idx as usize, row);
+            }
         }
     });
 
@@ -285,7 +433,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // Remove step (not yet wired to a UI button — callback ready for Session 1b)
+    // Remove step
     ui.on_remove_step({
         let step_model = step_model.clone();
         move |step_id| {

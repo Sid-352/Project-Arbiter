@@ -10,14 +10,14 @@
 use std::{sync::Arc, time::Duration};
 use tokio::sync::{broadcast, mpsc};
 use tokio_util::codec::{FramedWrite, LinesCodec};
-use futures::SinkExt;
+use futures::{SinkExt, StreamExt};
 use tracing::info;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
 use arbiter_core::{
     atlas::Atlas,
     filter::ArbiterFilter,
-    ordinance::{ExecData, LogEntry, NodeKind, OrdNode, WardConfig, WardLayer},
+    ordinance::{ExecData, LogEntry},
 };
 
 mod tray;
@@ -84,9 +84,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!(r#"
     
-    █▀▀█ █▀▀█ █▀▀█ ░▀░ ▀▀█▀▀ █▀▀ █▀▀█
-    █▄▄█ █▄▄▀ █▀▀▄ ▀█▀ ░░█░░ █▀▀ █▄▄▀
-    ▀  ▀ ▀ ▀▀ ▀▀▀▀ ▀▀▀ ░░▀░░ ▀▀▀ ▀ ▀▀
+    █▀▀█ █▀▀█ █▀▀█ ▀█▀ ▀▀█▀▀ █▀▀ █▀▀█
+    █▄▄█ █▄▄▀ █▀▀▄  █    █   █▀▀ █▄▄▀
+    ▀  ▀ ▀ ▀▀ ▀▀▀▀ ▀▀▀   ▀   ▀▀▀ ▀ ▀▀
     Deterministic System Orchestration
     
     "#);
@@ -104,13 +104,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (atlas_shutdown_tx, mut atlas_shutdown_rx) = tokio::sync::oneshot::channel();
     let (atlas_exec_tx, mut atlas_exec_rx) = mpsc::channel::<ExecData>(100);
     let (reset_tx, mut reset_rx) = mpsc::channel::<()>(1);
+    let (forge_cmd_tx, mut forge_cmd_rx) = mpsc::channel::<arbiter_core::ordinance::ForgeCommand>(10);
 
     // IPC Broadcast for Named Pipe consumers
     let (log_broadcast_tx, _) = broadcast::channel::<LogEntry>(1024);
 
     // ── Components ────────────────────────────────────────────────────────────
 
-    // IPC Server: Named Pipe \\.\pipe\arbiter_telemetry
+    // IPC Server (Telemetry): Named Pipe \\.\pipe\arbiter_telemetry
     let ipc_broadcast = log_broadcast_tx.clone();
     tokio::spawn(async move {
         use tokio::net::windows::named_pipe::ServerOptions;
@@ -130,6 +131,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     while let Ok(entry) = rx.recv().await {
                         if let Ok(json) = serde_json::to_string(&entry) {
                             if framed.send(json).await.is_err() { break; }
+                        }
+                    }
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    });
+
+    // IPC Server (Commands): Named Pipe \\.\pipe\arbiter_command
+    let cmd_tx = forge_cmd_tx.clone();
+    tokio::spawn(async move {
+        use tokio::net::windows::named_pipe::ServerOptions;
+        use tokio_util::codec::FramedRead;
+        let pipe_name = r"\\.\pipe\arbiter_command";
+        loop {
+            let server = ServerOptions::new()
+                .first_pipe_instance(true)
+                .create(pipe_name)
+                .or_else(|_| ServerOptions::new().create(pipe_name));
+
+            if let Ok(server) = server {
+                if server.connect().await.is_ok() {
+                    let (reader, _) = tokio::io::split(server);
+                    let mut framed = FramedRead::new(reader, LinesCodec::new());
+                    while let Some(res) = framed.next().await {
+                        if let Ok(line) = res {
+                            if let Ok(cmd) = serde_json::from_str::<arbiter_core::ordinance::ForgeCommand>(&line) {
+                                let _ = cmd_tx.send(cmd).await;
+                            }
                         }
                     }
                 }
@@ -195,99 +225,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // 3. Spawn Watchers
-    let _ = arbiter_core::vigil::keys::register_hotkey("Ctrl+Shift+D".into(), vigil_tx.clone());
-    info!("Vigil: hotkey monitor active (Ctrl+Shift+D)");
-
-    if let Some(downloads) = dirs::download_dir() {
-        arbiter_core::vigil::fs::spawn_watcher(
-            WardConfig { path: downloads.clone(), glob: "*.zip".into(), layer: WardLayer::Surface },
-            filter.clone(),
-            vigil_tx.clone(),
-        );
-        info!("Vigil: filesystem watcher active on {:?}", downloads);
-    }
-    
     arbiter_core::presence::spawn_monitor(presence_tx, filter.clone());
     info!("Vigil: presence monitoring active");
 
-    // 4. Initialise Atlas
+    // 4. Initialise Atlas & Load Ledger
     let mut atlas = Atlas::new();
-    
-    // Smoke Test 1: The Macro
-    let macro_nodes = vec![
-        OrdNode {
-            id: "1".into(),
-            label: "Start".into(),
-            kind: NodeKind::Entry,
-            internal_state: "".into(),
-            next_nodes: [("Next".into(), "7".into())].into(),
-        },
-        OrdNode {
-            id: "7".into(),
-            label: "Presence Buffer".into(),
-            kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Wait":1500},"point":null,"delay_ms":0}"#.into(),
-            next_nodes: [("Next".into(), "2".into())].into(),
-        },
-        OrdNode {
-            id: "2".into(),
-            label: "Open Start".into(),
-            kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Navigate":"super"},"point":null,"delay_ms":0}"#.into(),
-            next_nodes: [("Next".into(), "3".into())].into(),
-        },
-        OrdNode {
-            id: "3".into(),
-            label: "Wait".into(),
-            kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Wait":500},"point":null,"delay_ms":0}"#.into(),
-            next_nodes: [("Next".into(), "4".into())].into(),
-        },
-        OrdNode {
-            id: "4".into(),
-            label: "Type Discord".into(),
-            kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Type":"discord"},"point":null,"delay_ms":0}"#.into(),
-            next_nodes: [("Next".into(), "5".into())].into(),
-        },
-        OrdNode {
-            id: "5".into(),
-            label: "Wait".into(),
-            kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Wait":800},"point":null,"delay_ms":0}"#.into(),
-            next_nodes: [("Next".into(), "6".into())].into(),
-        },
-        OrdNode {
-            id: "6".into(),
-            label: "Enter".into(),
-            kind: NodeKind::Action,
-            internal_state: r#"{"action_type":{"Navigate":"return"},"point":null,"delay_ms":0}"#.into(),
-            next_nodes: [].into(),
-        },
-    ];
-    atlas.register_ordinance(
-        "Hotkey|Ctrl+Shift+D".into(),
-        arbiter_core::ordinance::Ordinance {
-            nodes: macro_nodes,
-            presence_config: arbiter_core::ordinance::PresenceConfig {
-                ignore_mouse: true,
-                ignore_keyboard: false,
-            },
-        },
-    );
+    let ledger = arbiter_core::ledger::load().unwrap_or_default();
+    arbiter_core::ledger::apply(&ledger, &mut atlas, &vigil_tx, &filter);
     info!("Atlas: engine core ready");
 
     // 5. Spawn Atlas loop
     let atlas_broadcast = log_broadcast_tx.clone();
     let atlas_loop_broadcast = atlas_broadcast.clone();
+    let atlas_vigil_tx = vigil_tx.clone();
     tokio::spawn(async move {
         atlas.run(
             &mut vigil_rx,
+            atlas_vigil_tx,
             #[cfg(feature = "presence")] &mut presence_rx,
             #[cfg(not(feature = "presence"))] &mut tokio::sync::mpsc::channel(1).1,
             &mut run_event_rx,
             atlas_exec_tx.clone(),
             &mut reset_rx,
+            &mut forge_cmd_rx,
             &mut atlas_shutdown_rx,
             atlas_loop_broadcast.clone(),
         ).await;

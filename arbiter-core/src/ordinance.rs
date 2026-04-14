@@ -108,9 +108,11 @@ pub enum WardLayer {
 /// The Vigil itself makes no policy decisions — it only fires events.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WardConfig {
+    /// Unique identifier for this Ward.
+    pub id: String,
     /// The absolute path of the directory to be watched.
     pub path: PathBuf,
-    /// Glob pattern for filename matching (e.g. `"*.zip"`). Empty = match all.
+    /// Glob pattern for filename matching (e.g. "*.zip"). Empty = match all.
     pub glob: String,
     /// The permission layer granted to this Ward.
     pub layer: WardLayer,
@@ -476,6 +478,13 @@ pub enum IoCommand {
     SaveGraph(String),
     /// Load the persisted sequence graph from disk.
     LoadGraph,
+}
+
+/// Commands sent from the Forge UI to the Arbiter Engine.
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ForgeCommand {
+    /// Save a new or updated ordinance definition.
+    SaveDecree(crate::ledger::OrdinanceDef),
 }
 
 /// Responses from the I/O worker thread.
