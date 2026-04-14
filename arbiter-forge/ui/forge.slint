@@ -96,6 +96,7 @@ component SidebarItem inherits Rectangle {
     in property <bool> icon-filled: false;
     in property <color> icon-color: root.active ? Theme.accent : Theme.text-secondary;
     callback clicked;
+    callback remove; // New delete callback for decrees
     height: 36px;
     border-radius: 6px;
     background: root.active ? Theme.accent-subtle : (ta.has-hover ? (Theme.is-dark ? #ffffff08 : #00000008) : transparent);
@@ -131,13 +132,34 @@ component SidebarItem inherits Rectangle {
             animate color { duration: 150ms; }
         }
 
-        if root.decree-status != 0: VerticalLayout {
+        if root.decree-status != 0 && !ta.has-hover: VerticalLayout {
             alignment: center;
             Rectangle {
                 width: 7px;
                 height: 7px;
                 border-radius: 4px;
                 background: root.decree-status == 1 ? Theme.success : root.decree-status == 2 ? Theme.warning : Theme.critical;
+            }
+        }
+
+        // ── Delete Button (only visible on hover or active) ──
+        if ta.has-hover || root.active: VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 20px;
+                height: 20px;
+                border-radius: 4px;
+                background: ta-del.has-hover ? #f43f5e20 : transparent;
+                Text {
+                    text: "\u{2715}"; // X mark
+                    color: ta-del.has-hover ? Theme.critical : Theme.text-muted;
+                    font-size: 10px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                ta-del := TouchArea {
+                    clicked => { root.remove(); }
+                }
             }
         }
     }
@@ -192,9 +214,10 @@ component InputPill inherits Rectangle {
     background: Theme.bg-input;
     border-radius: 5px;
     border-width: 1px;
-    border-color: Theme.border;
+    border-color: ta.has-hover ? Theme.accent : Theme.border;
     height: 34px;
     horizontal-stretch: 1;
+    animate border-color { duration: 150ms; }
     HorizontalLayout {
         padding-left: 12px;
         padding-right: 12px;
@@ -216,6 +239,7 @@ component InputPill inherits Rectangle {
             }
         }
     }
+    ta := TouchArea { }
 }
 
 // ── EventBadge ────────────────────────────────────────────────────────────────
@@ -409,6 +433,7 @@ component OrdinanceStep inherits Rectangle {
     in-out property <string> arg-a;
     in-out property <string> arg-b;
     callback edited(string, string);
+    callback remove();
 
     property <color> type-color:
         root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : Theme.text-muted;
@@ -417,7 +442,7 @@ component OrdinanceStep inherits Rectangle {
     background: Theme.bg-card;
     border-radius: Theme.radius;
     border-width: 1px;
-    border-color: root.is-editing ? Theme.accent : (ta.has-hover ? Theme.border-hover : Theme.border);
+    border-color: root.is-editing ? Theme.accent : Theme.border;
     animate border-color { duration: 150ms; }
     if !root.is-last: Rectangle {
         x: 25px;
@@ -634,10 +659,37 @@ component OrdinanceStep inherits Rectangle {
                     }
                 }
             }
+
+            Rectangle { height: 4px; }
+
+            // ── Step Actions ──
+            HorizontalLayout {
+                alignment: end;
+                Rectangle {
+                    width: 80px;
+                    height: 24px;
+                    border-radius: 4px;
+                    background: ta-del.has-hover ? Theme.critical : transparent;
+                    border-width: 1px;
+                    border-color: Theme.critical;
+                    animate background { duration: 100ms; }
+                    Text {
+                        text: "DELETE STEP";
+                        color: ta-del.has-hover ? white : Theme.critical;
+                        font-size: 8px;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    ta-del := TouchArea {
+                        clicked => {
+                            root.remove();
+                        }
+                    }
+                }
+            }
         }
     }
-
-    ta := TouchArea { }
 }
 
 // ── ModalDialog Overlay ───────────────────────────────────────────────────────
@@ -769,6 +821,7 @@ export component ArbiterForge inherits Window {
     callback select-decree(string);  // arg: decree id
     callback append-step(int);       // arg: step-type to add (0–3)
     callback remove-step(string);    // arg: step id
+    callback remove-decree(string);  // arg: decree id
     callback step-edited(int, string, string); // arg: idx, arg-a, arg-b
     callback request-close;
 
@@ -891,6 +944,9 @@ export component ArbiterForge inherits Window {
                         decree-status: item.status;
                         clicked => {
                             root.select-decree(item.id);
+                        }
+                        remove => {
+                            root.remove-decree(item.id);
                         }
                     }
                 }
@@ -1124,6 +1180,9 @@ export component ArbiterForge inherits Window {
                                 is-editing: true; 
                                 edited(a, b) => {
                                     root.step-edited(idx, a, b);
+                                }
+                                remove => {
+                                    root.remove-step(step.id);
                                 }
                             }
                             Rectangle {

@@ -181,7 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(first) = m.row_data(0) {
             ui.set_active_decree_id(first.id);
             ui.set_active_decree_label(first.label);
-            // We manually trigger the selection logic below to populate steps
+            // selection logic below
         }
     });
 
@@ -433,7 +433,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // Remove step
+    ui.on_remove_decree({
+        let ui_handle = ui_handle.clone();
+        move |id| {
+            info!(decree_id = %id, "Forge: remove-decree");
+            let mut ledger = arbiter_core::ledger::load().unwrap_or_default();
+            ledger.ordinances.retain(|o| id != o.id);
+            let _ = arbiter_core::ledger::save(&ledger);
+            
+            // Refresh UI
+            load_ledger_into_ui();
+            
+            // If the deleted one was active, clear the canvas
+            if let Some(ui) = ui_handle.upgrade() {
+                if ui.get_active_decree_id() == id {
+                    ui.set_active_decree_id("".into());
+                    ui.set_active_decree_label("No Decree Selected".into());
+                    STEP_MODEL.with(|m| {
+                        while m.row_count() > 0 { m.remove(0); }
+                    });
+                }
+            }
+        }
+    });
+
     ui.on_remove_step({
         let step_model = step_model.clone();
         move |step_id| {
