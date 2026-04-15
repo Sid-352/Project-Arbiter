@@ -6,7 +6,7 @@
 use std::fs;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
-use tracing::{info, error, warn};
+use tracing::{info, warn};
 use tokio::sync::mpsc;
 
 use crate::atlas::Atlas;

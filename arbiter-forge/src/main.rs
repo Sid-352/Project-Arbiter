@@ -3,7 +3,7 @@ slint::include_modules!();
 use std::rc::Rc;
 use std::time::Duration;
 use slint::{ComponentHandle, Model, ModelRc, VecModel, Color, SharedString};
-use tracing::{info, warn};
+use tracing::info;
 
 thread_local! {
     static LOG_MODEL:    Rc<VecModel<LogEntry>>    = Rc::new(VecModel::default());
@@ -181,7 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(first) = m.row_data(0) {
             ui.set_active_decree_id(first.id);
             ui.set_active_decree_label(first.label);
-            // selection logic below
+            ui.set_active_decree_status(first.status);
         }
     });
 
@@ -213,6 +213,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Ok(Some(Ok(line))) => {
                         match serde_json::from_str::<CoreLogEntry>(&line) {
                             Ok(core_entry) => {
+                                // Skip heartbeat messages to prevent terminal flooding
+                                if core_entry.tag == "VIGIL" && core_entry.message.contains("Heartbeat") {
+                                    continue;
+                                }
+
                                 let ui_copy = ui_handle_telemetry.clone();
 
                                 let tag_color = match core_entry.tag.as_str() {
@@ -233,13 +238,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     ordinance_id: core_entry.ordinance_id.unwrap_or_default().into(),
                                 };
 
-                                let _ = ui_copy.upgrade_in_event_loop(move |_ui| {
+                                let _ = ui_copy.upgrade_in_event_loop(move |ui| {
                                     LOG_MODEL.with(|m| {
                                         m.push(entry);
                                         if m.row_count() > 50 {
                                             m.remove(0);
                                         }
                                     });
+                                    ui.invoke_scroll_logs_to_bottom();
                                 });
                             }
                             Err(e) => {
@@ -312,6 +318,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(ui) = ui_handle.upgrade() {
                 ui.set_active_decree_id(id);
                 ui.set_active_decree_label("New Decree".into());
+                ui.set_active_decree_status(0);
+                ui.set_selected_step_id("".into());
                 // Reset summons properties for new decree
                 ui.set_summons_trigger_type(0);
                 ui.set_summons_path("".into());
@@ -332,6 +340,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(ui) = ui_handle.upgrade() {
                     ui.set_active_decree_id(ord.id.clone().into());
                     ui.set_active_decree_label(ord.label.clone().into());
+                    ui.set_active_decree_status(1); // Assuming stable if loaded
+                    ui.set_selected_step_id("".into());
                     
                     // Sync Summons
                     match &ord.summons {
@@ -396,14 +406,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     ui.on_step_edited({
         let step_model = step_model.clone();
-        move |idx, a, b| {
-            if let Some(mut row) = step_model.row_data(idx as usize) {
-                if row.arg_a == a && row.arg_b == b {
-                    return;
+        move |id, a, b| {
+            for i in 0..step_model.row_count() {
+                if let Some(mut row) = step_model.row_data(i) {
+                    if row.id == id {
+                        if row.arg_a == a && row.arg_b == b {
+                            return;
+                        }
+                        row.arg_a = a;
+                        row.arg_b = b;
+                        step_model.set_row_data(i, row);
+                        break;
+                    }
                 }
-                row.arg_a = a;
-                row.arg_b = b;
-                step_model.set_row_data(idx as usize, row);
             }
         }
     });
@@ -411,6 +426,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // + Append Action Step
     ui.on_append_step({
         let step_model = step_model.clone();
+        let ui_handle = ui_handle.clone();
         move |step_type| {
             let id = next_id();
             let (title, subtext, arg_a, arg_b) = match step_type {
@@ -421,7 +437,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             info!(step_type, new_id = %id, "Forge: append-step");
             step_model.push(DecreeStep {
-                id,
+                id:             id.clone(),
                 title:          title.into(),
                 subtext:        subtext.into(),
                 step_type,
@@ -430,6 +446,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 arg_a:          arg_a.into(),
                 arg_b:          arg_b.into(),
             });
+            if let Some(ui) = ui_handle.upgrade() {
+                ui.set_selected_step_id(id);
+            }
         }
     });
 
@@ -449,6 +468,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if ui.get_active_decree_id() == id {
                     ui.set_active_decree_id("".into());
                     ui.set_active_decree_label("No Decree Selected".into());
+                    ui.set_active_decree_status(0);
                     STEP_MODEL.with(|m| {
                         while m.row_count() > 0 { m.remove(0); }
                     });
@@ -470,6 +490,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
+    });
+
+    ui.on_copy_env(move |text| {
+        #[cfg(windows)]
+        {
+            use std::process::{Command, Stdio};
+            use std::io::Write;
+            info!("Copying to clipboard: {}", text);
+            if let Ok(mut child) = Command::new("clip").stdin(Stdio::piped()).spawn() {
+                if let Some(mut stdin) = child.stdin.take() {
+                    let _ = stdin.write_all(text.as_bytes());
+                }
+                let _ = child.wait();
+            }
+        }
+    });
+
+    ui.on_active_decree_renamed(move |id, new_label| {
+        info!(id = %id, label = %new_label, "Forge: active-decree-renamed");
+        DECREE_MODEL.with(|m| {
+            for i in 0..m.row_count() {
+                if let Some(mut entry) = m.row_data(i) {
+                    if entry.id == id {
+                        entry.label = new_label.clone().into();
+                        m.set_row_data(i, entry);
+                        break;
+                    }
+                }
+            }
+        });
     });
 
     // ── Run UI ────────────────────────────────────────────────────────────────

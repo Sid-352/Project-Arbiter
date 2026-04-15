@@ -10,7 +10,7 @@
 
 use crate::filter::ArbiterFilter;
 use tokio::sync::mpsc;
-use tracing::{debug, info, trace};
+use tracing::{info, trace};
 
 // ── Presence Signal ───────────────────────────────────────────────────────────
 
