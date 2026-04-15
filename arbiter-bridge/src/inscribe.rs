@@ -42,16 +42,43 @@ impl From<std::io::Error> for InscribeError {
 }
 
 /// Verify a path is under at least one trusted root before any write.
+/// Performs canonicalization to prevent path traversal (e.g. ..\..\).
 fn assert_trusted(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
     let path = path.as_ref();
-    let path_str = path.to_string_lossy();
+    
+    // Canonicalize the path to resolve symlinks and '..' components.
+    // If the path doesn't exist yet (common for destinations), canonicalize the parent.
+    let canonical_path = if path.exists() {
+        std::fs::canonicalize(path)?
+    } else if let Some(parent) = path.parent() {
+        // If parent exists, canonicalize it and join the filename.
+        // If parent doesn't exist, we'll create it later, but for the check
+        // we keep going up until we find something that exists or hit the root.
+        let mut curr = parent;
+        while !curr.exists() && curr.parent().is_some() {
+            curr = curr.parent().unwrap();
+        }
+        std::fs::canonicalize(curr)?.join(path.file_name().unwrap_or_default())
+    } else {
+        path.to_path_buf()
+    };
+
+    let path_str = canonical_path.to_string_lossy();
+    
     if trusted_roots
         .iter()
-        .any(|root| path_str.starts_with(root.as_str()))
+        .any(|root| {
+            // Also canonicalize the trusted root for a fair comparison
+            if let Ok(canon_root) = std::fs::canonicalize(root) {
+                path_str.starts_with(&canon_root.to_string_lossy().as_ref())
+            } else {
+                path_str.starts_with(root.as_str())
+            }
+        })
     {
         return Ok(());
     }
-    warn!(%path_str, "Inscribe: Conservatory rejected path");
+    warn!(%path_str, "Inscribe: Conservatory rejected path (Traversal or Untrusted)");
     Err(InscribeError::NotTrusted(path_str.to_string()))
 }
 

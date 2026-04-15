@@ -14,7 +14,46 @@ license = "MIT"
 description = "Industrial-grade deterministic system orchestration."
 
 [workspace.dependencies]
-toml = "0.8"
+# ── Core Framework ──
+tokio              = { version = "1", features = ["full"] }
+tokio-util         = { version = "0.7", features = ["net", "codec", "io-util"] }
+futures            = "0.3"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender   = "0.2"
+
+# ── Serialization & Config ──
+serde              = { version = "1", features = ["derive"] }
+serde_json         = "1"
+toml               = "0.8"
+regex              = "1"
+lazy_static        = "1.4"
+
+# ── OS & UI ──
+chrono             = "0.4"
+dirs               = "5.0"
+image              = "0.25"
+windows            = { version = "0.58", features = ["Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_SystemInformation", "Win32_Foundation"] }
+winres             = "0.1"
+slint              = { version = "1.15", features = ["renderer-winit-skia", "image-default-formats"] }
+slint-build        = "1.15"
+tao                = "0.30"
+tray-icon          = "0.19"
+
+# ── Feature Crates ──
+notify             = "6"
+global-hotkey      = "0.6"
+rdev               = "0.5"
+enigo              = "0.2"
+walkdir            = "2"
+sha2               = "0.10"
+infer              = "0.16"
+aes-gcm            = "0.10"
+base64             = "0.22"
+hostname           = "0.4"
+typenum            = "1.17"
+sysinfo            = "0.30"
+tempfile           = "3.10"
 
 [profile.release]
 opt-level = "z"

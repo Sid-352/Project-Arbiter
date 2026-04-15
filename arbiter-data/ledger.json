@@ -1,0 +1,30 @@
+{
+  "version": 0,
+  "wards": [],
+  "ordinances": [
+    {
+      "id": "id-1",
+      "label": "Sid",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "",
+          "glob": ""
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": false,
+        "ignore_keyboard": false
+      }
+    }
+  ]
+}

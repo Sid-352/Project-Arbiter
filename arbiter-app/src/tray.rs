@@ -35,18 +35,17 @@ pub enum TrayAppEvent {
 
 // ── Icon Builder ──────────────────────────────────────────────────────────────
 
-/// Build and return the system tray icon.
+/// Build and return the system tray icon and the status menu item handle.
 ///
 /// The returned `TrayIcon` must be kept alive for the icon to remain visible.
-pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
-    // Attempt to load the real icon.ico from the forge assets
-    let mut icon_path = std::path::Path::new("arbiter-forge")
-        .join("ui")
+pub fn build_tray() -> Result<(TrayIcon, MenuItem), Box<dyn std::error::Error>> {
+    // Attempt to load the real icon.ico from the data directory
+    let mut icon_path = std::path::Path::new("arbiter-data")
         .join("icon.ico");
 
-    // Fallback for dev environment running from project root
+    // Fallback for dev environment running from inside arbiter-app/
     if !icon_path.exists() {
-        icon_path = std::path::Path::new("ui").join("icon.ico");
+        icon_path = std::path::Path::new("..").join("arbiter-data").join("icon.ico");
     }
 
     let icon = if icon_path.exists() {
@@ -83,7 +82,7 @@ pub fn build_tray() -> Result<TrayIcon, Box<dyn std::error::Error>> {
         .build()?;
 
     info!("Tray icon built and visible");
-    Ok(tray)
+    Ok((tray, status_item))
 }
 
 fn build_fallback_icon() -> Result<tray_icon::Icon, Box<dyn std::error::Error>> {
@@ -101,17 +100,23 @@ fn build_fallback_icon() -> Result<tray_icon::Icon, Box<dyn std::error::Error>> 
 /// Must be called on the main thread (Windows COM / Cocoa requirement).
 /// `on_quit` is a `FnOnce` consumed exactly once from whichever exit branch
 /// fires first (menu Quit or engine-initiated Shutdown).
-pub fn run_event_loop(on_event: impl Fn(TrayAppEvent) + 'static) {
+pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoopProxy<TrayAppEvent>) + 'static) {
     use tao::event::Event;
     use tray_icon::menu::MenuEvent;
+    use std::sync::{Arc, Mutex};
 
     let event_loop = EventLoopBuilder::<TrayAppEvent>::with_user_event().build();
+    let proxy = event_loop.create_proxy();
+
+    // Track spawned terminal processes to kill them on exit
+    let children = Arc::new(Mutex::new(Vec::<std::process::Child>::new()));
 
     // Build tray inside the event loop (Windows COM requirement).
-    let _tray = build_tray().expect("Failed to build system tray");
+    let (tray, status_item) = build_tray().expect("Failed to build system tray");
 
     info!("Arbiter tray event loop starting");
 
+    let children_quit = children.clone();
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
@@ -120,15 +125,20 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent) + 'static) {
             let id = menu_event.id.0.as_str();
 
             if id == "quit" {
-                info!("Tray: Quit selected — initiating shutdown");
-                on_event(TrayAppEvent::Shutdown);
+                info!("Tray: Quit selected — killing children and shutting down");
+                if let Ok(mut kids) = children_quit.lock() {
+                    for mut child in kids.drain(..) {
+                        let _ = child.kill();
+                    }
+                }
+                on_event(TrayAppEvent::Shutdown, proxy.clone());
                 *control_flow = ControlFlow::Exit;
                 return;
             }
 
             if id == "reset" {
                 info!("Tray: Reset requested");
-                on_event(TrayAppEvent::Reset);
+                on_event(TrayAppEvent::Reset, proxy.clone());
             }
 
             if id == "terminal" {
@@ -148,8 +158,13 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent) + 'static) {
                     }
                 }
 
-                if let Err(e) = std::process::Command::new(term_path).spawn() {
-                    tracing::error!(%e, "Failed to spawn Terminal process");
+                match std::process::Command::new(term_path).spawn() {
+                    Ok(child) => {
+                        if let Ok(mut kids) = children.lock() {
+                            kids.push(child);
+                        }
+                    }
+                    Err(e) => tracing::error!(%e, "Failed to spawn Terminal process"),
                 }
             }
         }
@@ -159,15 +174,21 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent) + 'static) {
             match app_event {
                 TrayAppEvent::StatusUpdate(msg) => {
                     info!(%msg, "Tray: status update");
-                    // TODO: update tray tooltip via tray-icon API
+                    let _ = tray.set_tooltip(Some(format!("Arbiter — {}", msg)));
+                    status_item.set_text(format!("Arbiter — {}", msg));
                 }
                 TrayAppEvent::Shutdown => {
-                    info!("Tray: engine-initiated shutdown");
-                    on_event(TrayAppEvent::Shutdown);
+                    info!("Tray: engine-initiated shutdown — killing children");
+                    if let Ok(mut kids) = children_quit.lock() {
+                        for mut child in kids.drain(..) {
+                            let _ = child.kill();
+                        }
+                    }
+                    on_event(TrayAppEvent::Shutdown, proxy.clone());
                     *control_flow = ControlFlow::Exit;
                 }
                 TrayAppEvent::Reset => {
-                    on_event(TrayAppEvent::Reset);
+                    on_event(TrayAppEvent::Reset, proxy.clone());
                 }
             }
         }

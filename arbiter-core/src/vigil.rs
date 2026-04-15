@@ -18,6 +18,7 @@ pub mod sys;
 
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
+use chrono::{DateTime, Utc, TimeZone};
 
 use crate::ordinance::{EnvContext, Summons, WardConfig, WardLayer};
 
@@ -200,9 +201,9 @@ pub mod fs {
                                         .duration_since(std::time::UNIX_EPOCH)
                                         .unwrap_or_default()
                                         .as_secs();
-                                    // ISO 8601 (UTC, seconds precision)
-                                    let iso = unix_to_iso8601(unix);
-                                    context.insert("file_modified_iso", &iso);
+                                    // ISO 8601 using chrono
+                                    let dt: DateTime<Utc> = Utc.timestamp_opt(unix as i64, 0).unwrap();
+                                    context.insert("file_modified_iso", &dt.to_rfc3339());
                                 }
 
                                 // Attributes
@@ -280,39 +281,6 @@ pub mod fs {
         } else {
             format!("{} B", bytes)
         }
-    }
-
-    /// Convert a Unix timestamp (seconds since epoch) to an ISO 8601 UTC string.
-    ///
-    /// Produces the format `YYYY-MM-DDTHH:MM:SSZ` without any external crate.
-    fn unix_to_iso8601(unix: u64) -> String {
-        // Use std::time to derive wall-clock components without chrono.
-        // Simple approach: delegate to a manual decomposition.
-        let secs = unix;
-        let s = secs % 60;
-        let m = (secs / 60) % 60;
-        let h = (secs / 3600) % 24;
-        let days = secs / 86400; // days since 1970-01-01
-
-        // Gregorian calendar decomposition (handles leap years correctly).
-        let (year, month, day) = days_to_ymd(days);
-        format!("{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z")
-    }
-
-    /// Convert days-since-epoch to (year, month, day) using the proleptic Gregorian calendar.
-    fn days_to_ymd(days: u64) -> (u64, u64, u64) {
-        // Algorithm from http://howardhinnant.github.io/date_algorithms.html
-        let z = days + 719468;
-        let era = z / 146097;
-        let doe = z % 146097;
-        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-        let y = yoe + era * 400;
-        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-        let mp = (5 * doy + 2) / 153;
-        let d = doy - (153 * mp + 2) / 5 + 1;
-        let m = if mp < 10 { mp + 3 } else { mp - 9 };
-        let y = if m <= 2 { y + 1 } else { y };
-        (y, m, d)
     }
 
 } // end pub mod fs

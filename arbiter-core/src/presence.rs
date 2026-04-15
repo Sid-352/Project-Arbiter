@@ -10,7 +10,7 @@
 
 use crate::filter::ArbiterFilter;
 use tokio::sync::mpsc;
-use tracing::{debug, info};
+use tracing::{info, trace};
 
 // ── Presence Signal ───────────────────────────────────────────────────────────
 
@@ -62,7 +62,7 @@ pub fn spawn_monitor(
             };
 
             if let Some(sig) = signal {
-                debug!(?sig, "Presence: input detected");
+                trace!(?sig, "Presence: input detected");
                 // Block briefly to send — tolerable on a dedicated thread.
                 let tx = tx.clone();
                 rt.block_on(async move {
