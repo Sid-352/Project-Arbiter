@@ -25,6 +25,38 @@
         "ignore_mouse": false,
         "ignore_keyboard": false
       }
+    },
+    {
+      "id": "edge-shortcut",
+      "label": "Open Edge",
+      "summons": {
+        "type": "Hotkey",
+        "data": {
+          "combo": "Ctrl+Alt+U"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "step-1"
+          }
+        },
+        {
+          "id": "step-1",
+          "label": "Launch Edge",
+          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"C:\\\\Program Files (x86)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"args\":[],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
     }
   ]
 }

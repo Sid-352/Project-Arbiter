@@ -314,6 +314,10 @@ pub mod keys {
         tokio::spawn(async move {
             loop {
                 if let Ok(event) = global_hotkey::GlobalHotKeyEvent::receiver().try_recv() {
+                    // Signet Guard: Only trigger on Press, ignore Release to prevent double execution
+                    if event.state != global_hotkey::HotKeyState::Pressed {
+                        continue;
+                    }
                     debug!(?event, "Vigil-keys: hotkey fired");
                     let mut context = super::EnvContext::new();
                     context.insert("hotkey_combo", &combo);

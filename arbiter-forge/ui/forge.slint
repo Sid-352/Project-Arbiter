@@ -286,8 +286,8 @@ component SummonsBlock inherits Rectangle {
         }
         if root.trigger-type == 1: HorizontalLayout {
             spacing: 10px; alignment: stretch;
-            EventBadge { label: "CTRL+SHIFT"; width: 110px; }
-            InputPill { value <=> root.summons-combo; placeholder: "Enter key combination (e.g. Control+Shift+P)"; }
+            EventBadge { label: "HOTKEY"; width: 110px; }
+            InputPill { value <=> root.summons-combo; placeholder: "Enter key combination (e.g. Ctrl+Alt+U)"; }
         }
         if root.trigger-type == 2: HorizontalLayout {
             spacing: 10px; alignment: stretch;
