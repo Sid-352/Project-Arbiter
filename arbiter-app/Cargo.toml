@@ -15,7 +15,7 @@ default = ["presence"]
 presence = ["arbiter-core/presence"]
 
 [dependencies]
-arbiter-core   = { path = "../arbiter-core", features = ["vigil-fs", "vigil-keys", "signet", "vigil-deep"] }
+arbiter-core   = { path = "../arbiter-core", features = ["vigil-fs", "vigil-keys", "vigil-sys", "signet", "vigil-deep"] }
 arbiter-bridge = { path = "../arbiter-bridge" }
 tao           = { workspace = true }
 tray-icon     = { workspace = true }

@@ -11,7 +11,8 @@ use tracing::{error, info, warn};
 use crate::{hand::HardwareBridge, inscribe, shell};
 use arbiter_core::{
     filter::ArbiterFilter,
-    ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent, LogEntry},
+    ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent, DecreeId},
+    protocol::LogEntry,
 };
 
 // ── Runner Commands ────────────────────────────────────────────────────────
@@ -26,8 +27,9 @@ pub enum ExecCmd {
         // Signet contextual data
         trusted_roots: Vec<String>,
         baton_allowed: HashSet<String>,
-        ordinance_id: Option<String>,
+        ordinance_id: Option<DecreeId>,
         trigger_time: std::time::Instant,
+        dry_run: bool,
     },
 }
 
@@ -149,6 +151,7 @@ pub fn spawn(
                 baton_allowed,
                 ordinance_id,
                 trigger_time,
+                dry_run,
             } = cmd;
 
             info!("Runner: acquiring queue lock");
@@ -168,10 +171,11 @@ pub fn spawn(
             info!(idle_secs = idle, "Runner: user idle time at sequence start");
 
             let _ = event_tx.send(RunEvent::Log(LogEntry {
+                time: chrono::Utc::now().to_rfc3339(),
                 tag: "HAND".into(),
-                message: format!("Macro iteration started (Last User Input: {}s ago)", idle),
+                message: format!("Macro iteration started (Last User Input: {}s ago){}", idle, if dry_run { " [DRY RUN]" } else { "" }),
                 is_error: false,
-                ordinance_id: ordinance_id.clone(),
+                ordinance_id: ordinance_id.as_ref().map(|id| id.0.clone()),
             })).await;
 
             let mut current_idx = 0;
@@ -202,12 +206,16 @@ pub fn spawn(
 
                         // Async Wait: Handle ActionType::Wait without blocking
                         if let ActionType::Wait(ms) = action.action_type {
-                            tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                            if !dry_run {
+                                tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                            } else {
+                                info!(ms, "DRY RUN: Would wait");
+                            }
                             let _ = event_tx.send(RunEvent::Progress(idx)).await;
                             continue;
                         }
 
-                        let exec_result = match action.action_type {
+                        let exec_result = match &action.action_type {
                             // Somatic actions
                             ActionType::Click
                             | ActionType::DoubleClick
@@ -215,61 +223,86 @@ pub fn spawn(
                             | ActionType::Type(_)
                             | ActionType::Scroll(_)
                             | ActionType::Navigate(_) => {
-                                filter.inhibit_presence();
-                                let res = hand.execute(&action);
-                                filter.resume_presence();
-                                res
+                                if !dry_run {
+                                    filter.inhibit_presence();
+                                    let res = hand.execute(&action);
+                                    filter.resume_presence();
+                                    res
+                                } else {
+                                    info!(action = ?action.action_type, "DRY RUN: Would execute somatic action");
+                                    Ok(())
+                                }
                             }
 
                             // Inscribe actions
                             ActionType::InscribeMove {
-                                ref source,
-                                ref destination,
+                                source,
+                                destination,
                             } => {
-                                filter.mark(destination);
-                                let r = inscribe::move_file(
-                                    source,
-                                    destination,
-                                    &trusted_roots,
-                                )
-                                .map_err(|e| e.to_string());
-                                filter.unmark(destination);
-                                r
+                                if !dry_run {
+                                    filter.mark(destination);
+                                    let r = inscribe::move_file(
+                                        source,
+                                        destination,
+                                        &trusted_roots,
+                                    )
+                                    .map_err(|e| e.to_string());
+                                    filter.unmark(destination);
+                                    r
+                                } else {
+                                    info!(?source, ?destination, "DRY RUN: Would move file");
+                                    Ok(())
+                                }
                             }
                             ActionType::InscribeCopy {
-                                ref source,
-                                ref destination,
+                                source,
+                                destination,
                             } => {
-                                filter.mark(destination);
-                                let r = inscribe::copy_file(
-                                    source,
-                                    destination,
-                                    &trusted_roots,
-                                )
-                                .map(|_| ())
-                                .map_err(|e| e.to_string());
-                                filter.unmark(destination);
-                                r
+                                if !dry_run {
+                                    filter.mark(destination);
+                                    let r = inscribe::copy_file(
+                                        source,
+                                        destination,
+                                        &trusted_roots,
+                                    )
+                                    .map(|_| ())
+                                    .map_err(|e| e.to_string());
+                                    filter.unmark(destination);
+                                    r
+                                } else {
+                                    info!(?source, ?destination, "DRY RUN: Would copy file");
+                                    Ok(())
+                                }
                             }
-                            ActionType::InscribeDelete { ref target } => {
-                                inscribe::delete_file(target, &trusted_roots)
-                                    .map_err(|e| e.to_string())
+                            ActionType::InscribeDelete { target } => {
+                                if !dry_run {
+                                    inscribe::delete_file(target, &trusted_roots)
+                                        .map_err(|e| e.to_string())
+                                } else {
+                                    info!(?target, "DRY RUN: Would delete file");
+                                    Ok(())
+                                }
                             }
 
                             // Shell actions
                             ActionType::Shell {
-                                ref command,
-                                ref args,
+                                command,
+                                args,
                                 detached,
                             } => {
-                                let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-                                if detached {
-                                    shell::spawn_detached(command, command, &arg_refs, &baton_allowed)
-                                        .map_err(|e| e.to_string())
+                                if !dry_run {
+                                    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+                                    if *detached {
+                                        shell::spawn_detached(command, command, &arg_refs, &baton_allowed)
+                                            .map_err(|e| e.to_string())
+                                    } else {
+                                        shell::run(command, command, &arg_refs, &baton_allowed)
+                                            .map(|_| ())
+                                            .map_err(|e| e.to_string())
+                                    }
                                 } else {
-                                    shell::run(command, command, &arg_refs, &baton_allowed)
-                                        .map(|_| ())
-                                        .map_err(|e| e.to_string())
+                                    info!(%command, ?args, detached = *detached, "DRY RUN: Would execute shell command");
+                                    Ok(())
                                 }
                             }
                             _ => Ok(()),
@@ -284,10 +317,11 @@ pub fn spawn(
                     Err(e) => {
                         error!(%e, id = %node.id, "Runner: failed to parse JSON action");
                         let _ = event_tx.send(RunEvent::Log(LogEntry {
+                            time: chrono::Utc::now().to_rfc3339(),
                             tag: "HAND".into(),
                             message: format!("Corrupt Action data in step '{}'", node.label),
                             is_error: true,
-                            ordinance_id: ordinance_id.clone(),
+                            ordinance_id: ordinance_id.as_ref().map(|id| id.0.clone()),
                         })).await;
                         let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed ordinance data".into())).await;
                         break;

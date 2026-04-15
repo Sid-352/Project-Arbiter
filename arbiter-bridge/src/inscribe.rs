@@ -12,6 +12,8 @@ use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
 use walkdir::WalkDir;
 
+use globset::{Glob, GlobMatcher};
+
 // ── Directory Jail Guard ──────────────────────────────────────────────────────
 
 /// Error type for Inscribe operations.
@@ -186,12 +188,26 @@ pub fn dry_run_walk(root: &Path, pattern: &str) -> DryRunReport {
     let mut affected = Vec::new();
     let mut warnings = Vec::new();
 
-    let re = regex_for_glob(pattern);
+    let matcher: Option<GlobMatcher> = if !pattern.is_empty() {
+        match Glob::new(pattern) {
+            Ok(g) => Some(g.compile_matcher()),
+            Err(_) => None,
+        }
+    } else {
+        None
+    };
 
     for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
             let name = entry.file_name().to_string_lossy();
-            if re.is_match(&name) {
+            
+            let matched = if let Some(ref m) = matcher {
+                m.is_match(&*name)
+            } else {
+                true
+            };
+
+            if matched {
                 let path = entry.path().to_path_buf();
                 let path_str = path.to_string_lossy().to_lowercase();
 
@@ -206,13 +222,6 @@ pub fn dry_run_walk(root: &Path, pattern: &str) -> DryRunReport {
     }
 
     DryRunReport { affected, warnings }
-}
-
-/// Convert a simple glob pattern (`*.ext`, `prefix*`) to a `regex::Regex`.
-fn regex_for_glob(glob: &str) -> regex::Regex {
-    use regex::Regex;
-    let escaped = regex::escape(glob).replace("\\*", ".*");
-    Regex::new(&format!("(?i)^{escaped}$")).unwrap_or_else(|_| Regex::new(".*").unwrap())
 }
 
 #[cfg(test)]

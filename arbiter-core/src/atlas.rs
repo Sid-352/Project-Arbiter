@@ -14,7 +14,8 @@ use std::{
 use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, error, info, warn};
 
-use crate::ordinance::{push_log, ExecData, LogEntry, NodeKind, OrdNode, Ordinance, PresenceConfig, RunEvent, Summons};
+use crate::ordinance::{DecreeId, EnvContext, ExecData, NodeId, NodeKind, OrdNode, Ordinance, PresenceConfig, RunEvent, Summons};
+use crate::protocol::{ForgeCommand, LogEntry};
 
 #[cfg(feature = "presence")]
 use crate::presence::PresenceSignal;
@@ -43,7 +44,7 @@ pub struct Atlas {
     pub last_start: Option<Instant>,
     pub registry: HashMap<String, Ordinance>,
     pub active_presence_config: PresenceConfig,
-    pub active_ordinance_id: Option<String>,
+    pub active_ordinance_id: Option<DecreeId>,
 
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
@@ -52,6 +53,7 @@ pub struct Atlas {
 impl Atlas {
     pub fn new() -> Self {
         let logs: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(vec![LogEntry {
+            time: chrono::Utc::now().to_rfc3339(),
             tag: "ATLAS".into(),
             message: "Engine boot sequence initiated.".into(),
             is_error: false,
@@ -84,7 +86,7 @@ impl Atlas {
         run_event_rx: &mut mpsc::Receiver<RunEvent>,
         run_tx: mpsc::Sender<ExecData>,
         reset_rx: &mut mpsc::Receiver<()>,
-        forge_cmd_rx: &mut mpsc::Receiver<crate::ordinance::ForgeCommand>,
+        forge_cmd_rx: &mut mpsc::Receiver<ForgeCommand>,
         shutdown_rx: &mut oneshot::Receiver<()>,
         log_broadcast: tokio::sync::broadcast::Sender<LogEntry>,
     ) {
@@ -107,6 +109,7 @@ impl Atlas {
                         info!("Atlas: reset signal received, clearing Faulted state");
                         self.state = EngineState::Idle;
                         let _ = log_broadcast.send(LogEntry {
+                            time: chrono::Utc::now().to_rfc3339(),
                             tag: "ATLAS".into(),
                             message: "Engine fault cleared manually.".into(),
                             is_error: false,
@@ -118,11 +121,14 @@ impl Atlas {
                 // ── Process Forge Commands ──
                 Some(cmd) = forge_cmd_rx.recv() => {
                     match cmd {
-                        crate::ordinance::ForgeCommand::SaveDecree(def) => {
-                            info!(%def.id, "Atlas: received SaveDecree command");
+                        ForgeCommand::SaveDecree(def) => {
+                            info!(id = %def.id, "Atlas: received SaveDecree command");
                             
                             // 1. Update the Ledger on disk
-                            let mut ledger = crate::ledger::load().unwrap_or_default();
+                            let mut ledger = crate::ledger::load().unwrap_or_else(|e| {
+                                error!("Atlas: failed to load ledger for save: {}", e);
+                                crate::ledger::ArbiterLedger::default()
+                            });
                             // Update or insert
                             if let Some(existing) = ledger.ordinances.iter_mut().find(|o| o.id == def.id) {
                                 *existing = def.clone();
@@ -133,36 +139,35 @@ impl Atlas {
 
                             // 2. Hot-reload the registry entry
                             let summons = match &def.summons {
-                                crate::ledger::SummonsDef::FileCreated { ward_id, glob } => {
+                                crate::ledger::SummonsDef::FileCreated { ward_id, pattern } => {
                                     let ward = ledger.wards.iter().find(|w| w.path.to_string_lossy() == *ward_id);
                                     if let Some(w) = ward {
                                         Summons::FileCreated {
                                             watch_path: w.path.clone(),
-                                            glob: glob.clone(),
-                                            context: crate::ordinance::EnvContext::new(),
+                                            pattern: pattern.clone(),
+                                            context: EnvContext::new(),
                                         }
                                     } else {
-                                        warn!(%def.id, ward_id, "Atlas: Ward not found for dynamic registration");
+                                        warn!(id = %def.id, ward_id, "Atlas: Ward not found for dynamic registration");
                                         continue;
                                     }
                                 }
                                 crate::ledger::SummonsDef::Hotkey { combo } => {
-                                    // For simplicity in the prototype, we re-register. 
-                                    // Note: vigil-keys should ideally handle duplicate cleanup.
                                     let _ = crate::vigil::keys::register_hotkey(combo.clone(), vigil_tx.clone());
                                     Summons::Hotkey {
                                         combo: combo.clone(),
-                                        context: crate::ordinance::EnvContext::new(),
+                                        context: EnvContext::new(),
                                     }
                                 }
                                 crate::ledger::SummonsDef::ProcessAppeared { name } => {
+                                    crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
                                     Summons::ProcessAppeared {
                                         name: name.clone(),
-                                        context: crate::ordinance::EnvContext::new(),
+                                        context: EnvContext::new(),
                                     }
                                 }
                                 crate::ledger::SummonsDef::Manual => Summons::Manual {
-                                    context: crate::ordinance::EnvContext::new(),
+                                    context: EnvContext::new(),
                                 },
                             };
 
@@ -175,11 +180,18 @@ impl Atlas {
                             );
 
                             let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
                                 tag: "ATLAS".into(),
                                 message: format!("Decree '{}' registered and saved.", def.label),
                                 is_error: false,
-                                ordinance_id: Some(def.id),
+                                ordinance_id: Some(def.id.0.clone()),
                             });
+                        }
+                        ForgeCommand::ReloadWards => {
+                            // TODO: Implementation for reloading wards (Phase 3)
+                        }
+                        ForgeCommand::ManualRun { summons_key: _ } => {
+                            // TODO: Implementation for manual run (Phase 3)
                         }
                     }
                 }
@@ -190,15 +202,17 @@ impl Atlas {
                         let key = summons.to_registry_key();
                         if let Some(ordinance) = self.registry.get(&key).cloned() {
                             info!(%key, "Atlas: summons matched, dispatching sequence");
-                            self.active_ordinance_id = Some(key.clone());
+                            // active_ordinance_id stores the summon key for now, maybe refactor later to use DecreeId
+                            self.active_ordinance_id = Some(DecreeId(key.clone()));
 
                             let msg = format!("Summons matched: {}", key);
-                            push_log(&self.engine_logs, "ATLAS", &msg, false, self.active_ordinance_id.clone());
+                            push_log(&self.engine_logs, "ATLAS", &msg, false, self.active_ordinance_id.as_ref().map(|id| id.0.clone()));
                             let _ = log_broadcast.send(LogEntry { 
+                                time: chrono::Utc::now().to_rfc3339(),
                                 tag: "ATLAS".into(), 
                                 message: msg, 
                                 is_error: false, 
-                                ordinance_id: self.active_ordinance_id.clone() 
+                                ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone())
                             });
 
                             self.state = EngineState::Executing;
@@ -222,7 +236,7 @@ impl Atlas {
                                 nodes: ordinance.nodes,
                                 context,
                                 presence_config: ordinance.presence_config,
-                                ordinance_id: Some(key),
+                                ordinance_id: self.active_ordinance_id.clone(),
                                 trigger_time: Instant::now(),
                                 abort_rx,
                             };
@@ -292,20 +306,24 @@ impl Atlas {
             "PRESN",
             msg,
             false,
-            self.active_ordinance_id.clone(),
+            self.active_ordinance_id.as_ref().map(|id| id.0.clone()),
         );
         let _ = log_broadcast.send(LogEntry { 
+            time: chrono::Utc::now().to_rfc3339(),
             tag: "PRESN".into(), 
             message: msg.into(), 
             is_error: false,
-            ordinance_id: self.active_ordinance_id.clone(),
+            ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone()),
         });
         warn!("Atlas yielded to human presence");
     }
 
     fn handle_run_event(&mut self, event: RunEvent, log_broadcast: &tokio::sync::broadcast::Sender<LogEntry>) {
         match event {
-            RunEvent::Log(entry) => {
+            RunEvent::Log(mut entry) => {
+                if entry.time.is_empty() {
+                    entry.time = chrono::Utc::now().to_rfc3339();
+                }
                 let _ = log_broadcast.send(entry.clone());
                 if let Ok(mut logs) = self.engine_logs.lock() {
                     logs.push(entry);
@@ -315,12 +333,13 @@ impl Atlas {
                 debug!(idx, "Atlas: node execution complete");
             }
             RunEvent::Panic(msg) => {
-                push_log(&self.engine_logs, "ATLAS", &msg, true, self.active_ordinance_id.clone());
+                push_log(&self.engine_logs, "ATLAS", &msg, true, self.active_ordinance_id.as_ref().map(|id| id.0.clone()));
                 let _ = log_broadcast.send(LogEntry { 
+                    time: chrono::Utc::now().to_rfc3339(),
                     tag: "ATLAS".into(), 
                     message: msg.clone(), 
                     is_error: true,
-                    ordinance_id: self.active_ordinance_id.clone(),
+                    ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone()),
                 });
                 error!(%msg, "Atlas entered Faulted state");
                 self.state = EngineState::Faulted;
@@ -328,12 +347,13 @@ impl Atlas {
             }
             RunEvent::Done => {
                 let msg = "Sequence complete.";
-                push_log(&self.engine_logs, "ATLAS", msg, false, self.active_ordinance_id.clone());
+                push_log(&self.engine_logs, "ATLAS", msg, false, self.active_ordinance_id.as_ref().map(|id| id.0.clone()));
                 let _ = log_broadcast.send(LogEntry { 
+                    time: chrono::Utc::now().to_rfc3339(),
                     tag: "ATLAS".into(), 
                     message: msg.into(), 
                     is_error: false,
-                    ordinance_id: self.active_ordinance_id.clone(),
+                    ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone()),
                 });
                 info!("Atlas sequence complete — returning to Idle");
                 self.state = EngineState::Idle;
@@ -352,7 +372,7 @@ impl Default for Atlas {
 
 // ── Graph Compiler ──────────────────────────────────────────────────────────
 
-pub fn compile_sequence(nodes_map: &HashMap<String, OrdNode>) -> Option<Vec<OrdNode>> {
+pub fn compile_sequence(nodes_map: &HashMap<NodeId, OrdNode>) -> Option<Vec<OrdNode>> {
     let entry = nodes_map.values().find(|n| n.kind == NodeKind::Entry)?;
 
     let mut sequence = Vec::new();
@@ -378,4 +398,26 @@ pub fn compile_sequence(nodes_map: &HashMap<String, OrdNode>) -> Option<Vec<OrdN
     }
 
     Some(sequence)
+}
+
+/// Helper: push a log entry into a shared log buffer, capping at 1 000 lines.
+pub fn push_log(
+    logs: &Arc<Mutex<Vec<LogEntry>>>,
+    tag: &str,
+    msg: &str,
+    is_error: bool,
+    ordinance_id: Option<String>,
+) {
+    if let Ok(mut v) = logs.lock() {
+        if v.len() >= 1_000 {
+            v.remove(0);
+        }
+        v.push(LogEntry {
+            time: chrono::Utc::now().to_rfc3339(),
+            tag: tag.into(),
+            message: msg.into(),
+            is_error,
+            ordinance_id,
+        });
+    }
 }

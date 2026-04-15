@@ -9,9 +9,43 @@ use tracing::warn;
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{OnceLock},
     time::Instant,
 };
+
+// ── Strong ID Types ──────────────────────────────────────────────────────────
+
+/// Unique identifier for an Ordinance (Decree).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct DecreeId(pub String);
+
+impl From<&str> for DecreeId {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
+
+impl std::fmt::Display for DecreeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Unique identifier for a Node within a sequence.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NodeId(pub String);
+
+impl From<&str> for NodeId {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
+
+impl std::fmt::Display for NodeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
@@ -103,17 +137,14 @@ pub enum WardLayer {
 }
 
 /// Runtime configuration for a monitored Ward (watched directory).
-///
-/// Constructed by `main.rs` and passed into `vigil::fs::spawn_watcher`.
-/// The Vigil itself makes no policy decisions — it only fires events.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WardConfig {
     /// Unique identifier for this Ward.
     pub id: String,
     /// The absolute path of the directory to be watched.
     pub path: PathBuf,
-    /// Glob pattern for filename matching (e.g. "*.zip"). Empty = match all.
-    pub glob: String,
+    /// File pattern for filename matching (e.g. "*.zip"). Empty = match all.
+    pub pattern: String,
     /// The permission layer granted to this Ward.
     pub layer: WardLayer,
 }
@@ -139,13 +170,10 @@ pub enum NodeKind {
 }
 
 /// A single node in a compiled Ordinance sequence.
-///
-/// Derived from the graph editor's blueprint, stripped of all visual
-/// perception fields that existed in the Lithos era.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrdNode {
     /// Stable UUID for this node, used for graph wiring.
-    pub id: String,
+    pub id: NodeId,
     /// Human-readable label shown in the editor.
     pub label: String,
     /// The action this node executes (serialised as a string key for the editor).
@@ -153,7 +181,7 @@ pub struct OrdNode {
     pub kind: NodeKind,
     /// Adjacency map: output-port-name → next node UUID.
     #[serde(default)]
-    pub next_nodes: HashMap<String, String>,
+    pub next_nodes: HashMap<String, NodeId>,
 }
 
 // ── Summons (Triggers) ────────────────────────────────────────────────────────
@@ -161,11 +189,11 @@ pub struct OrdNode {
 /// The specific signal that starts or gates a sequence — The Summons.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Summons {
-    /// A file matching `glob` finished writing inside `watch_path`.
+    /// A file matching `pattern` finished writing inside `watch_path`.
     #[cfg(feature = "vigil-fs")]
     FileCreated {
         watch_path: PathBuf,
-        glob: String,
+        pattern: String,
         context: EnvContext,
     },
     /// A user-defined global hotkey combination.
@@ -182,8 +210,8 @@ impl Summons {
         match self {
             #[cfg(feature = "vigil-fs")]
             Self::FileCreated {
-                watch_path, glob, ..
-            } => format!("FileCreated|{}|{}", watch_path.display(), glob),
+                watch_path, pattern, ..
+            } => format!("FileCreated|{}|{}", watch_path.display(), pattern),
             #[cfg(feature = "vigil-keys")]
             Self::Hotkey { combo, .. } => format!("Hotkey|{}", combo),
             Self::ProcessAppeared { name, .. } => format!("ProcessAppeared|{}", name),
@@ -248,38 +276,24 @@ impl EnvKey {
 // ── Environment Context ───────────────────────────────────────────────────────
 
 /// The payload associated with a fired trigger.
-///
-/// Provides variables for string interpolation (e.g., `${env.file_path}`).
-///
-/// **Static variables** (file name, timestamp, etc.) are inserted eagerly by the
-/// Vigil at fire time via [`EnvContext::insert`].
-///
-/// **Lazy variables** (SHA256, MIME type) are computed on first access via
-/// [`EnvContext::resolve`] and cached using [`OnceLock`] — the file is read
-/// at most once per context lifetime regardless of how many times a macro
-/// requests the same hash.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EnvContext {
     /// Eagerly-inserted static variables available to all ordinances.
     pub variables: HashMap<String, String>,
 
     /// The real `PathBuf` of the triggering file, used for lazy resolution.
-    /// Skipped during serialisation — re-populated from `file_path` on load if needed.
     #[serde(skip)]
     pub source_path: Option<PathBuf>,
 
     /// `true` when this Ward has Layer 2 (Analytical) access enabled.
-    /// The Signet Guard in `resolve()` consults this before performing any
-    /// content read; returns `None` if the required layer is not granted.
     #[serde(skip)]
     pub integrity_scan: bool,
 
-    /// Cached SHA-256 hex string. Computed once on first request, then frozen.
-    /// `None` = not yet computed *or* computation failed / not permitted.
+    /// Cached SHA-256 hex string.
     #[serde(skip)]
     sha256_cache: OnceLock<Option<String>>,
 
-    /// Cached MIME type string (e.g. `"application/zip"`). Same lazy semantics.
+    /// Cached MIME type string.
     #[serde(skip)]
     mime_cache: OnceLock<Option<String>>,
 }
@@ -297,9 +311,6 @@ impl Default for EnvContext {
 }
 
 impl Clone for EnvContext {
-    /// Clones the static `variables` map and `source_path`/`integrity_scan` flags.
-    /// The `OnceLock` caches are intentionally reset on clone so each clone
-    /// independently re-computes if needed (avoids cross-clone aliasing).
     fn clone(&self) -> Self {
         Self {
             variables: self.variables.clone(),
@@ -316,27 +327,17 @@ impl EnvContext {
         Self::default()
     }
 
-    /// Insert a static key/value variable (eagerly available to all ordinances).
+    /// Insert a static key/value variable.
     pub fn insert(&mut self, key: &str, value: &str) {
         self.variables.insert(key.to_string(), value.to_string());
     }
 
     /// Resolve a variable by key, performing lazy computation if necessary.
-    ///
-    /// **Resolution order:**
-    /// 1. Static `variables` map (always available).
-    /// 2. Lazy content variables — only if `integrity_scan` is `true`.
-    ///    If the Ward is Surface-only, these return `None` (Signet Guard).
-    ///
-    /// Returns `None` if the key is unknown, the Ward layer is insufficient,
-    /// or the underlying computation failed (e.g. I/O error).
     pub fn resolve(&self, key_str: &str) -> Option<&str> {
-        // ── 1. Static map ────────────────────────────────────────────────────
         if let Some(v) = self.variables.get(key_str) {
             return Some(v.as_str());
         }
 
-        // ── 2. Lazy / content-derived keys (Signet Guard) ────────────────────
         let key = EnvKey::from_str(key_str)?;
 
         if key.is_analytical() && !self.integrity_scan {
@@ -370,13 +371,6 @@ impl EnvContext {
 
 // ── Lazy Content Helpers (vigil-deep) ─────────────────────────────────────────
 
-/// Compute the SHA-256 hex digest of the file at `path`.
-///
-/// Reads the entire file into memory. For very large files the caller should
-/// ensure this is invoked from a blocking context (the Runner already does so
-/// inside `tokio::task::spawn_blocking` where necessary).
-///
-/// Returns `None` on any I/O error.
 #[cfg(feature = "vigil-deep")]
 fn compute_sha256(path: &PathBuf) -> Option<String> {
     use sha2::{Digest, Sha256};
@@ -385,18 +379,13 @@ fn compute_sha256(path: &PathBuf) -> Option<String> {
     Some(format!("{:x}", hash))
 }
 
-/// Stub when `vigil-deep` is not compiled in — always returns `None`.
 #[cfg(not(feature = "vigil-deep"))]
 fn compute_sha256(_path: &PathBuf) -> Option<String> {
     None
 }
 
-/// Detect the MIME type of `path` by inspecting its magic bytes.
-///
-/// Returns `None` on I/O error or unknown format.
 #[cfg(feature = "vigil-deep")]
 fn compute_mime(path: &PathBuf) -> Option<String> {
-    // Read just the first 512 bytes — sufficient for magic-byte detection.
     use std::io::Read;
     let mut buf = [0u8; 512];
     let mut f = std::fs::File::open(path).ok()?;
@@ -404,7 +393,6 @@ fn compute_mime(path: &PathBuf) -> Option<String> {
     infer::get(&buf[..n]).map(|t| t.mime_type().to_string())
 }
 
-/// Stub when `vigil-deep` is not compiled in — always returns `None`.
 #[cfg(not(feature = "vigil-deep"))]
 fn compute_mime(_path: &PathBuf) -> Option<String> {
     None
@@ -412,11 +400,11 @@ fn compute_mime(_path: &PathBuf) -> Option<String> {
 
 // ── Run-time Events ───────────────────────────────────────────────────────────
 
-/// Events emitted by the Atlas FSM to any listening consumers (UI, logger).
+/// Events emitted by the Atlas FSM to any listening consumers.
 #[derive(Debug, Clone)]
 pub enum RunEvent {
     /// A log line to be displayed in the Terminal of Commands.
-    Log(LogEntry),
+    Log(crate::protocol::LogEntry),
     /// The FSM advanced to node at index `usize`.
     Progress(usize),
     /// A non-recoverable fault — engine halted.
@@ -432,65 +420,7 @@ pub struct ExecData {
     pub nodes: Vec<OrdNode>,
     pub context: EnvContext,
     pub presence_config: PresenceConfig,
-    pub ordinance_id: Option<String>,
+    pub ordinance_id: Option<DecreeId>,
     pub trigger_time: Instant,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
-}
-
-/// A single structured log entry.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LogEntry {
-    /// Short category tag shown in the terminal (e.g. "ATLAS", "VIGIL", "HAND").
-    pub tag: String,
-    pub message: String,
-    pub is_error: bool,
-    /// The ID of the ordinance currently executing, if any.
-    pub ordinance_id: Option<String>,
-}
-
-/// Helper: push a log entry into a shared log buffer, capping at 1 000 lines.
-pub fn push_log(
-    logs: &Arc<Mutex<Vec<LogEntry>>>,
-    tag: &str,
-    msg: &str,
-    is_error: bool,
-    ordinance_id: Option<String>,
-) {
-    if let Ok(mut v) = logs.lock() {
-        if v.len() >= 1_000 {
-            v.remove(0);
-        }
-        v.push(LogEntry {
-            tag: tag.into(),
-            message: msg.into(),
-            is_error,
-            ordinance_id,
-        });
-    }
-}
-
-// ── I/O Commands (Ordinance persistence) ─────────────────────────────────────
-
-/// Commands sent from the UI or engine to the I/O worker thread.
-#[derive(Debug)]
-pub enum IoCommand {
-    /// Serialise and persist the current sequence graph.
-    SaveGraph(String),
-    /// Load the persisted sequence graph from disk.
-    LoadGraph,
-}
-
-/// Commands sent from the Forge UI to the Arbiter Engine.
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ForgeCommand {
-    /// Save a new or updated ordinance definition.
-    SaveDecree(crate::ledger::OrdinanceDef),
-}
-
-/// Responses from the I/O worker thread.
-#[derive(Debug)]
-pub enum IoResult {
-    SaveSuccess,
-    LoadSuccess(serde_json::Value),
-    Error(String),
 }

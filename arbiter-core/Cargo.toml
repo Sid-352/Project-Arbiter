@@ -7,7 +7,7 @@ license.workspace = true
 description = "The Atlas, Vigil, Presence, and Signet — the deterministic engine core."
 
 [features]
-default = []
+default = ["vigil-sys"]
 vigil-fs   = ["dep:notify"]
 vigil-keys = ["dep:global-hotkey"]
 vigil-sys  = ["dep:sysinfo"]
@@ -24,6 +24,7 @@ tracing    = { workspace = true }
 tokio      = { workspace = true }
 regex      = { workspace = true }
 chrono     = { workspace = true }
+lazy_static = { workspace = true }
 
 # Feature: vigil-fs
 notify = { workspace = true, optional = true }
@@ -46,3 +47,4 @@ typenum  = { workspace = true, optional = true }
 # Feature: vigil-deep
 sha2  = { workspace = true, optional = true }
 infer = { workspace = true, optional = true }
+globset = "0.4.18"

@@ -19,8 +19,42 @@ pub mod sys;
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 use chrono::{DateTime, Utc, TimeZone};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use crate::ordinance::{EnvContext, Summons, WardConfig, WardLayer};
+
+lazy_static::lazy_static! {
+    /// Tracks the last fire time of event signatures to prevent rapid double-execution.
+    static ref COOLDOWN_MAP: Arc<Mutex<HashMap<String, Instant>>> = Arc::new(Mutex::new(HashMap::new()));
+}
+
+/// The debounce window (milliseconds). Triggers within this window for the same
+/// signature are dropped.
+const DEBOUNCE_MS: u64 = 400;
+
+/// Returns true if the event signature is currently in cooldown.
+fn is_debounced(signature: &str) -> bool {
+    let mut map = COOLDOWN_MAP.lock().unwrap();
+    let now = Instant::now();
+    
+    if let Some(last_fire) = map.get(signature) {
+        if now.duration_since(*last_fire).as_millis() < DEBOUNCE_MS as u128 {
+            debug!(signature, "Vigil: dropping debounced event");
+            return true;
+        }
+    }
+    
+    map.insert(signature.to_string(), now);
+    
+    // Prune old entries occasionally
+    if map.len() > 100 {
+        map.retain(|_, v| now.duration_since(*v).as_millis() < 5000);
+    }
+    
+    false
+}
 
 // ── Shared Event Channel ──────────────────────────────────────────────────────
 
@@ -84,6 +118,7 @@ pub fn is_write_complete(path: &str) -> bool {
 pub mod fs {
     use super::*;
     use notify::{recommended_watcher, Event, EventKind, RecursiveMode, Watcher};
+    use globset::{Glob, GlobMatcher};
 
     /// Spawn a file-system watcher for the Ward described by `ward` and forward
     /// matching `FileCreated` events into `tx`.
@@ -106,10 +141,23 @@ pub mod fs {
         tx: mpsc::Sender<Summons>,
     ) -> std::thread::JoinHandle<()> {
         let watch_path = ward.path.clone();
-        let glob = ward.glob.clone();
+        let pattern = ward.pattern.clone();
         let analytical = ward.layer == WardLayer::Analytical;
 
-        info!(%glob, path = %watch_path.display(), analytical, "Vigil-fs: spawning watcher");
+        info!(%pattern, path = %watch_path.display(), analytical, "Vigil-fs: spawning watcher");
+
+        // Pre-compile glob for performance
+        let matcher: Option<GlobMatcher> = if !pattern.is_empty() {
+            match Glob::new(&pattern) {
+                Ok(g) => Some(g.compile_matcher()),
+                Err(e) => {
+                    warn!(%e, %pattern, "Vigil-fs: invalid pattern, falling back to match-all");
+                    None
+                }
+            }
+        } else {
+            None
+        };
 
         std::thread::spawn(move || {
             let (ntx, nrx) = std::sync::mpsc::channel::<notify::Result<Event>>();
@@ -145,11 +193,10 @@ pub mod fs {
                                 continue;
                             }
 
-                            // Glob filter — simple filename match
-                            if !glob.is_empty() {
-                                let filename =
-                                    path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                                if !matches_glob(&glob, filename) {
+                            // Pattern filter using globset
+                            if let Some(ref m) = matcher {
+                                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                                if !m.is_match(filename) {
                                     continue;
                                 }
                             }
@@ -238,9 +285,15 @@ pub mod fs {
 
                             let summons = Summons::FileCreated {
                                 watch_path: watch_path.clone(),
-                                glob: glob.clone(),
+                                pattern: pattern.clone(),
                                 context,
-                            };                            if tx.blocking_send(summons).is_err() {
+                            };
+
+                            if is_debounced(&summons.to_registry_key()) {
+                                continue;
+                            }
+
+                            if tx.blocking_send(summons).is_err() {
                                 break; // Channel closed — watcher done
                             }
                         }
@@ -252,17 +305,6 @@ pub mod fs {
 
             info!("Vigil-fs: watcher thread exiting");
         })
-    }
-
-    /// Minimal glob: supports `*` as wildcard, case-insensitive on Windows.
-    fn matches_glob(glob: &str, name: &str) -> bool {
-        let glob = glob.to_lowercase();
-        let name = name.to_lowercase();
-        if let Some((prefix, suffix)) = glob.split_once('*') {
-            name.starts_with(prefix) && name.ends_with(suffix)
-        } else {
-            glob == name
-        }
     }
 
     /// Format a byte count into a human-readable string (KB / MB / GB).
@@ -329,6 +371,11 @@ pub mod keys {
                         combo: combo.clone(),
                         context,
                     };
+
+                    if is_debounced(&summons.to_registry_key()) {
+                        continue;
+                    }
+
                     if tx.send(summons).await.is_err() {
                         break;
                     }

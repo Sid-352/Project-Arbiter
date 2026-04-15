@@ -11,7 +11,7 @@ use tokio::sync::mpsc;
 
 use crate::atlas::Atlas;
 use crate::filter::ArbiterFilter;
-use crate::ordinance::{EnvContext, OrdNode, Ordinance, PresenceConfig, Summons, WardConfig};
+use crate::ordinance::{DecreeId, EnvContext, OrdNode, Ordinance, PresenceConfig, Summons, WardConfig};
 
 // ── Persistence Structures ───────────────────────────────────────────────────
 
@@ -26,18 +26,55 @@ pub struct ArbiterLedger {
 /// A named, serializable ordinance definition.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrdinanceDef {
-    pub id: String,
+    pub id: DecreeId,
     pub label: String,
     pub summons: SummonsDef,
     pub nodes: Vec<OrdNode>,
     pub presence_config: PresenceConfig,
 }
 
+impl OrdinanceDef {
+    /// Validates the structural integrity of the ordinance sequence.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.nodes.is_empty() {
+            return Err("Ordinance sequence is empty".into());
+        }
+
+        let mut has_entry = false;
+        let mut node_ids = std::collections::HashSet::new();
+
+        for node in &self.nodes {
+            node_ids.insert(&node.id);
+            if node.kind == crate::ordinance::NodeKind::Entry {
+                has_entry = true;
+            }
+        }
+
+        if !has_entry {
+            return Err("Ordinance sequence is missing an Entry node".into());
+        }
+
+        // Check for orphaned transitions
+        for node in &self.nodes {
+            for (port, target_id) in &node.next_nodes {
+                if !node_ids.contains(target_id) {
+                    return Err(format!(
+                        "Node '{}' transition '{}' points to non-existent node '{}'",
+                        node.label, port, target_id
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 /// Serializable trigger definition (mirrors Summons but without runtime fields).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum SummonsDef {
-    FileCreated { ward_id: String, glob: String },
+    FileCreated { ward_id: String, pattern: String },
     Hotkey { combo: String },
     ProcessAppeared { name: String },
     Manual,
@@ -101,7 +138,7 @@ pub fn apply(
     // 2. Register Ordinances
     for def in &ledger.ordinances {
         let summons = match &def.summons {
-            SummonsDef::FileCreated { ward_id, glob } => {
+            SummonsDef::FileCreated { ward_id, pattern } => {
                 // Find the ward to get the path
                 let ward = ledger.wards.iter().find(|w| {
                     w.path.to_string_lossy() == *ward_id
@@ -110,7 +147,7 @@ pub fn apply(
                 if let Some(w) = ward {
                     Summons::FileCreated {
                         watch_path: w.path.clone(),
-                        glob: glob.clone(),
+                        pattern: pattern.clone(),
                         context: EnvContext::new(),
                     }
                 } else {
@@ -126,6 +163,7 @@ pub fn apply(
                 }
             }
             SummonsDef::ProcessAppeared { name } => {
+                crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
                 Summons::ProcessAppeared {
                     name: name.clone(),
                     context: EnvContext::new(),

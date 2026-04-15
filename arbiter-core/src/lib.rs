@@ -9,6 +9,7 @@
 
 pub mod atlas;
 pub mod ordinance;
+pub mod protocol;
 pub mod ledger;
 
 #[cfg(any(feature = "vigil-fs", feature = "vigil-keys"))]
