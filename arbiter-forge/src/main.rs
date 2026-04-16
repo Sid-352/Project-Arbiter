@@ -43,11 +43,12 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
     let id = DecreeId(ui.get_active_decree_id().to_string());
     let label = ui.get_active_decree_label().to_string();
     
-    let trigger_type = ui.get_summons_trigger_type();
-    let summons = match trigger_type {
+    let _trigger_type = ui.get_summons_trigger_type();
+    let summons = match ui.get_summons_trigger_type() {
         0 => SummonsDef::FileCreated {
             ward_id: ui.get_summons_path().to_string(),
             pattern: ui.get_summons_pattern().to_string(),
+            recursive: ui.get_summons_ward_recursive(),
         },
         1 => SummonsDef::Hotkey {
             combo: ui.get_summons_combo().to_string(),
@@ -57,6 +58,7 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
         },
         _ => SummonsDef::Manual,
     };
+
 
     let mut nodes = Vec::new();
     // Entry node
@@ -73,9 +75,18 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
         for i in 0..m.row_count() {
             if let Some(step) = m.row_data(i) {
                 let action_type = match step.step_type {
-                    0 => ActionType::InscribeMove {
-                        source: step.arg_a.to_string().into(),
-                        destination: step.arg_b.to_string().into(),
+                    0 => {
+                        if step.subtext.contains("Copy") {
+                            ActionType::InscribeCopy {
+                                source: step.arg_a.to_string().into(),
+                                destination: step.arg_b.to_string().into(),
+                            }
+                        } else {
+                            ActionType::InscribeMove {
+                                source: step.arg_a.to_string().into(),
+                                destination: step.arg_b.to_string().into(),
+                            }
+                        }
                     },
                     1 => ActionType::Shell {
                         command: step.arg_a.to_string(),
@@ -415,10 +426,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     
                     // Sync Summons
                     match &ord.summons {
-                        SummonsDef::FileCreated { ward_id, pattern } => {
+                        SummonsDef::FileCreated { ward_id, pattern, recursive } => {
                             ui.set_summons_trigger_type(0);
                             ui.set_summons_path(ward_id.clone().into());
                             ui.set_summons_pattern(pattern.clone().into());
+                            ui.set_summons_ward_recursive(*recursive);
                         }
                         SummonsDef::Hotkey { combo } => {
                             ui.set_summons_trigger_type(1);
@@ -439,29 +451,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         for node in &ord.nodes {
                             if node.kind == NodeKind::Action {
                                 if let Ok(action) = serde_json::from_str::<Action>(&node.internal_state) {
-                                    let (step_type, arg_a, arg_b) = match &action.action_type {
+                                    let (step_type, arg_a, arg_b, subtext) = match &action.action_type {
                                         ActionType::InscribeMove { source, destination } => {
-                                            (0, source.to_string_lossy().to_string(), destination.to_string_lossy().to_string())
+                                            (0, source.to_string_lossy().to_string(), destination.to_string_lossy().to_string(), "Inscribe: Move Mode".to_string())
+                                        }
+                                        ActionType::InscribeCopy { source, destination } => {
+                                            (0, source.to_string_lossy().to_string(), destination.to_string_lossy().to_string(), "Inscribe: Copy Mode".to_string())
                                         }
                                         ActionType::Shell { command, args, .. } => {
-                                            (1, command.clone(), args.join(" "))
+                                            (1, command.clone(), args.join(" "), "Shell: execute program".to_string())
                                         }
                                         ActionType::Type(s) => {
-                                            (2, s.clone(), "".to_string())
+                                            (2, s.clone(), "".to_string(), "Somatic: emit keys".to_string())
                                         }
                                         ActionType::Wait(ms) => {
-                                            (3, ms.to_string(), "".to_string())
+                                            (3, ms.to_string(), "".to_string(), "Steady Wait".to_string())
                                         }
                                         ActionType::Navigate(s) => {
-                                            (4, s.clone(), "".to_string())
+                                            (4, s.clone(), "".to_string(), "Navigate".to_string())
                                         }
-                                        _ => (5, "".to_string(), "".to_string()),
+                                        _ => (5, "".to_string(), "".to_string(), "".to_string()),
                                     };
 
                                     incoming_steps.push(DecreeStep {
                                         id: node.id.0.clone().into(),
                                         title: node.label.clone().into(),
-                                        subtext: "".into(),
+                                        subtext: subtext.into(),
                                         step_type,
                                         is_active: false,
                                         baton_required: step_type == 1,
@@ -495,9 +510,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for i in 0..step_model.row_count() {
                 if let Some(mut row) = step_model.row_data(i) {
                     if row.id == id {
-                        row.title = title;
-                        row.arg_a = a;
-                        row.arg_b = b;
+                        // Special case: If this is an Inscribe step (type 0), 
+                        // toggling the mode via the button should flip the subtext.
+                        if row.step_type == 0 && row.title == title && row.arg_a == a && row.arg_b == b {
+                            if row.subtext.contains("Move") {
+                                row.subtext = "Inscribe: Copy Mode".into();
+                            } else {
+                                row.subtext = "Inscribe: Move Mode".into();
+                            }
+                        } else {
+                            row.title = title.clone();
+                            row.arg_a = a.clone();
+                            row.arg_b = b.clone();
+                        }
                         step_model.set_row_data(i, row);
                         break;
                     }

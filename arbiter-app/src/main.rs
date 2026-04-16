@@ -242,6 +242,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let atlas_broadcast = log_broadcast_tx.clone();
     let atlas_loop_broadcast = atlas_broadcast.clone();
     let atlas_vigil_tx = vigil_tx.clone();
+    let atlas_filter = filter.clone();
     tokio::spawn(async move {
         atlas.run(
             &mut vigil_rx,
@@ -254,6 +255,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut forge_cmd_rx,
             &mut atlas_shutdown_rx,
             atlas_loop_broadcast.clone(),
+            atlas_filter,
         ).await;
         info!("Atlas: run loop terminated cleanly");
     });

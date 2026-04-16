@@ -74,10 +74,23 @@ impl OrdinanceDef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum SummonsDef {
-    FileCreated { ward_id: String, pattern: String },
-    Hotkey { combo: String },
-    ProcessAppeared { name: String },
+    FileCreated {
+        ward_id: String,
+        pattern: String,
+        #[serde(default = "default_recursive")]
+        recursive: bool,
+    },
+    Hotkey {
+        combo: String,
+    },
+    ProcessAppeared {
+        name: String,
+    },
     Manual,
+}
+
+fn default_recursive() -> bool {
+    true
 }
 
 // ── I/O Operations ───────────────────────────────────────────────────────────
@@ -132,13 +145,14 @@ pub fn apply(
 
     // 1. Setup Wards (File System Watchers)
     for ward in &ledger.wards {
-        crate::vigil::fs::spawn_watcher(ward.clone(), filter.clone(), vigil_tx.clone());
+        let stop_tx = crate::vigil::fs::spawn_watcher(ward.clone(), filter.clone(), vigil_tx.clone());
+        atlas.active_watchers.insert(ward.path.to_string_lossy().to_string(), stop_tx);
     }
 
     // 2. Register Ordinances
     for def in &ledger.ordinances {
         let summons = match &def.summons {
-            SummonsDef::FileCreated { ward_id, pattern } => {
+            SummonsDef::FileCreated { ward_id, pattern, recursive: _recursive } => {
                 // Find the ward to get the path
                 let ward = ledger.wards.iter().find(|w| {
                     w.path.to_string_lossy() == *ward_id

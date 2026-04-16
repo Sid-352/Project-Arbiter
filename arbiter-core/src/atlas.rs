@@ -49,6 +49,9 @@ pub struct Atlas {
     /// Tracks process names that already have an active watcher task.
     pub watched_processes: HashSet<String>,
 
+    /// Tracks active Ward watchers by their Ward ID to allow stopping/restarting them.
+    pub active_watchers: HashMap<String, tokio::sync::broadcast::Sender<()>>,
+
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
 }
@@ -70,6 +73,7 @@ impl Atlas {
             active_presence_config: PresenceConfig::default(),
             active_ordinance_id: None,
             watched_processes: HashSet::new(),
+            active_watchers: HashMap::new(),
             active_abort: None,
         }
     }
@@ -93,6 +97,7 @@ impl Atlas {
         forge_cmd_rx: &mut mpsc::Receiver<ForgeCommand>,
         shutdown_rx: &mut oneshot::Receiver<()>,
         log_broadcast: tokio::sync::broadcast::Sender<LogEntry>,
+        filter: crate::filter::ArbiterFilter,
     ) {
         info!("Atlas: run loop started");
 
@@ -101,6 +106,11 @@ impl Atlas {
                 // 1. Process Shutdown
                 _ = &mut *shutdown_rx => {
                     info!("Atlas: shutting down");
+                    // Stop all watchers
+                    for (id, tx) in self.active_watchers.drain() {
+                        debug!(%id, "Atlas: stopping watcher on shutdown");
+                        let _ = tx.send(());
+                    }
                     if let Some(tx) = self.active_abort.take() {
                         let _ = tx.send(());
                     }
@@ -133,6 +143,7 @@ impl Atlas {
                                 error!("Atlas: failed to load ledger for save: {}", e);
                                 crate::ledger::ArbiterLedger::default()
                             });
+
                             // Update or insert
                             if let Some(existing) = ledger.ordinances.iter_mut().find(|o| o.id == def.id) {
                                 *existing = def.clone();
@@ -141,7 +152,7 @@ impl Atlas {
                             }
                             let _ = crate::ledger::save(&ledger);
 
-                            // 2. Hot-reload the registry entry
+                            // 2. Hot-reload logic
                             let mut context = EnvContext::new();
                             let now_unix = std::time::SystemTime::now()
                                 .duration_since(std::time::UNIX_EPOCH)
@@ -151,7 +162,38 @@ impl Atlas {
                             context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
 
                             let summons = match &def.summons {
-                                crate::ledger::SummonsDef::FileCreated { ward_id, pattern } => {
+                                crate::ledger::SummonsDef::FileCreated { ward_id, pattern, recursive } => {
+                                    // 2a. Ensure the Ward exists and is up to date
+                                    let mut ward_exists = false;
+                                    if let Some(w) = ledger.wards.iter_mut().find(|w| w.path.to_string_lossy() == *ward_id) {
+                                        ward_exists = true;
+                                        if w.recursive != *recursive {
+                                            info!(path = %ward_id, from = w.recursive, to = *recursive, "Atlas: updating Ward recursion level (Allowed/Denied)");
+                                            w.recursive = *recursive;
+                                            
+                                            // Stop old watcher and spawn new one with correct mode
+                                            if let Some(stop_tx) = self.active_watchers.get(ward_id) {
+                                                let _ = stop_tx.send(());
+                                            }
+                                            let new_stop_tx = crate::vigil::fs::spawn_watcher(w.clone(), filter.clone(), vigil_tx.clone());
+                                            self.active_watchers.insert(ward_id.clone(), new_stop_tx);
+                                        }
+                                    }
+
+                                    if !ward_exists && !ward_id.is_empty() {
+                                        info!(path = %ward_id, "Atlas: path not found in Wards, creating new entry");
+                                        let new_ward = crate::ordinance::WardConfig {
+                                            id: ward_id.clone(),
+                                            path: std::path::PathBuf::from(ward_id),
+                                            pattern: "*".into(),
+                                            layer: crate::ordinance::WardLayer::Surface,
+                                            recursive: *recursive,
+                                        };
+                                        ledger.wards.push(new_ward.clone());
+                                        let stop_tx = crate::vigil::fs::spawn_watcher(new_ward, filter.clone(), vigil_tx.clone());
+                                        self.active_watchers.insert(ward_id.clone(), stop_tx);
+                                    }
+
                                     let ward = ledger.wards.iter().find(|w| w.path.to_string_lossy() == *ward_id);
                                     if let Some(w) = ward {
                                         Summons::FileCreated {
@@ -206,10 +248,29 @@ impl Atlas {
                             });
                         }
                         ForgeCommand::ReloadWards => {
-                            // TODO: Implementation for reloading wards (Phase 3)
+                            info!("Atlas: reloading Signet configuration (Live)");
+                            crate::signet::reload_cache();
+                            let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
+                                tag: "SIGNT".into(),
+                                message: "Signet configuration reloaded from vault.".into(),
+                                is_error: false,
+                                ordinance_id: None,
+                            });
                         }
-                        ForgeCommand::ManualRun { summons_key: _ } => {
-                            // TODO: Implementation for manual run (Phase 3)
+                        ForgeCommand::ManualRun { summons_key } => {
+                            if self.state == EngineState::Idle {
+                                info!(%summons_key, "Atlas: received ManualRun command");
+                                if let Some(ord) = self.registry.get(&summons_key).cloned() {
+                                    let mut context = EnvContext::new();
+                                    context.insert("trigger_mode", "Manual");
+                                    self.dispatch_ordinance(summons_key, ord, context, &run_tx, &log_broadcast).await;
+                                } else {
+                                    warn!(%summons_key, "Atlas: ManualRun failed — ordinance not found");
+                                }
+                            } else {
+                                debug!("Atlas: ignoring ManualRun, engine is busy");
+                            }
                         }
                     }
                 }
@@ -221,8 +282,6 @@ impl Atlas {
                         let mut ordinance = self.registry.get(&key).cloned();
 
                         // ── Fuzzy Matching for File Events ──
-                        // If no exact match (likely due to catch-all Ward pattern "*"),
-                        // scan the registry for path + pattern matches against the actual filename.
                         if ordinance.is_none() {
                             if let Summons::FileCreated { watch_path, .. } = &summons {
                                 let filename = match &summons {
@@ -235,13 +294,8 @@ impl Atlas {
                                     
                                     for (reg_key, reg_ord) in &self.registry {
                                         if reg_key.starts_with(&path_prefix) {
-                                            // Extract the pattern from the registry key
                                             let pattern = &reg_key[path_prefix.len()..];
-                                            
-                                            if let Ok(matcher) = globset::GlobBuilder::new(pattern)
-                                                .case_insensitive(true)
-                                                .build() 
-                                            {
+                                            if let Ok(matcher) = globset::GlobBuilder::new(pattern).case_insensitive(true).build() {
                                                 if matcher.compile_matcher().is_match(&filename) {
                                                     debug!(%reg_key, %filename, "Atlas: fuzzy summons match found");
                                                     key = reg_key.clone();
@@ -256,27 +310,6 @@ impl Atlas {
                         }
 
                         if let Some(ordinance) = ordinance {
-                            info!(%key, "Atlas: summons matched, dispatching sequence");
-                            // active_ordinance_id stores the summon key for now, maybe refactor later to use DecreeId
-                            self.active_ordinance_id = Some(DecreeId(key.clone()));
-
-                            let msg = format!("Summons matched: {}", key);
-                            push_log(&self.engine_logs, "ATLAS", &msg, false, self.active_ordinance_id.as_ref().map(|id| id.0.clone()));
-                            let _ = log_broadcast.send(LogEntry { 
-                                time: chrono::Utc::now().to_rfc3339(),
-                                tag: "ATLAS".into(), 
-                                message: msg, 
-                                is_error: false, 
-                                ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone())
-                            });
-
-                            self.state = EngineState::Executing;
-                            self.last_start = Some(Instant::now());
-                            self.active_presence_config = ordinance.presence_config.clone();
-
-                            let (abort_tx, abort_rx) = oneshot::channel();
-                            self.active_abort = Some(abort_tx);
-
                             // Extract context
                             let context = match summons {
                                 #[cfg(feature = "vigil-fs")]
@@ -287,25 +320,16 @@ impl Atlas {
                                 Summons::Manual { context, .. } => context,
                             };
 
-                            let exec_data = ExecData {
-                                nodes: ordinance.nodes,
-                                context,
-                                presence_config: ordinance.presence_config,
-                                ordinance_id: self.active_ordinance_id.clone(),
-                                trigger_time: Instant::now(),
-                                abort_rx,
-                            };
-
-                            if let Err(e) = run_tx.send(exec_data).await {
-                                error!(%e, "Atlas: failed to dispatch to Runner");
-                                self.state = EngineState::Faulted;
-                            }
+                            self.dispatch_ordinance(key, ordinance, context, &run_tx, &log_broadcast).await;
                         } else {
                             debug!(%key, "Atlas: unassigned Summons received, ignoring");
                         }
                     } else {
                         debug!("Atlas: ignoring Summons, Engine is busy");
                     }
+
+                    // Periodic Cleanup of dead watchers
+                    self.active_watchers.retain(|_, tx| tx.receiver_count() > 0);
                 }
 
                 // 3. Process Human Yield (Presence)
@@ -318,7 +342,6 @@ impl Atlas {
                     #[allow(unused_variables)]
                     if let Some(signal) = res {
                         if self.state == EngineState::Executing {
-                            // Sensitivity Filter (Scope-bound)
                             #[cfg(feature = "presence")]
                             {
                                 use crate::presence::PresenceSignal;
@@ -329,7 +352,6 @@ impl Atlas {
                                 }
                             }
 
-                            // Grace Period: Ignore presence for 1500ms after summons
                             if let Some(start) = self.last_start {
                                 if start.elapsed().as_millis() < 1500 {
                                     debug!("Atlas: ignoring presence during 1500ms grace period");
@@ -347,6 +369,60 @@ impl Atlas {
                     self.handle_run_event(event, &log_broadcast);
                 }
             }
+        }
+    }
+
+    async fn dispatch_ordinance(
+        &mut self,
+        key: String,
+        ordinance: Ordinance,
+        context: EnvContext,
+        run_tx: &mpsc::Sender<ExecData>,
+        log_broadcast: &tokio::sync::broadcast::Sender<LogEntry>,
+    ) {
+        info!(%key, "Atlas: dispatching sequence");
+        self.active_ordinance_id = Some(DecreeId(key.clone()));
+
+        let msg = format!("Summons matched: {}", key);
+        push_log(&self.engine_logs, "ATLAS", &msg, false, self.active_ordinance_id.as_ref().map(|id| id.0.clone()));
+        let _ = log_broadcast.send(LogEntry { 
+            time: chrono::Utc::now().to_rfc3339(),
+            tag: "ATLAS".into(), 
+            message: msg, 
+            is_error: false, 
+            ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone())
+        });
+
+        self.state = EngineState::Executing;
+        self.last_start = Some(Instant::now());
+        self.active_presence_config = ordinance.presence_config.clone();
+
+        let (abort_tx, abort_rx) = oneshot::channel();
+        self.active_abort = Some(abort_tx);
+
+        // ── Recursion Safety ──
+        if let Some(p) = context.variables.get("file_path") {
+            let component_count = p.split(|c| c == '/' || c == '\\').count();
+            if component_count > 20 {
+                error!(%p, "Atlas: MAX_RECURSION_DEPTH exceeded, aborting sequence to prevent path explosion");
+                self.state = EngineState::Idle;
+                self.active_ordinance_id = None;
+                return;
+            }
+        }
+
+        let exec_data = ExecData {
+            nodes: ordinance.nodes,
+            context,
+            presence_config: ordinance.presence_config,
+            ordinance_id: self.active_ordinance_id.clone(),
+            trigger_time: Instant::now(),
+            abort_rx,
+        };
+
+        if let Err(e) = run_tx.send(exec_data).await {
+            error!(%e, "Atlas: failed to dispatch to Runner");
+            self.state = EngineState::Faulted;
         }
     }
 
@@ -476,4 +552,3 @@ pub fn push_log(
         });
     }
 }
-

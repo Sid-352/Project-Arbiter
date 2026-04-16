@@ -454,6 +454,40 @@ component OrdinanceStepItem inherits Rectangle {
 
             if root.step-type == 0: VerticalLayout {
                 spacing: 8px;
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text {
+                        text: "Inscribe Mode";
+                        color: Theme.text-secondary;
+                        font-size: 10px;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+                    Rectangle {
+                        width: 80px;
+                        height: 24px;
+                        background: Theme.bg-input;
+                        border-radius: 4px;
+                        ta-inc := TouchArea {
+                            clicked => {
+                                // We'll use subtext or a hidden field to determine mode, 
+                                // but for now let's just toggle the label or args if needed.
+                                // Actually, we'll let the rust side handle the logic based on button state.
+                                // For now, just provide the UI hook.
+                                root.edited(root.step-id, root.title, root.arg-a, root.arg-b);
+                            }
+                        }
+                        Text {
+                            text: root.subtext == "Inscribe: Copy Mode" ? "COPY" : "MOVE";
+                            color: Theme.accent;
+                            font-size: 9px;
+                            font-weight: 800;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
                 Text {
                     text: "Source Path";
                     color: Theme.text-secondary;
@@ -632,6 +666,7 @@ export component ArbiterForge inherits Window {
     in-out property <int> summons-trigger-type: 0;
     in-out property <string> summons-path: "";
     in-out property <string> summons-pattern: "";
+    in-out property <bool> summons-ward-recursive: true;
     in-out property <string> summons-combo: "";
     in-out property <string> summons-process: "";
     in-out property <int> summons-ward-layer: 0;
@@ -994,7 +1029,7 @@ export component ArbiterForge inherits Window {
 
                                         VerticalLayout {
                                             spacing: 6px;
-                                            width: 250px;
+                                            width: 180px;
                                             Text {
                                                 text: "File Pattern";
                                                 color: Theme.text-muted;
@@ -1005,6 +1040,35 @@ export component ArbiterForge inherits Window {
                                                 value <=> root.summons-pattern;
                                                 placeholder: "e.g. *.pdf";
                                                 monospaced: true;
+                                            }
+                                        }
+
+                                        VerticalLayout {
+                                            spacing: 6px;
+                                            width: 100px;
+                                            Text {
+                                                text: "Recursion";
+                                                color: Theme.text-muted;
+                                                font-size: 10px;
+                                            }
+
+                                            Rectangle {
+                                                height: 36px;
+                                                background: Theme.bg-input;
+                                                border-radius: 6px;
+                                                ta-rec := TouchArea {
+                                                    clicked => {
+                                                        root.summons-ward-recursive = !root.summons-ward-recursive;
+                                                    }
+                                                }
+                                                Text {
+                                                    text: root.summons-ward-recursive ? "RECURSIVE" : "SHALLOW";
+                                                    color: root.summons-ward-recursive ? Theme.accent : Theme.text-muted;
+                                                    font-size: 9px;
+                                                    font-weight: 800;
+                                                    horizontal-alignment: center;
+                                                    vertical-alignment: center;
+                                                }
                                             }
                                         }
                                     }

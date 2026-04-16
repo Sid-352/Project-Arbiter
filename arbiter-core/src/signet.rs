@@ -10,11 +10,14 @@
 
 use std::{
     collections::HashSet,
-    path::Path,
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
 };
 
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
+use globset::Glob;
+use lazy_static::lazy_static;
 
 // ── Arbiter Configuration ───────────────────────────────────────────────────
 
@@ -23,8 +26,15 @@ use tracing::{info, warn};
 pub struct ArbiterConfig {
     /// A list of directory paths Arbiter is allowed to write to.
     pub trusted_paths: HashSet<String>,
+    /// A list of directory paths Arbiter is NOT allowed to trigger from.
+    pub restricted_paths: HashSet<String>,
     /// A list of shell commands (binary names) Arbiter is allowed to spawn.
     pub baton_allowed: HashSet<String>,
+}
+
+lazy_static! {
+    /// Global cache of the Arbiter config to prevent excessive disk I/O in signal loops.
+    static ref CONFIG_CACHE: Arc<RwLock<Option<ArbiterConfig>>> = Arc::new(RwLock::new(None));
 }
 
 // ── Vault Management ─────────────────────────────────────────────────────────
@@ -36,22 +46,31 @@ const VAULT_PATH: &str = "arbiter-data/signet.vault";
 ///
 /// If the vault does not exist, returns a default configuration.
 pub fn load() -> Result<ArbiterConfig, String> {
+    // Check cache first
+    if let Ok(cache) = CONFIG_CACHE.read() {
+        if let Some(config) = &*cache {
+            return Ok(config.clone());
+        }
+    }
+
     let path = Path::new(VAULT_PATH);
     if !path.exists() {
         info!("Signet: vault not found, using default configuration");
-        return Ok(ArbiterConfig::default());
+        let def = ArbiterConfig::default();
+        let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(def.clone()));
+        return Ok(def);
     }
 
     let bytes = std::fs::read(path).map_err(|e| format!("Signet: failed to read vault: {e}"))?;
-    
-    // In a real implementation, we would decrypt `bytes` here using a key.
-    // For this prototype, we'll use a placeholder decryption and then deserialize.
     let config: ArbiterConfig = serde_json::from_slice(&bytes).map_err(|e| format!("Signet: failed to deserialize vault: {e}"))?;
+
+    // Update cache
+    let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(config.clone()));
 
     Ok(config)
 }
 
-/// Save the Arbiter configuration to disk.
+/// Save the Arbiter configuration to disk and invalidate cache.
 pub fn save(config: &ArbiterConfig) -> Result<(), String> {
     let path = Path::new(VAULT_PATH);
     if let Some(parent) = path.parent() {
@@ -59,37 +78,64 @@ pub fn save(config: &ArbiterConfig) -> Result<(), String> {
     }
 
     let bytes = serde_json::to_vec(config).map_err(|e| format!("Signet: failed to serialize config: {e}"))?;
-    
-    // In a real implementation, we would encrypt `bytes` here before writing.
     std::fs::write(path, bytes).map_err(|e| format!("Signet: failed to write vault: {e}"))?;
+
+    // Update cache
+    let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(config.clone()));
 
     info!("Signet: configuration saved to vault");
     Ok(())
 }
 
+/// Force a reload of the configuration from disk on the next `load()` call.
+pub fn reload_cache() {
+    let _ = CONFIG_CACHE.write().map(|mut c| *c = None);
+}
+
 // ── Permission Helpers ───────────────────────────────────────────────────────
+
+/// Helper to canonicalize a path for security checks.
+fn secure_canonicalize(path: &Path) -> PathBuf {
+    if path.exists() {
+        std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    } else {
+        path.parent()
+            .and_then(|p| std::fs::canonicalize(p).ok())
+            .map(|p| p.join(path.file_name().unwrap_or_default()))
+            .unwrap_or_else(|| path.to_path_buf())
+    }
+}
+
+/// Helper to check if a path matches a set of rules (supports globs and prefixes).
+fn path_matches_rules(path: &Path, rules: &HashSet<String>) -> bool {
+    let canon_path = secure_canonicalize(path);
+    let path_str = canon_path.to_string_lossy();
+
+    for rule in rules {
+        // 1. Try exact/prefix match (canonicalized)
+        let canon_rule = std::fs::canonicalize(rule).unwrap_or_else(|_| Path::new(rule).to_path_buf());
+        if path_str.starts_with(&canon_rule.to_string_lossy().as_ref()) {
+            return true;
+        }
+
+        // 2. Try glob match if rule contains wildcards
+        if rule.contains('*') || rule.contains('?') {
+            if let Ok(glob) = Glob::new(rule) {
+                if glob.compile_matcher().is_match(&*path_str) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
 
 /// Returns `true` if the given path is within a "Trusted Root".
 pub fn is_path_trusted(config: &ArbiterConfig, path: impl AsRef<Path>) -> bool {
-    let path = path.as_ref();
-    
-    // Canonicalize target path (or its parent if it doesn't exist)
-    let canon_target = if path.exists() {
-        std::fs::canonicalize(path).ok()
-    } else {
-        path.parent().and_then(|p| std::fs::canonicalize(p).ok()).map(|p| p.join(path.file_name().unwrap_or_default()))
-    }.unwrap_or_else(|| path.to_path_buf());
-
-    let target_str = canon_target.to_string_lossy();
-
-    for root in &config.trusted_paths {
-        // Also canonicalize the root for a fair comparison
-        let canon_root = std::fs::canonicalize(root).unwrap_or_else(|_| Path::new(root).to_path_buf());
-        if target_str.starts_with(&canon_root.to_string_lossy().as_ref()) {
-            return true;
-        }
+    if path_matches_rules(path.as_ref(), &config.trusted_paths) {
+        return true;
     }
-    warn!(?path, "Signet: path rejected — not within a Trusted Root");
+    warn!(path = ?path.as_ref(), "Signet: path rejected — not within a Trusted Root");
     false
 }
 
@@ -99,5 +145,14 @@ pub fn is_command_allowed(config: &ArbiterConfig, command: &str) -> bool {
         return true;
     }
     warn!(%command, "Signet: command rejected — not in Baton Whitelist");
+    false
+}
+
+/// Returns `true` if the given path is within a "Restricted Zone" (Path Jailing).
+pub fn is_path_restricted(config: &ArbiterConfig, path: impl AsRef<Path>) -> bool {
+    if path_matches_rules(path.as_ref(), &config.restricted_paths) {
+        warn!(path = ?path.as_ref(), "Signet: path rejected — within a Restricted Zone (Jail)");
+        return true;
+    }
     false
 }

@@ -147,6 +147,8 @@ pub struct WardConfig {
     pub pattern: String,
     /// The permission layer granted to this Ward.
     pub layer: WardLayer,
+    /// If true, monitors all subdirectories recursively.
+    pub recursive: bool,
 }
 
 // ── Ordinance Nodes (Sequence Graph) ─────────────────────────────────────────
