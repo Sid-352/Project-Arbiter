@@ -230,11 +230,38 @@ pub enum EnvKey {
     FileName,
     FileExt,
     FileSize,
-    FileCreated,
+    FileSizeHuman,
+    FileReadonly,
+    FileHidden,
+    FileCreatedUnix,
+    FileCreatedIso,
+    FileCreatedLocal,
+    FileModifiedIso,
+    FileModifiedLocal,
+    FileOwner,
+    FileIsLink,
+    Timestamp,
     // ── Layer 2: Analytical (Gated by Integrity Ward) ──
     ContentSha256,
     ContentMd5,
     ContentMime,
+    ContentEntropy,
+    // ── Layer 3: Origin (Windows ADS) ──
+    OriginZone,
+    OriginUrl,
+    OriginHost,
+    OriginProcessName,
+    // ── Layer 4: Deep ──
+    ImgDims,
+    ImgAspect,
+    ImgModel,
+    ImgGps,
+    TextLines,
+    // ── Process Layer ──
+    ProcessName,
+    ProcessPid,
+    // ── Hotkey Layer ──
+    HotkeyCombo,
 }
 
 impl EnvKey {
@@ -244,10 +271,33 @@ impl EnvKey {
             Self::FileName => "file_name",
             Self::FileExt => "file_ext",
             Self::FileSize => "file_size",
-            Self::FileCreated => "file_created",
+            Self::FileSizeHuman => "file_size_human",
+            Self::FileReadonly => "file_readonly",
+            Self::FileHidden => "file_hidden",
+            Self::FileCreatedUnix => "file_created_unix",
+            Self::FileCreatedIso => "file_created_iso",
+            Self::FileCreatedLocal => "file_created_local",
+            Self::FileModifiedIso => "file_modified_iso",
+            Self::FileModifiedLocal => "file_modified_local",
+            Self::FileOwner => "file_owner",
+            Self::FileIsLink => "file_is_link",
+            Self::Timestamp => "timestamp",
             Self::ContentSha256 => "content_sha256",
             Self::ContentMd5 => "content_md5",
             Self::ContentMime => "content_mime",
+            Self::ContentEntropy => "content_entropy",
+            Self::OriginZone => "origin_zone",
+            Self::OriginUrl => "origin_url",
+            Self::OriginHost => "origin_host",
+            Self::OriginProcessName => "origin_process_name",
+            Self::ImgDims => "img_dims",
+            Self::ImgAspect => "img_aspect",
+            Self::ImgModel => "img_model",
+            Self::ImgGps => "img_gps",
+            Self::TextLines => "text_lines",
+            Self::ProcessName => "process_name",
+            Self::ProcessPid => "process_pid",
+            Self::HotkeyCombo => "hotkey_combo",
         }
     }
 
@@ -257,10 +307,33 @@ impl EnvKey {
             "file_name" => Some(Self::FileName),
             "file_ext" => Some(Self::FileExt),
             "file_size" => Some(Self::FileSize),
-            "file_created" => Some(Self::FileCreated),
+            "file_size_human" => Some(Self::FileSizeHuman),
+            "file_readonly" => Some(Self::FileReadonly),
+            "file_hidden" => Some(Self::FileHidden),
+            "file_created_unix" => Some(Self::FileCreatedUnix),
+            "file_created_iso" => Some(Self::FileCreatedIso),
+            "file_created_local" => Some(Self::FileCreatedLocal),
+            "file_modified_iso" => Some(Self::FileModifiedIso),
+            "file_modified_local" => Some(Self::FileModifiedLocal),
+            "file_owner" => Some(Self::FileOwner),
+            "file_is_link" => Some(Self::FileIsLink),
+            "timestamp" => Some(Self::Timestamp),
             "content_sha256" => Some(Self::ContentSha256),
             "content_md5" => Some(Self::ContentMd5),
             "content_mime" => Some(Self::ContentMime),
+            "content_entropy" => Some(Self::ContentEntropy),
+            "origin_zone" => Some(Self::OriginZone),
+            "origin_url" => Some(Self::OriginUrl),
+            "origin_host" => Some(Self::OriginHost),
+            "origin_process_name" => Some(Self::OriginProcessName),
+            "img_dims" => Some(Self::ImgDims),
+            "img_aspect" => Some(Self::ImgAspect),
+            "img_model" => Some(Self::ImgModel),
+            "img_gps" => Some(Self::ImgGps),
+            "text_lines" => Some(Self::TextLines),
+            "process_name" => Some(Self::ProcessName),
+            "process_pid" => Some(Self::ProcessPid),
+            "hotkey_combo" => Some(Self::HotkeyCombo),
             _ => None,
         }
     }
@@ -268,7 +341,22 @@ impl EnvKey {
     pub fn is_analytical(&self) -> bool {
         matches!(
             self,
-            Self::ContentSha256 | Self::ContentMd5 | Self::ContentMime
+            Self::ContentSha256
+                | Self::ContentMd5
+                | Self::ContentMime
+                | Self::ContentEntropy
+                | Self::OriginZone
+                | Self::OriginUrl
+                | Self::OriginHost
+                | Self::OriginProcessName
+                | Self::ImgDims
+                | Self::ImgAspect
+                | Self::ImgModel
+                | Self::ImgGps
+                | Self::TextLines
+                | Self::FileCreatedIso
+                | Self::FileCreatedLocal
+                | Self::FileModifiedLocal
         )
     }
 }

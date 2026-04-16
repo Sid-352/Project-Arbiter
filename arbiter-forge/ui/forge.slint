@@ -2,7 +2,7 @@
 //  ARBITER FORGE — Slint UI (Rebuilt)
 // ============================================================
 
-import { ScrollView, Button } from "std-widgets.slint";
+import { Button } from "std-widgets.slint";
 
 // ── Theme global ──────────────────────────────────────────────────────────────
 export global Theme {
@@ -51,6 +51,49 @@ export struct DecreeStep {
 }
 
 // ── Components ────────────────────────────────────────────────────────────────
+
+component ThemedScroll inherits Flickable {
+    in property <bool> show-horizontal: true;
+    in property <bool> show-vertical: true;
+    
+    // Minimalist Vertical Scrollbar
+    if root.show-vertical && root.viewport-height > root.height: Rectangle {
+        x: parent.width - 4px;
+        y: 2px;
+        width: 2px;
+        height: parent.height - 4px;
+        background: Theme.is-dark ? #ffffff10 : #00000010;
+        border-radius: 1px;
+        z: 100;
+        
+        Rectangle {
+            width: 2px;
+            height: max(20px, (parent.height / root.viewport-height) * parent.height);
+            y: (-root.viewport-y / root.viewport-height) * parent.height;
+            background: Theme.accent;
+            border-radius: 1px;
+        }
+    }
+
+    // Minimalist Horizontal Scrollbar
+    if root.show-horizontal && root.viewport-width > root.width: Rectangle {
+        y: parent.height - 4px;
+        x: 2px;
+        height: 2px;
+        width: parent.width - 4px;
+        background: Theme.is-dark ? #ffffff10 : #00000010;
+        border-radius: 1px;
+        z: 100;
+        
+        Rectangle {
+            height: 2px;
+            width: max(20px, (parent.width / root.viewport-width) * parent.width);
+            x: (-root.viewport-x / root.viewport-width) * parent.width;
+            background: Theme.accent;
+            border-radius: 1px;
+        }
+    }
+}
 
 component EnvChip inherits Rectangle {
     in property <string> token;
@@ -579,9 +622,9 @@ component OrdinanceStepItem inherits Rectangle {
                 spacing: 8px;
                 Text {
                     text: "Internal state stabilization delay (ms).";
-                    color: Theme.text-secondary;
-                    font-size: 10px;
-                    font-weight: 700;
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                    font-italic: true;
                 }
 
                 InputPill {
@@ -610,7 +653,6 @@ component OrdinanceStepItem inherits Rectangle {
                         root.edited(root.step-id, root.title, v, root.arg-b);
                     }
                 }
-
                 Text {
                     text: "Use '+' for combinations. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
                     color: Theme.text-muted;
@@ -621,30 +663,83 @@ component OrdinanceStepItem inherits Rectangle {
 
             // Context helper
             VerticalLayout {
-                spacing: 3px;
-                Text {
-                    text: "Available Context (Click to copy)";
-                    color: Theme.text-muted;
-                    font-size: 9px;
-                    font-weight: 800;
-                }
+                spacing: 0px; // Remove top spacing
+                
+                Rectangle {
+                    height: 140px;
+                    background: Theme.bg-input;
+                    border-radius: 6px;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    clip: true; // Hide content that overflows during scroll
+                    
+                    ThemedScroll {
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 10px;
+                            alignment: start;
+                            
+                            // Surface Row
+                            HorizontalLayout {
+                                alignment: start;
+                                spacing: 8px;
+                                for token in [
+                                    "${env.file_path}",
+                                    "${env.file_name}",
+                                    "${env.file_ext}",
+                                    "${env.file_size}",
+                                    "${env.file_size_human}"
+                                ]: EnvChip {
+                                    token: token;
+                                    clicked(t) => { root.copy-env(t); }
+                                }
+                            }
+                            
+                            // Temporal Row
+                            HorizontalLayout {
+                                alignment: start;
+                                spacing: 8px;
+                                for token in [
+                                    "${env.timestamp}",
+                                    "${env.file_created_local}",
+                                    "${env.file_modified_local}",
+                                    "${env.file_created_iso}",
+                                    "${env.file_created_unix}"
+                                ]: EnvChip {
+                                    token: token;
+                                    clicked(t) => { root.copy-env(t); }
+                                }
+                            }
 
-                ScrollView {
-                    height: 56px;
-                    HorizontalLayout {
-                        padding-top: 24px;
-                        spacing: 6px;
-                        alignment: start;
-                        for token in [
-                            "${env.file_path}",
-                            "${env.file_name}",
-                            "${env.file_ext}",
-                            "${env.file_size_human}",
-                            "${env.content_sha256}"
-                        ]: EnvChip {
-                            token: token;
-                            clicked(t) => {
-                                root.copy-env(t);
+                            // Attributes & Security Row
+                            HorizontalLayout {
+                                alignment: start;
+                                spacing: 8px;
+                                for token in [
+                                    "${env.file_readonly}",
+                                    "${env.file_hidden}",
+                                    "${env.file_owner}",
+                                    "${env.file_is_link}",
+                                    "${env.content_sha256}",
+                                    "${env.content_mime}"
+                                ]: EnvChip {
+                                    token: token;
+                                    clicked(t) => { root.copy-env(t); }
+                                }
+                            }
+
+                            // Signal-specific Row
+                            HorizontalLayout {
+                                alignment: start;
+                                spacing: 8px;
+                                for token in [
+                                    "${env.process_name}",
+                                    "${env.process_pid}",
+                                    "${env.hotkey_combo}"
+                                ]: EnvChip {
+                                    token: token;
+                                    clicked(t) => { root.copy-env(t); }
+                                }
                             }
                         }
                     }
@@ -726,7 +821,7 @@ export component ArbiterForge inherits Window {
     callback active-decree-renamed(string, string);
     callback request-close;
     public function scroll-logs-to-bottom() {
-        log-scroll.viewport-y = - max(0px, log-scroll.viewport-height - log-scroll.visible-height);
+        log-scroll.viewport-y = - max(0px, log-scroll.viewport-height - log-scroll.height);
     }
     HorizontalLayout {
         // ── Sidebar ───────────────────────────────────────────────────────────
@@ -834,7 +929,7 @@ export component ArbiterForge inherits Window {
                         }
                     }
 
-                    ScrollView {
+                    ThemedScroll {
                         VerticalLayout {
                             spacing: 2px;
                             alignment: start;
@@ -1008,7 +1103,7 @@ export component ArbiterForge inherits Window {
             Rectangle {
                 vertical-stretch: 1;
                 clip: true;
-                if root.active-page == 0: ScrollView {
+                if root.active-page == 0: ThemedScroll {
                     VerticalLayout {
                         padding: 40px;
                         spacing: 40px;
@@ -1326,8 +1421,7 @@ export component ArbiterForge inherits Window {
                         height: 6px;
                     }
 
-                    log-scroll := ScrollView {
-                        vertical-stretch: 1;
+                    log-scroll := ThemedScroll {
                         VerticalLayout {
                             alignment: start;
                             for entry in root.telemetry-logs: HorizontalLayout {

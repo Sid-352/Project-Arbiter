@@ -242,15 +242,21 @@ pub mod fs {
                                         .unwrap_or_default()
                                         .as_secs();
                                     context.insert("file_created_unix", &unix.to_string());
+                                    let dt: DateTime<Utc> = Utc.timestamp_opt(unix as i64, 0).unwrap();
+                                    context.insert("file_created_iso", &dt.to_rfc3339());
+                                    // Local time formatted like Windows Explorer (M/d/yyyy h:mm tt)
+                                    let local_dt: DateTime<chrono::Local> = dt.with_timezone(&chrono::Local);
+                                    context.insert("file_created_local", &local_dt.format("%m/%d/%Y %I:%M %p").to_string());
                                 }
                                 if let Ok(modified) = meta.modified() {
                                     let unix = modified
                                         .duration_since(std::time::UNIX_EPOCH)
                                         .unwrap_or_default()
                                         .as_secs();
-                                    // ISO 8601 using chrono
                                     let dt: DateTime<Utc> = Utc.timestamp_opt(unix as i64, 0).unwrap();
                                     context.insert("file_modified_iso", &dt.to_rfc3339());
+                                    let local_dt: DateTime<chrono::Local> = dt.with_timezone(&chrono::Local);
+                                    context.insert("file_modified_local", &local_dt.format("%m/%d/%Y %I:%M %p").to_string());
                                 }
 
                                 // Attributes

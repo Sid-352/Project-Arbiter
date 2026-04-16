@@ -53,7 +53,6 @@ impl HardwareBridge {
             self.enigo
                 .move_mouse(pt.x, pt.y, Coordinate::Abs)
                 .map_err(|e| format!("The Hand: mouse move failed: {e:?}"))?;
-            debug!(x = pt.x, y = pt.y, "The Hand: mouse positioned");
         }
 
         match &action.action_type {
@@ -77,9 +76,27 @@ impl HardwareBridge {
                     .map_err(|e| format!("The Hand: right-click failed: {e:?}"))?;
             }
             ActionType::Type(text) => {
-                self.enigo
-                    .text(text)
-                    .map_err(|e| format!("The Hand: type failed: {e:?}"))?;
+                if !text.is_empty() {
+                    for c in text.chars() {
+                        match c {
+                            '\n' => {
+                                self.enigo.key(enigo::Key::Return, Direction::Click)
+                                    .map_err(|e| format!("The Hand: newline failed: {e:?}"))?;
+                            }
+                            '\r' => { /* skip carriage returns */ }
+                            '\t' => {
+                                self.enigo.key(enigo::Key::Tab, Direction::Click)
+                                    .map_err(|e| format!("The Hand: tab failed: {e:?}"))?;
+                            }
+                            _ => {
+                                let s = c.to_string();
+                                self.enigo.text(&s)
+                                    .map_err(|e| format!("The Hand: char type failed ('{c}'): {e:?}"))?;
+                            }
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(2));
+                    }
+                }
             }
             ActionType::Scroll(amount) => {
                 self.enigo
@@ -143,8 +160,8 @@ impl HardwareBridge {
                 // No-op here: waits are now handled asynchronously by the Runner
             }
             // File & Shell actions are handled directly by the Runner, not The Hand.
-            _ => {
-                warn!("The Hand received a non-somatic action — ignoring");
+            other => {
+                warn!(action = ?other, "The Hand received a non-somatic action — ignoring");
             }
         }
 
