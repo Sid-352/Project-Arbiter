@@ -91,6 +91,15 @@
           "internal_state": "",
           "kind": "Entry",
           "next_nodes": {
+            "Next": "delay-before-type"
+          }
+        },
+        {
+          "id": "delay-before-type",
+          "label": "Wait for Notepad",
+          "internal_state": "{\"action_type\":{\"Wait\":200},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
             "Next": "type-header"
           }
         },

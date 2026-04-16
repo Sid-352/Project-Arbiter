@@ -327,7 +327,7 @@ component OrdinanceStepItem inherits Rectangle {
     in property <bool> is-last;
     in-out property <string> arg-a;
     in-out property <string> arg-b;
-    callback edited(string, string, string);
+    callback edited(string, string, string, string);
     callback remove();
     callback selected();
     callback copy-env(string);
@@ -337,9 +337,9 @@ component OrdinanceStepItem inherits Rectangle {
     border-color: root.is-editing ? Theme.accent : Theme.border;
     animate border-color { duration: 150ms; }
     property <color> type-color: 
-        root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : Theme.text-muted;
+        root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
     property <string> type-label: 
-        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : "STEADY";
+        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
     
     // Selection Capture - First so it's at the bottom of Z-order but above the background
     ta-select := TouchArea {
@@ -470,6 +470,26 @@ component OrdinanceStepItem inherits Rectangle {
         if root.is-editing: VerticalLayout {
             padding-left: 36px;
             spacing: 12px;
+            
+            // Renaming Field
+            VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Step Name";
+                    color: Theme.text-secondary;
+                    font-size: 10px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value: root.title;
+                    placeholder: "e.g. Move File";
+                    committed(v) => {
+                        root.edited(root.step-id, v, root.arg-a, root.arg-b);
+                    }
+                }
+            }
+
             if root.step-type == 0: VerticalLayout {
                 spacing: 8px;
                 Text {
@@ -484,7 +504,7 @@ component OrdinanceStepItem inherits Rectangle {
                     placeholder: "e.g. C:/Source/data.bin";
                     monospaced: true;
                     committed(v) => {
-                        root.edited(root.step-id, v, root.arg-b);
+                        root.edited(root.step-id, root.title, v, root.arg-b);
                     }
                 }
 
@@ -500,7 +520,7 @@ component OrdinanceStepItem inherits Rectangle {
                     placeholder: "e.g. D:/Output/";
                     monospaced: true;
                     committed(v) => {
-                        root.edited(root.step-id, root.arg-a, v);
+                        root.edited(root.step-id, root.title, root.arg-a, v);
                     }
                 }
             }
@@ -518,7 +538,7 @@ component OrdinanceStepItem inherits Rectangle {
                     placeholder: "e.g. ffmpeg.exe";
                     monospaced: true;
                     committed(v) => {
-                        root.edited(root.step-id, v, root.arg-b);
+                        root.edited(root.step-id, root.title, v, root.arg-b);
                     }
                 }
 
@@ -534,7 +554,7 @@ component OrdinanceStepItem inherits Rectangle {
                     placeholder: "e.g. -i ${env.file_path} -o output.mp4";
                     monospaced: true;
                     committed(v) => {
-                        root.edited(root.step-id, root.arg-a, v);
+                        root.edited(root.step-id, root.title, root.arg-a, v);
                     }
                 }
             }
@@ -551,15 +571,52 @@ component OrdinanceStepItem inherits Rectangle {
                     value <=> root.arg-a;
                     placeholder: "Enter characters...";
                     edited(v) => {
-                        root.edited(root.step-id, v, root.arg-b);
+                        root.edited(root.step-id, root.title, v, root.arg-b);
                     }
                 }
             }
-            if root.step-type == 3: Text {
-                text: "Internal state stabilization delay.";
-                color: Theme.text-muted;
-                font-size: 11px;
-                font-italic: true;
+            if root.step-type == 3: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Internal state stabilization delay (ms).";
+                    color: Theme.text-secondary;
+                    font-size: 10px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-a;
+                    placeholder: "1000";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+            }
+            if root.step-type == 4: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Key Sequence";
+                    color: Theme.text-secondary;
+                    font-size: 10px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-a;
+                    placeholder: "e.g. ctrl+alt+delete or win+s";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+
+                Text {
+                    text: "Use '+' for combinations. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
+                    color: Theme.text-muted;
+                    font-size: 10px;
+                    font-italic: true;
+                }
             }
 
             // Context helper
@@ -664,7 +721,7 @@ export component ArbiterForge inherits Window {
     callback append-step(int);
     callback remove-step(string);
     callback remove-decree(string);
-    callback step-edited(string, string, string);
+    callback step-edited(string, string, string, string);
     callback copy-env(string);
     callback active-decree-renamed(string, string);
     callback request-close;
@@ -1112,8 +1169,8 @@ export component ArbiterForge inherits Window {
                                     is-last: idx == root.decree-steps.length - 1;
                                     arg-a: step.arg-a;
                                     arg-b: step.arg-b;
-                                    edited(id, a, b) => {
-                                        root.step-edited(id, a, b);
+                                    edited(id, t, a, b) => {
+                                        root.step-edited(id, t, a, b);
                                     }
                                     remove => {
                                         root.remove-step(step.id);
@@ -1184,6 +1241,14 @@ export component ArbiterForge inherits Window {
                                         label: "STEADY";
                                         clicked => {
                                             root.append-step(3);
+                                        }
+                                    }
+
+                                    ActionButton {
+                                        horizontal-stretch: 1;
+                                        label: "NAVIGATE";
+                                        clicked => {
+                                            root.append-step(4);
                                         }
                                     }
                                 }

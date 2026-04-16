@@ -83,6 +83,8 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
                         detached: true,
                     },
                     2 => ActionType::Type(step.arg_a.to_string()),
+                    3 => ActionType::Wait(step.arg_a.parse().unwrap_or(1000)),
+                    4 => ActionType::Navigate(step.arg_a.to_string()),
                     _ => ActionType::Wait(1000),
                 };
 
@@ -449,7 +451,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         ActionType::Wait(ms) => {
                                             (3, ms.to_string(), "".to_string())
                                         }
-                                        _ => (3, "".to_string(), "".to_string()),
+                                        ActionType::Navigate(s) => {
+                                            (4, s.clone(), "".to_string())
+                                        }
+                                        _ => (5, "".to_string(), "".to_string()),
                                     };
 
                                     incoming_steps.push(DecreeStep {
@@ -485,13 +490,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     ui.on_step_edited({
         let step_model = step_model.clone();
-        move |id, a, b| {
+        move |id, title, a, b| {
             for i in 0..step_model.row_count() {
                 if let Some(mut row) = step_model.row_data(i) {
                     if row.id == id {
-                        if row.arg_a == a && row.arg_b == b {
-                            return;
-                        }
+                        row.title = title;
                         row.arg_a = a;
                         row.arg_b = b;
                         step_model.set_row_data(i, row);
@@ -512,7 +515,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 0 => ("Move File",     "Inscribe: relocate artifact",      "${env.file_path}", "C:/Destination/"),
                 1 => ("Shell Command", "Shell: execute external program",  "program.exe",      "${env.file_path}"),
                 2 => ("Type Text",     "Somatic: emit keystrokes",         "TYPE",             "${env.file_name}"),
-                _ => ("Steady Wait",   "Wait for condition to stabilise",  "",                 ""),
+                3 => ("Steady Wait",   "Wait for condition to stabilise",  "1000",             ""),
+                4 => ("Navigate",      "OS-native navigation keystroke",  "win+s",            ""),
+                _ => ("Action",        "Arbiter node",                     "",                 ""),
             };
             info!(step_type, new_id = %id, "Forge: append-step");
             step_model.push(DecreeStep {
