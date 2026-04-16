@@ -240,15 +240,15 @@ pub fn spawn(
                                 destination,
                             } => {
                                 if !dry_run {
-                                    filter.mark(destination);
                                     let r = inscribe::move_file(
                                         source,
                                         destination,
                                         &trusted_roots,
-                                    )
-                                    .map_err(|e| e.to_string());
-                                    filter.unmark(destination);
-                                    r
+                                    );
+                                    if let Ok(ref final_dst) = r {
+                                        filter.mark(final_dst);
+                                    }
+                                    r.map(|_| ()).map_err(|e| e.to_string())
                                 } else {
                                     info!(?source, ?destination, "DRY RUN: Would move file");
                                     Ok(())
@@ -259,16 +259,15 @@ pub fn spawn(
                                 destination,
                             } => {
                                 if !dry_run {
-                                    filter.mark(destination);
                                     let r = inscribe::copy_file(
                                         source,
                                         destination,
                                         &trusted_roots,
-                                    )
-                                    .map(|_| ())
-                                    .map_err(|e| e.to_string());
-                                    filter.unmark(destination);
-                                    r
+                                    );
+                                    if let Ok((ref final_dst, _)) = r {
+                                        filter.mark(final_dst);
+                                    }
+                                    r.map(|_| ()).map_err(|e| e.to_string())
                                 } else {
                                     info!(?source, ?destination, "DRY RUN: Would copy file");
                                     Ok(())

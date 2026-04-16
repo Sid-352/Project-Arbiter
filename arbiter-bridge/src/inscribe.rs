@@ -126,7 +126,8 @@ fn ensure_file_path(src: &Path, dst: &Path) -> PathBuf {
 }
 
 /// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
+/// Returns the final destination path used.
+pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<PathBuf, InscribeError> {
     let src = src.as_ref();
     let dst_raw = dst.as_ref();
     
@@ -151,11 +152,12 @@ pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[
     })?;
 
     info!(src = %src.display(), dst = %dst.display(), "Inscribe: file moved");
-    Ok(())
+    Ok(dst)
 }
 
 /// Copy `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<u64, InscribeError> {
+/// Returns the final destination path used and bytes copied.
+pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(PathBuf, u64), InscribeError> {
     let src = src.as_ref();
     let dst_raw = dst.as_ref();
 
@@ -172,7 +174,7 @@ pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[
 
     let bytes = retry_with_backoff(|| std::fs::copy(src, &dst))?;
     info!(src = %src.display(), dst = %dst.display(), bytes, "Inscribe: file copied");
-    Ok(bytes)
+    Ok((dst, bytes))
 }
 
 /// Delete a file, verifying it is in a trusted directory.

@@ -178,7 +178,7 @@
         {
           "id": "move-image",
           "label": "Move to Pictures",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Pictures\\\\Arbiter\\\\${env.file_name}\"}},\"point\":null,\"delay_ms\":500}",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Pictures\\\\Arbiter\\\\\"}},\"point\":null,\"delay_ms\":500}",
           "kind": "Action",
           "next_nodes": {}
         }

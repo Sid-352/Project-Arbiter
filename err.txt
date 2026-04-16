@@ -1,0 +1,641 @@
+gs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:26.910360Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:26.910631Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:26.911020Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:26.911309Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:26.911542Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:27.113865Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:27.114611Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:27.115077Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:27.308513Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:27.309081Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:27.709935Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:27.710532Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:28.111857Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:28.112367Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:28.513174Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:28.517005Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:28.517456Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:28.517926Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:28.518218Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:28.518475Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:28.730915Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:28.731661Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:28.731984Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:28.914948Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:28.915387Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:29.316455Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:29.316876Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:29.717824Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:29.718331Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:30.119304Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:30.122968Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:30.123268Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:30.123600Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:30.123803Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:30.124039Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:30.332331Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:30.332979Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:30.333213Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:30.521223Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:30.521652Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:30.922486Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:30.923022Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:31.324152Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:31.324547Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:31.726197Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:31.729780Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:31.730118Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:31.730465Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:31.730673Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:31.730883Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:31.947231Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:31.947826Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:31.948058Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:32.128192Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:32.128741Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:32.530165Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:32.530733Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:32.932434Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:32.932909Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:33.334089Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:33.337835Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:33.338297Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:33.338722Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:33.339005Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:33.339232Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:33.541490Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:33.542249Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:33.542534Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:33.735350Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:33.735779Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:34.136781Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:34.137185Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:34.538083Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:34.538498Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:34.939721Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:34.943372Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:34.943718Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:34.944122Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:34.944403Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:34.944720Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:35.154110Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:35.154755Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:35.155012Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:35.340710Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:35.341246Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:35.742245Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:35.742674Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:36.144322Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:36.144832Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:36.546047Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:36.549726Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:36.550022Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:36.550425Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:36.550660Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:36.550867Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:36.758150Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:36.758938Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:36.759326Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:36.947588Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:36.948003Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:37.348878Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:37.349545Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:37.750429Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:37.751057Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:38.152118Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true   
+2026-04-16T07:48:38.155969Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:38.156277Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:38.156646Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:38.156861Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:38.157185Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:38.371925Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:38.372657Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:38.372942Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:38.553668Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:38.554278Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:38.955628Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:38.956205Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:39.357239Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:39.357785Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:39.758801Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:39.762617Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:39.762960Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:39.763409Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:39.763685Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:39.763947Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:39.966468Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:39.967080Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:39.967315Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:40.160736Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:40.161197Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:40.562073Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:40.562658Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:40.963684Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:40.964398Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:41.365666Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:41.369542Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:41.369993Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:41.370507Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:41.370945Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:41.371305Z  INFO Runner: user idle time at sequence start idle_secs=1
+2026-04-16T07:48:41.585133Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png    
+2026-04-16T07:48:41.585924Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:41.586336Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:41.767531Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:41.767924Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:42.168916Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:42.169512Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:42.570836Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false      
+2026-04-16T07:48:42.571438Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:42.972942Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:42.976688Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:42.977130Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:42.977669Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:42.978106Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:42.978395Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:43.182381Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:43.183201Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:43.183514Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:43.374772Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false      
+2026-04-16T07:48:43.375262Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:43.776505Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:43.776951Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:44.177682Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false2026-04-16T07:48:44.178269Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:44.579397Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:44.583003Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:44.583351Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:44.583686Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:44.583972Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:44.584177Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:44.793925Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:44.794743Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:44.795169Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:44.980786Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false2026-04-16T07:48:44.981368Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:45.382605Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false      
+2026-04-16T07:48:45.383198Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:45.784494Z DEBUG Successive size check path="N:\\Temp\\arbtest\\ds2.png" size=3344621 stable=true
+2026-04-16T07:48:45.788121Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:48:45.788409Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:45.788946Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:45.789268Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:45.789532Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:46.003210Z  INFO Inscribe: file moved src=N:\Temp\arbtest\ds2.png dst=N:\Temp\arbtest\pngs\ds2.png
+2026-04-16T07:48:46.003730Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:46.004022Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:46.185697Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:46.186321Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:46.587351Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:46.591065Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:46.591528Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:46.591896Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:46.592280Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:46.592663Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:46.795312Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:46.796311Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:46.796811Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:46.988526Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:46.989010Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:47.389880Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false2026-04-16T07:48:47.390500Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:47.791365Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:48:47.795106Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:48:47.795584Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:47.796084Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:47.796539Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:47.796972Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:47.999290Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\ds2.png
+2026-04-16T07:48:47.999735Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:47.999992Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:48.192914Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs" size=0 stable=false
+2026-04-16T07:48:48.193306Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs
+2026-04-16T07:48:48.594261Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 
+stable=false
+2026-04-16T07:48:48.594705Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:48.995674Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:48.999367Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:48.999765Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:49.000147Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:49.000376Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:49.000637Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:49.205040Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:49.205870Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:49.206381Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:49.396913Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 
+stable=false
+2026-04-16T07:48:49.397364Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:49.798468Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:49.798976Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:50.199886Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:48:50.203522Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:48:50.203844Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:50.204165Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:50.204407Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:50.204604Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:50.408897Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\ds2.png
+2026-04-16T07:48:50.409378Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:50.409731Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:50.601273Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:50.601590Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs
+2026-04-16T07:48:51.002403Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs" size=0 stable=false
+2026-04-16T07:48:51.002785Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs
+2026-04-16T07:48:51.404287Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:51.404700Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:51.806161Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:51.810068Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:51.810449Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:51.810864Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:51.811122Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:51.811392Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:52.014550Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:52.015265Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:52.015486Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:52.207598Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:52.208269Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:52.609443Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 
+stable=false
+2026-04-16T07:48:52.610178Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:53.011586Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:48:53.015402Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:48:53.015773Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:53.016232Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:53.016565Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:53.016942Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:53.218312Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:48:53.218796Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:53.219123Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:53.413410Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:53.413874Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs
+2026-04-16T07:48:53.815564Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:53.816008Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs
+2026-04-16T07:48:54.216823Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:54.217263Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:54.618434Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:54.622150Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:54.622525Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:54.622944Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:54.623306Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:54.623622Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:54.826724Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:54.827405Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:54.827686Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:55.019799Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:55.020232Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:55.421457Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:55.422039Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:55.823661Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:48:55.827445Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:48:55.827910Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:55.828355Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:55.828685Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:55.828973Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:56.036862Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:48:56.037506Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:56.038052Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:56.225123Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:56.225521Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs
+2026-04-16T07:48:56.627064Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:56.627449Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs
+2026-04-16T07:48:57.028426Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:57.028934Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:57.429663Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:48:57.433416Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:48:57.433747Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:57.434115Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:57.434371Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:57.434597Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:57.650230Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:48:57.651285Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:57.651681Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:57.830943Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:57.831387Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:58.233001Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:58.233556Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:58.635163Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:48:58.638644Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:48:58.638950Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:48:58.639296Z  INFO Runner: acquiring queue lock
+2026-04-16T07:48:58.639491Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:48:58.639696Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:48:58.851193Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:48:58.851906Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:48:58.852301Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:48:59.036052Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:59.036563Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:48:59.437528Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:59.437858Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs
+2026-04-16T07:48:59.839222Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:48:59.839677Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs      
+2026-04-16T07:49:00.240440Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:00.244407Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:00.244705Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:00.245057Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:00.245274Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:00.245486Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:00.454301Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:00.454993Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:00.455248Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:00.641675Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:00.642162Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs      
+2026-04-16T07:49:01.043837Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:01.044380Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:01.445589Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:01.449234Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:01.449522Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:01.449894Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:01.450126Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:01.450368Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:01.663084Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:01.663815Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:01.664205Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:01.846810Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:01.847132Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:02.247973Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:02.248299Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:02.649448Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:02.650056Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs 
+2026-04-16T07:49:03.051463Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:03.055142Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:03.055485Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:03.055834Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:03.056080Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:03.056294Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:03.273473Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:03.274173Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:03.274403Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:03.452574Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:03.453041Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs 
+2026-04-16T07:49:03.853919Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:03.854541Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs      
+2026-04-16T07:49:04.255535Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:04.259191Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:04.259650Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:04.260231Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:04.260662Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:04.261074Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:04.465844Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:04.466453Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:04.466933Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:04.657426Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:04.657943Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:05.058749Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:05.059067Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:05.460168Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:05.460601Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:05.861895Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:05.865595Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:05.865923Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:05.866292Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:05.866587Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:05.866880Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:06.075900Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:06.076769Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:06.077236Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:06.263322Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:06.263978Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:06.665241Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:06.665668Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs 
+2026-04-16T07:49:07.066905Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:07.070563Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:07.070981Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:07.071396Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:07.071657Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:07.071939Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:07.274991Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:07.275708Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:07.276196Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:07.468587Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:07.469123Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:07.870190Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:07.870760Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:08.272085Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:08.272510Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:08.674039Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:08.677892Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:08.678302Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:08.678628Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:08.678890Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:08.679149Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:08.889730Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:08.890519Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:08.890833Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:09.076011Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:09.076578Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:09.477699Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:09.478315Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:09.879852Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:09.883785Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:09.884229Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:09.884648Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:09.884861Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:09.885112Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:10.102204Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:10.102845Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:10.103236Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:10.281912Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:10.282374Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:10.683303Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:10.683831Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:11.085280Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:11.086140Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:11.487746Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:11.491440Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:11.491738Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:11.492147Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:11.492364Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:11.492573Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:11.697412Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:11.698236Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:11.698467Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:11.889308Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:11.889831Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:12.291675Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:12.292246Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:12.693746Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:12.697331Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:12.697662Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:12.698053Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:12.698239Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:12.698451Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:12.902559Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:12.903306Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:12.903833Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:13.095174Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:13.095714Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:13.497173Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:13.497676Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:13.898735Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:13.899237Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:14.300818Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:14.305263Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:14.305645Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:14.306082Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:14.306327Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:14.306566Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:14.510441Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:14.511521Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:14.511912Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:14.702264Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:14.702700Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:15.103698Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:15.104151Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:15.505142Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:15.508888Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:15.509337Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:15.509672Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:15.509943Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:15.510249Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:15.727235Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:15.727915Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:15.728253Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:15.906598Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:15.907168Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:16.308188Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:16.308530Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:16.709878Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:16.710675Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:17.112013Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:17.115785Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:17.116257Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:17.116844Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:17.117173Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:17.117592Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:17.326895Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:17.327800Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:17.328167Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:17.514237Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:17.514843Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:17.915735Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:17.916331Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:18.318034Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:18.322062Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:18.322646Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:18.323288Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:18.323578Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:18.323780Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:18.540980Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:18.541712Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:18.542101Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:18.720264Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:18.720708Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs2026-04-16T07:49:19.121741Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:19.122288Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:19.523352Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:19.523982Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:19.924977Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:19.928621Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:19.928912Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:19.929272Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:19.929462Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:19.929683Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:20.131622Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:20.132385Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:20.132705Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:20.326698Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:20.327339Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:20.728286Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:20.728752Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:21.130342Z DEBUG Successive size check path="N:\\Temp\\arbtest\\ds_2.png" size=3344621 stable=true
+2026-04-16T07:49:21.133951Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds_2.png
+2026-04-16T07:49:21.134298Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:21.134738Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:21.135015Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:21.135306Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:21.347211Z  INFO Inscribe: file moved src=N:\Temp\arbtest\ds_2.png dst=N:\Temp\arbtest\pngs\ds_2.png
+2026-04-16T07:49:21.347759Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:21.348126Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:21.531294Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\ds_2.png
+2026-04-16T07:49:21.932014Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\ds_2.png
+2026-04-16T07:49:22.333814Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:22.337491Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:22.337882Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:22.338383Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:22.338606Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:22.338854Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:22.555942Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:22.556554Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:22.556882Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:22.735298Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:22.735900Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:23.137221Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:23.137759Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs2026-04-16T07:49:23.538849Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:23.539359Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:23.941349Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:23.945166Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:23.945553Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:23.945959Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:23.946161Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:23.946407Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:24.153681Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png     
+2026-04-16T07:49:24.154668Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:24.155026Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:24.342993Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:24.343625Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:24.744489Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:24.745105Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:25.146798Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\ds_2.png" size=3344621 stable=true
+2026-04-16T07:49:25.150306Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds_2.png
+2026-04-16T07:49:25.150673Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:25.150965Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:25.151199Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:25.151437Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:25.354365Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\ds_2.png dst=N:\Temp\arbtest\pngs\pngs\ds_2.png
+2026-04-16T07:49:25.354918Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:25.355191Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:25.548639Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs" size=0 stable=false
+2026-04-16T07:49:25.548960Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs
+2026-04-16T07:49:25.949753Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:25.953435Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:25.953761Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:25.954104Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:25.954380Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:25.954614Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:26.157338Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:26.158105Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:26.158500Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:26.351082Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:26.351528Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:26.752286Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:26.752713Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:27.154313Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:27.154840Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:27.556473Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2 - Copy.png" size=3344621 stable=true
+2026-04-16T07:49:27.560168Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2 - Copy.png
+2026-04-16T07:49:27.560458Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:27.560810Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:27.561037Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:27.561318Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:27.772420Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2 - Copy.png
+2026-04-16T07:49:27.774366Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:27.775042Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:27.957813Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:27.958321Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:28.359425Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:28.359973Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:28.760773Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\ds_2.png" size=3344621 stable=true
+2026-04-16T07:49:28.764400Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds_2.png
+2026-04-16T07:49:28.764822Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:28.765174Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:28.765451Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:28.765624Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:28.967346Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\ds_2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\ds_2.png
+2026-04-16T07:49:28.967818Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:28.968044Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:29.162262Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:29.162659Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs
+2026-04-16T07:49:29.563822Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs" size=0 stable=false
+2026-04-16T07:49:29.564226Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs
+2026-04-16T07:49:29.965600Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\ds2.png" size=3344621 stable=true
+2026-04-16T07:49:29.969243Z DEBUG Atlas: fuzzy summons match found reg_key=FileCreated|N:\Temp\arbtest|*.png filename=ds2.png
+2026-04-16T07:49:29.969527Z  INFO Atlas: summons matched, dispatching sequence key=FileCreated|N:\Temp\arbtest|*.png
+2026-04-16T07:49:29.969902Z  INFO Runner: acquiring queue lock
+2026-04-16T07:49:29.970083Z  INFO Runner: lock acquired, checking hibernation guard
+2026-04-16T07:49:29.970287Z  INFO Runner: user idle time at sequence start idle_secs=0
+2026-04-16T07:49:30.177527Z  INFO Inscribe: file moved src=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png dst=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\ds2.png
+2026-04-16T07:49:30.178361Z DEBUG Atlas: node execution complete idx=1
+2026-04-16T07:49:30.178911Z  INFO Atlas sequence complete — returning to Idle
+2026-04-16T07:49:30.366671Z DEBUG Successive size check path="N:\\Temp\\arbtest\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs\\pngs" size=0 stable=false
+2026-04-16T07:49:30.367197Z DEBUG Vigil-fs: write not yet complete, skipping path_str=N:\Temp\arbtest\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs\pngs
+2026-04-16T07:49:30.487180Z  INFO Tray: Quit selected — killing children and shutting down
+2026-04-16T07:49:30.487555Z  INFO Atlas: shutting down
+2026-04-16T07:49:30.487745Z  INFO Atlas: run loop terminated cleanly
+2026-04-16T07:49:30.488902Z DEBUG The Hand: safety release executed (all modifiers up)
+PS N:\Projects\Project Vassal> 

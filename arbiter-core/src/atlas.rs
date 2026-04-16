@@ -217,8 +217,45 @@ impl Atlas {
                 // 2. Process incoming Triggers (Summons)
                 Some(summons) = vigil_rx.recv() => {
                     if self.state == EngineState::Idle {
-                        let key = summons.to_registry_key();
-                        if let Some(ordinance) = self.registry.get(&key).cloned() {
+                        let mut key = summons.to_registry_key();
+                        let mut ordinance = self.registry.get(&key).cloned();
+
+                        // ── Fuzzy Matching for File Events ──
+                        // If no exact match (likely due to catch-all Ward pattern "*"),
+                        // scan the registry for path + pattern matches against the actual filename.
+                        if ordinance.is_none() {
+                            if let Summons::FileCreated { watch_path, .. } = &summons {
+                                let filename = match &summons {
+                                    Summons::FileCreated { context, .. } => context.variables.get("file_name").cloned().unwrap_or_default(),
+                                    _ => String::new(),
+                                };
+                                
+                                if !filename.is_empty() {
+                                    let path_prefix = format!("FileCreated|{}|", watch_path.display());
+                                    
+                                    for (reg_key, reg_ord) in &self.registry {
+                                        if reg_key.starts_with(&path_prefix) {
+                                            // Extract the pattern from the registry key
+                                            let pattern = &reg_key[path_prefix.len()..];
+                                            
+                                            if let Ok(matcher) = globset::GlobBuilder::new(pattern)
+                                                .case_insensitive(true)
+                                                .build() 
+                                            {
+                                                if matcher.compile_matcher().is_match(&filename) {
+                                                    debug!(%reg_key, %filename, "Atlas: fuzzy summons match found");
+                                                    key = reg_key.clone();
+                                                    ordinance = Some(reg_ord.clone());
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some(ordinance) = ordinance {
                             info!(%key, "Atlas: summons matched, dispatching sequence");
                             // active_ordinance_id stores the summon key for now, maybe refactor later to use DecreeId
                             self.active_ordinance_id = Some(DecreeId(key.clone()));
