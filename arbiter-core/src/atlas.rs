@@ -190,6 +190,8 @@ impl Atlas {
                                             recursive: *recursive,
                                         };
                                         ledger.wards.push(new_ward.clone());
+                                        // Save again to persist the new ward
+                                        let _ = crate::ledger::save(&ledger);
                                         let stop_tx = crate::vigil::fs::spawn_watcher(new_ward, filter.clone(), vigil_tx.clone());
                                         self.active_watchers.insert(ward_id.clone(), stop_tx);
                                     }

@@ -227,6 +227,38 @@
         "ignore_mouse": true,
         "ignore_keyboard": true
       }
+    },
+    {
+      "id": "id-1",
+      "label": "Edge opener",
+      "summons": {
+        "type": "Hotkey",
+        "data": {
+          "combo": "ctrl+alt+u"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "id-2"
+          }
+        },
+        {
+          "id": "id-2",
+          "label": "Open Edge",
+          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"program.exe\",\"args\":[],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": false,
+        "ignore_keyboard": false
+      }
     }
   ]
 }

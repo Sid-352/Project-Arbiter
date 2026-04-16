@@ -23,8 +23,16 @@ export global Theme {
     in-out property <color> text-muted:     is-dark ? #52525b : #a1a1aa;
     in-out property <length> radius:        8px;
     in-out property <length> spacing:       12px;
+    in-out property <length> padding:       16px;
 
-    // Durations
+    // Unified Font Sizes
+    in-out property <length> font-tiny:     9px;
+    in-out property <length> font-small:    11px;
+    in-out property <length> font-norm:     13px;
+    in-out property <length> font-large:    16px;
+    in-out property <length> font-title:    20px;
+
+    // Unified Durations
     in-out property <duration> dur-fast:    150ms;
     in-out property <duration> dur-norm:    200ms;
     in-out property <duration> dur-slow:    250ms;
@@ -87,7 +95,7 @@ component EnvChip inherits Rectangle {
         Text {
             text: root.token;
             color: ta.has-hover ? Theme.text-main : Theme.warning;
-            font-size: 9px;
+            font-size: Theme.font-tiny;
             font-family: "Geist Mono";
             vertical-alignment: center;
             animate color { duration: Theme.dur-fast; }
@@ -160,7 +168,7 @@ component SidebarItem inherits Rectangle {
         Text {
             text: root.label;
             color: root.active ? Theme.text-main : (root.is-hovered ? Theme.text-main : Theme.text-secondary);
-            font-size: 13px;
+            font-size: Theme.font-norm;
             font-weight: root.active ? 600 : 400;
             vertical-alignment: center;
             horizontal-stretch: 1;
@@ -176,7 +184,7 @@ component SidebarItem inherits Rectangle {
                 background: root.decree-status == 1 ? Theme.success : root.decree-status == 2 ? Theme.warning : Theme.critical;
             }
         }
-
+        
         VerticalLayout {
             width: root.deletable ? 22px : 0px;
             visible: root.deletable;
@@ -213,17 +221,24 @@ component InputPill inherits Rectangle {
     in property <bool> monospaced: false;
     callback committed(string);
     background: Theme.bg-input;
-    border-radius: 6px;
+    border-radius: Theme.radius / 2;
     border-width: 1px;
     border-color: input.has-focus ? Theme.border-focus : Theme.border;
     height: Theme.input-height;
+    
+    ta := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { input.focus(); }
+    }
+
     HorizontalLayout {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding-left: Theme.spacing;
+        padding-right: Theme.spacing;
         input := TextInput {
             text <=> root.value;
             color: Theme.text-main;
-            font-size: 12px;
+            font-size: Theme.font-norm;
             font-family: root.monospaced ? "Geist Mono" : "Inter";
             vertical-alignment: center;
             single-line: true;
@@ -235,8 +250,14 @@ component InputPill inherits Rectangle {
         if input.text == "" && !input.has-focus: Text {
             text: root.placeholder;
             color: Theme.text-muted;
-            font-size: 12px;
+            font-size: Theme.font-norm;
             vertical-alignment: center;
+        }
+    }
+
+    FocusScope {
+        focus-lost(reason) => {
+            root.committed(root.value);
         }
     }
 }
@@ -247,29 +268,40 @@ component TextEdit inherits Rectangle {
     in property <bool> monospaced: false;
     callback edited(string);
     background: Theme.bg-input;
-    border-radius: 6px;
+    border-radius: Theme.radius / 2;
     border-width: 1px;
     border-color: input.has-focus ? Theme.border-focus : Theme.border;
-    height: 100px;
-    FocusScope {
-        HorizontalLayout {
-            padding: 8px;
+    min-height: 120px;
+
+    ta := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { input.focus(); }
+    }
+
+    VerticalLayout {
+        padding: Theme.spacing;
+        ScrollView {
+            vertical-stretch: 1;
+            viewport-height: input.preferred-height;
             input := TextInput {
                 text <=> root.value;
                 color: Theme.text-main;
-                font-size: 12px;
+                font-size: Theme.font-norm;
                 font-family: root.monospaced ? "Geist Mono" : "Inter";
                 wrap: word-wrap;
                 single-line: false;
             }
-
-            if input.text == "" && !input.has-focus: Text {
-                text: root.placeholder;
-                color: Theme.text-muted;
-                font-size: 12px;
-            }
         }
 
+        if input.text == "" && !input.has-focus: Text {
+            text: root.placeholder;
+            color: Theme.text-muted;
+            font-size: Theme.font-norm;
+        }
+    }
+
+    FocusScope {
         focus-lost(reason) => {
             root.edited(root.value);
         }
@@ -296,7 +328,7 @@ component ActionButton inherits Rectangle {
     Text {
         text: root.label;
         color: root.primary ? #ffffff : (ta.has-hover ? Theme.accent : Theme.text-main);
-        font-size: 11px;
+        font-size: Theme.font-small;
         font-weight: 700;
         horizontal-alignment: center;
         vertical-alignment: center;
@@ -322,6 +354,10 @@ component OrdinanceStepItem inherits Rectangle {
     border-radius: Theme.radius;
     border-width: 1px;
     border-color: root.is-editing ? Theme.accent : Theme.border;
+    
+    // Smooth transition for editing state
+    animate border-color { duration: Theme.dur-fast; }
+
     property <color> type-color: 
         root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
     property <string> type-label: 
@@ -340,17 +376,17 @@ component OrdinanceStepItem inherits Rectangle {
     }
 
     if !root.is-last: Rectangle {
-        x: 16px + 10px - 1px;
-        y: 16px + 20px;
+        x: Theme.padding + 10px - 1px;
+        y: Theme.padding + 20px;
         width: 2px;
-        height: root.height - 8px;
+        height: root.height - Theme.spacing;
         background: Theme.border;
     }
     VerticalLayout {
-        padding: 16px;
-        spacing: 12px;
+        padding: Theme.padding;
+        spacing: Theme.spacing;
         HorizontalLayout {
-            spacing: 16px;
+            spacing: Theme.padding;
             VerticalLayout {
                 width: 20px;
                 alignment: start;
@@ -363,7 +399,7 @@ component OrdinanceStepItem inherits Rectangle {
                     border-color: (root.is-active || root.is-editing) ? Theme.accent : Theme.border;
                     z: 1;
 
-                    // Pulsing Glow Restoration
+                    // Pulsing Glow
                     drop-shadow-blur: root.is-active ? 6px + 6px * root.pulse : 0px;
                     drop-shadow-color: Theme.accent;
 
@@ -381,7 +417,7 @@ component OrdinanceStepItem inherits Rectangle {
                     Text {
                         text: root.title;
                         color: Theme.text-main;
-                        font-size: 14px;
+                        font-size: Theme.font-norm + 1px;
                         font-weight: 600;
                         vertical-alignment: center;
                     }
@@ -400,7 +436,7 @@ component OrdinanceStepItem inherits Rectangle {
                                 Text {
                                     text: root.type-label;
                                     color: root.type-color;
-                                    font-size: 8px;
+                                    font-size: Theme.font-tiny;
                                     font-weight: 800;
                                     font-family: "Geist Mono";
                                     vertical-alignment: center;
@@ -423,7 +459,7 @@ component OrdinanceStepItem inherits Rectangle {
                                 Text {
                                     text: "BATON";
                                     color: Theme.critical;
-                                    font-size: 8px;
+                                    font-size: Theme.font-tiny;
                                     font-weight: 800;
                                     font-family: "Geist Mono";
                                     vertical-alignment: center;
@@ -436,7 +472,7 @@ component OrdinanceStepItem inherits Rectangle {
                 if !root.is-editing: Text {
                     text: root.subtext;
                     color: Theme.text-secondary;
-                    font-size: 12px;
+                    font-size: Theme.font-small + 1px;
                 }
             }
 
@@ -456,14 +492,14 @@ component OrdinanceStepItem inherits Rectangle {
 
         if root.is-editing: VerticalLayout {
             padding-left: 36px;
-            spacing: 12px;
+            spacing: Theme.spacing;
 
             VerticalLayout {
                 spacing: 8px;
                 Text {
                     text: "Step Name";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -483,7 +519,7 @@ component OrdinanceStepItem inherits Rectangle {
                     Text {
                         text: "Inscribe Mode";
                         color: Theme.text-secondary;
-                        font-size: 10px;
+                        font-size: Theme.font-tiny + 1px;
                         font-weight: 700;
                         vertical-alignment: center;
                     }
@@ -502,7 +538,7 @@ component OrdinanceStepItem inherits Rectangle {
                         Text {
                             text: root.subtext == "Inscribe: Copy Mode" ? "COPY" : "MOVE";
                             color: Theme.accent;
-                            font-size: 9px;
+                            font-size: Theme.font-tiny;
                             font-weight: 800;
                             horizontal-alignment: center;
                             vertical-alignment: center;
@@ -513,7 +549,7 @@ component OrdinanceStepItem inherits Rectangle {
                 Text {
                     text: "Source Path";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -529,7 +565,7 @@ component OrdinanceStepItem inherits Rectangle {
                 Text {
                     text: "Target Destination";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -547,7 +583,7 @@ component OrdinanceStepItem inherits Rectangle {
                 Text {
                     text: "Executable";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -563,7 +599,7 @@ component OrdinanceStepItem inherits Rectangle {
                 Text {
                     text: "Arguments";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -581,7 +617,7 @@ component OrdinanceStepItem inherits Rectangle {
                 Text {
                     text: "Text to Emit";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -598,7 +634,7 @@ component OrdinanceStepItem inherits Rectangle {
                 Text {
                     text: "Internal state stabilization delay (ms).";
                     color: Theme.text-muted;
-                    font-size: 11px;
+                    font-size: Theme.font-small;
                     font-italic: true;
                 }
 
@@ -614,9 +650,9 @@ component OrdinanceStepItem inherits Rectangle {
             if root.step-type == 4: VerticalLayout {
                 spacing: 8px;
                 Text {
-                    text: "Key Sequence";
+                    text: "Navigation Key Sequence";
                     color: Theme.text-secondary;
-                    font-size: 10px;
+                    font-size: Theme.font-tiny + 1px;
                     font-weight: 700;
                 }
 
@@ -630,10 +666,11 @@ component OrdinanceStepItem inherits Rectangle {
                 }
 
                 Text {
-                    text: "Use '+' for combinations. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
+                    text: "Use '+' for combinations. Example: win+r to open Run dialog. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
                     color: Theme.text-muted;
-                    font-size: 10px;
+                    font-size: Theme.font-small;
                     font-italic: true;
+                    wrap: word-wrap;
                 }
             }
 
@@ -656,7 +693,7 @@ component OrdinanceStepItem inherits Rectangle {
                     Text {
                         text: "REMOVE STEP";
                         color: ta-rem.has-hover ? #ffffff : Theme.critical;
-                        font-size: 10px;
+                        font-size: Theme.font-tiny + 1px;
                         font-weight: 700;
                         horizontal-alignment: center;
                         vertical-alignment: center;
@@ -728,7 +765,7 @@ export component ArbiterForge inherits Window {
                     Text {
                         text: "ARBITER";
                         color: Theme.text-main;
-                        font-size: 16px;
+                        font-size: Theme.font-large;
                         font-weight: 800;
                         letter-spacing: 1px;
                         vertical-alignment: center;
@@ -743,7 +780,7 @@ export component ArbiterForge inherits Window {
                         Text {
                             text: "SYSTEM";
                             color: Theme.text-muted;
-                            font-size: 10px;
+                            font-size: Theme.font-tiny + 1px;
                             font-weight: 800;
                         }
                     }
@@ -785,7 +822,7 @@ export component ArbiterForge inherits Window {
                         Text {
                             text: "DECREES";
                             color: Theme.text-muted;
-                            font-size: 10px;
+                            font-size: Theme.font-tiny + 1px;
                             font-weight: 800;
                             vertical-alignment: center;
                         }
@@ -837,7 +874,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: "No active decrees.";
                                     color: Theme.text-muted;
-                                    font-size: 11px;
+                                    font-size: Theme.font-small;
                                     horizontal-alignment: center;
                                 }
                             }
@@ -923,7 +960,7 @@ export component ArbiterForge inherits Window {
                                 input-label := TextInput {
                                     text <=> root.active-decree-label;
                                     color: Theme.text-main;
-                                    font-size: 18px;
+                                    font-size: Theme.font-large + 2px;
                                     font-weight: 700;
                                     vertical-alignment: center;
                                     single-line: true;
@@ -951,7 +988,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: root.active-decree-status == 0 ? "DRAFT" : "STABLE";
                                     color: Theme.accent;
-                                    font-size: 10px;
+                                    font-size: Theme.font-tiny + 1px;
                                     font-weight: 800;
                                     vertical-alignment: center;
                                 }
@@ -996,7 +1033,7 @@ export component ArbiterForge inherits Window {
                             Text {
                                 text: "SUMMONS CONDITION";
                                 color: Theme.accent;
-                                font-size: 11px;
+                                font-size: Theme.font-small;
                                 font-weight: 800;
                                 letter-spacing: 0.5px;
                             }
@@ -1023,7 +1060,7 @@ export component ArbiterForge inherits Window {
                                                 Text {
                                                     text: t;
                                                     color: root.summons-trigger-type == i ? Theme.text-main : Theme.text-muted;
-                                                    font-size: 10px;
+                                                    font-size: Theme.font-tiny + 1px;
                                                     font-weight: 800;
                                                     horizontal-alignment: center;
                                                     vertical-alignment: center;
@@ -1039,14 +1076,14 @@ export component ArbiterForge inherits Window {
                                     }
 
                                     if root.summons-trigger-type == 0: HorizontalLayout {
-                                        spacing: 12px;
+                                        spacing: Theme.spacing;
                                         VerticalLayout {
                                             spacing: 6px;
-                                            horizontal-stretch: 1;
+                                            horizontal-stretch: 2;
                                             Text {
                                                 text: "Monitor Path";
                                                 color: Theme.text-muted;
-                                                font-size: 10px;
+                                                font-size: Theme.font-tiny + 1px;
                                             }
 
                                             InputPill {
@@ -1058,11 +1095,12 @@ export component ArbiterForge inherits Window {
 
                                         VerticalLayout {
                                             spacing: 6px;
-                                            width: 180px;
+                                            horizontal-stretch: 1;
+                                            min-width: 140px;
                                             Text {
                                                 text: "File Pattern";
                                                 color: Theme.text-muted;
-                                                font-size: 10px;
+                                                font-size: Theme.font-tiny + 1px;
                                             }
 
                                             InputPill {
@@ -1078,7 +1116,7 @@ export component ArbiterForge inherits Window {
                                             Text {
                                                 text: "Recursion";
                                                 color: Theme.text-muted;
-                                                font-size: 10px;
+                                                font-size: Theme.font-tiny + 1px;
                                             }
 
                                             Rectangle {
@@ -1094,7 +1132,7 @@ export component ArbiterForge inherits Window {
                                                 Text {
                                                     text: root.summons-ward-recursive ? "RECURSIVE" : "SHALLOW";
                                                     color: root.summons-ward-recursive ? Theme.accent : Theme.text-muted;
-                                                    font-size: 9px;
+                                                    font-size: Theme.font-tiny;
                                                     font-weight: 800;
                                                     horizontal-alignment: center;
                                                     vertical-alignment: center;
@@ -1110,7 +1148,7 @@ export component ArbiterForge inherits Window {
                                             Text {
                                                 text: "Combo";
                                                 color: Theme.text-muted;
-                                                font-size: 10px;
+                                                font-size: Theme.font-tiny + 1px;
                                             }
 
                                             InputPill {
@@ -1128,7 +1166,7 @@ export component ArbiterForge inherits Window {
                                             Text {
                                                 text: "Process Name";
                                                 color: Theme.text-muted;
-                                                font-size: 10px;
+                                                font-size: Theme.font-tiny + 1px;
                                             }
 
                                             InputPill {
@@ -1148,7 +1186,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: "DECREE SEQUENCE";
                                     color: Theme.accent;
-                                    font-size: 11px;
+                                    font-size: Theme.font-small;
                                     font-weight: 800;
                                     letter-spacing: 0.5px;
                                 }
@@ -1190,7 +1228,7 @@ export component ArbiterForge inherits Window {
                                     Text {
                                         text: "Sequence is empty. Append an action below.";
                                         color: Theme.text-muted;
-                                        font-size: 12px;
+                                        font-size: Theme.font-norm;
                                         horizontal-alignment: center;
                                         vertical-alignment: center;
                                     }
@@ -1203,7 +1241,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: "APPEND ACTION";
                                     color: Theme.text-muted;
-                                    font-size: 10px;
+                                    font-size: Theme.font-tiny + 1px;
                                     font-weight: 800;
                                     horizontal-alignment: center;
                                 }
@@ -1261,7 +1299,7 @@ export component ArbiterForge inherits Window {
                     Text {
                         text: "MODULE OFFLINE";
                         color: Theme.text-main;
-                        font-size: 16px;
+                        font-size: Theme.font-large;
                         font-weight: 700;
                         horizontal-alignment: center;
                     }
@@ -1269,7 +1307,7 @@ export component ArbiterForge inherits Window {
                     Text {
                         text: "Arbiter Conservatory and Signet modules are under development.";
                         color: Theme.text-muted;
-                        font-size: 12px;
+                        font-size: Theme.font-norm;
                         horizontal-alignment: center;
                     }
                 }
@@ -1311,7 +1349,7 @@ export component ArbiterForge inherits Window {
                     Text {
                         text: "CONTEXT VARIABLES (CLICK TO COPY)";
                         color: Theme.accent;
-                        font-size: 9px;
+                        font-size: Theme.font-tiny;
                         font-weight: 800;
                         vertical-alignment: center;
                     }
@@ -1478,7 +1516,7 @@ export component ArbiterForge inherits Window {
                         Text {
                             text: "DATA STREAM ACTIVE";
                             color: Theme.text-secondary;
-                            font-size: 10px;
+                            font-size: Theme.font-tiny + 1px;
                             font-weight: 800;
                             vertical-alignment: center;
                         }
@@ -1490,7 +1528,7 @@ export component ArbiterForge inherits Window {
                         Text {
                             text: "ENGINE v0.1.0";
                             color: Theme.text-muted;
-                            font-size: 10px;
+                            font-size: Theme.font-tiny + 1px;
                             font-weight: 800;
                             vertical-alignment: center;
                         }
@@ -1509,7 +1547,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: entry.time;
                                     color: Theme.text-muted;
-                                    font-size: 9px;
+                                    font-size: Theme.font-tiny;
                                     font-family: "Geist Mono";
                                     vertical-alignment: center;
                                 }
@@ -1517,7 +1555,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: entry.tag;
                                     color: entry.tag-color;
-                                    font-size: 9px;
+                                    font-size: Theme.font-tiny;
                                     font-weight: 700;
                                     font-family: "Geist Mono";
                                     vertical-alignment: center;
@@ -1527,7 +1565,7 @@ export component ArbiterForge inherits Window {
                                 Text {
                                     text: entry.msg;
                                     color: Theme.text-secondary;
-                                    font-size: 9px;
+                                    font-size: Theme.font-tiny;
                                     vertical-alignment: center;
                                     height: 16px;
                                     horizontal-stretch: 1;
@@ -1560,7 +1598,7 @@ export component ArbiterForge inherits Window {
                 Text {
                     text: root.modal-title;
                     color: Theme.text-main;
-                    font-size: 20px;
+                    font-size: Theme.font-title;
                     font-weight: 700;
                     horizontal-alignment: center;
                 }
@@ -1568,7 +1606,7 @@ export component ArbiterForge inherits Window {
                 Text {
                     text: root.modal-message;
                     color: Theme.text-secondary;
-                    font-size: 14px;
+                    font-size: Theme.font-norm + 1px;
                     horizontal-alignment: center;
                     wrap: word-wrap;
                 }
