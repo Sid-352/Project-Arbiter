@@ -23,6 +23,20 @@ export global Theme {
     in-out property <color> text-muted:     is-dark ? #52525b : #a1a1aa;
     in-out property <length> radius:        8px;
     in-out property <length> spacing:       12px;
+
+    // Durations
+    in-out property <duration> dur-fast:    150ms;
+    in-out property <duration> dur-norm:    200ms;
+    in-out property <duration> dur-slow:    250ms;
+
+    // Component Sizes
+    in-out property <length> sidebar-width: 260px;
+    in-out property <length> header-height:  64px;
+    in-out property <length> item-height:    38px;
+    in-out property <length> btn-height:     32px;
+    in-out property <length> log-height:     140px;
+    in-out property <length> modal-width:    400px;
+    in-out property <length> input-height:   36px;
 }
 
 export struct LogEntry {
@@ -34,18 +48,18 @@ export struct LogEntry {
 }
 
 export struct DecreeEntry {
-    id:     string,
-    label:  string,
+    id: string,
+    label: string,
     status: int,
 }
 
 export struct DecreeStep {
-    id:            string,
-    title:         string,
-    subtext:       string,
-    step-type:     int,
+    id: string,
+    title: string,
+    subtext: string,
+    step-type: int,
     baton-required: bool,
-    is-active:     bool,
+    is-active: bool,
     arg-a: string,
     arg-b: string,
 }
@@ -76,7 +90,7 @@ component EnvChip inherits Rectangle {
             font-size: 9px;
             font-family: "Geist Mono";
             vertical-alignment: center;
-            animate color { duration: 100ms; }
+            animate color { duration: Theme.dur-fast; }
         }
     }
 }
@@ -114,10 +128,10 @@ component SidebarItem inherits Rectangle {
     in property <bool> deletable: false;
     callback clicked;
     callback remove;
-    height: 38px;
+    height: Theme.item-height;
     border-radius: 6px;
     background: root.active ? Theme.accent-subtle : (root.is-hovered ? (Theme.is-dark ? #ffffff08 : #00000008) : transparent);
-    animate background { duration: 150ms; }
+    animate background { duration: Theme.dur-fast; }
     property <bool> is-hovered: ta.has-hover || ta-del.has-hover;
     ta := TouchArea {
         mouse-cursor: pointer;
@@ -150,6 +164,7 @@ component SidebarItem inherits Rectangle {
             font-weight: root.active ? 600 : 400;
             vertical-alignment: center;
             horizontal-stretch: 1;
+            overflow: elide;
         }
 
         if root.decree-status != 0: VerticalLayout {
@@ -161,7 +176,7 @@ component SidebarItem inherits Rectangle {
                 background: root.decree-status == 1 ? Theme.success : root.decree-status == 2 ? Theme.warning : Theme.critical;
             }
         }
-        
+
         VerticalLayout {
             width: root.deletable ? 22px : 0px;
             visible: root.deletable;
@@ -170,6 +185,7 @@ component SidebarItem inherits Rectangle {
                 width: 22px;
                 height: 22px;
                 opacity: root.is-hovered ? 1.0 : 0.0;
+                animate opacity { duration: Theme.dur-fast; }
                 clicked => {
                     root.remove();
                 }
@@ -200,7 +216,7 @@ component InputPill inherits Rectangle {
     border-radius: 6px;
     border-width: 1px;
     border-color: input.has-focus ? Theme.border-focus : Theme.border;
-    height: 36px;
+    height: Theme.input-height;
     HorizontalLayout {
         padding-left: 12px;
         padding-right: 12px;
@@ -265,7 +281,7 @@ component ActionButton inherits Rectangle {
     in property <color> btn-color: Theme.accent;
     in property <bool> primary: false;
     callback clicked;
-    height: 32px;
+    height: Theme.btn-height;
     border-radius: 6px;
     background: root.primary ? (ta.has-hover ? root.btn-color.darker(10%) : root.btn-color) : (ta.has-hover ? Theme.accent-subtle : transparent);
     border-width: root.primary ? 0px : 1px;
@@ -310,7 +326,9 @@ component OrdinanceStepItem inherits Rectangle {
         root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
     property <string> type-label: 
         root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
-    
+
+    property <float> pulse: 0.5 + 0.5 * Math.sin((animation-tick() / 250ms) * 1deg);
+
     ta-select := TouchArea {
         width: 100%;
         height: 100%;
@@ -344,6 +362,12 @@ component OrdinanceStepItem inherits Rectangle {
                     border-width: 1.5px;
                     border-color: (root.is-active || root.is-editing) ? Theme.accent : Theme.border;
                     z: 1;
+
+                    // Pulsing Glow Restoration
+                    drop-shadow-blur: root.is-active ? 6px + 6px * root.pulse : 0px;
+                    drop-shadow-color: Theme.accent;
+
+                    animate background, border-color { duration: Theme.dur-norm; }
                 }
             }
 
@@ -433,7 +457,7 @@ component OrdinanceStepItem inherits Rectangle {
         if root.is-editing: VerticalLayout {
             padding-left: 36px;
             spacing: 12px;
-            
+
             VerticalLayout {
                 spacing: 8px;
                 Text {
@@ -463,6 +487,7 @@ component OrdinanceStepItem inherits Rectangle {
                         font-weight: 700;
                         vertical-alignment: center;
                     }
+
                     Rectangle {
                         width: 80px;
                         height: 24px;
@@ -470,13 +495,10 @@ component OrdinanceStepItem inherits Rectangle {
                         border-radius: 4px;
                         ta-inc := TouchArea {
                             clicked => {
-                                // We'll use subtext or a hidden field to determine mode, 
-                                // but for now let's just toggle the label or args if needed.
-                                // Actually, we'll let the rust side handle the logic based on button state.
-                                // For now, just provide the UI hook.
                                 root.edited(root.step-id, root.title, root.arg-a, root.arg-b);
                             }
                         }
+
                         Text {
                             text: root.subtext == "Inscribe: Copy Mode" ? "COPY" : "MOVE";
                             color: Theme.accent;
@@ -606,6 +628,7 @@ component OrdinanceStepItem inherits Rectangle {
                         root.edited(root.step-id, root.title, v, root.arg-b);
                     }
                 }
+
                 Text {
                     text: "Use '+' for combinations. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
                     color: Theme.text-muted;
@@ -618,7 +641,7 @@ component OrdinanceStepItem inherits Rectangle {
                 alignment: end;
                 Rectangle {
                     width: 110px;
-                    height: 32px;
+                    height: Theme.btn-height;
                     border-radius: 6px;
                     background: ta-rem.has-hover ? Theme.critical : transparent;
                     border-width: 1px;
@@ -690,10 +713,11 @@ export component ArbiterForge inherits Window {
     }
     HorizontalLayout {
         Rectangle {
-            width: 260px;
+            width: Theme.sidebar-width;
             background: Theme.bg-sidebar;
             border-width: 1px;
             border-color: Theme.border;
+            animate background { duration: Theme.dur-fast; }
             VerticalLayout {
                 padding: 24px;
                 spacing: 28px;
@@ -790,7 +814,9 @@ export component ArbiterForge inherits Window {
                         }
                     }
 
-                    ScrollView {
+                    Rectangle {
+                        vertical-stretch: 1;
+                        clip: true;
                         VerticalLayout {
                             spacing: 2px;
                             alignment: start;
@@ -878,10 +904,11 @@ export component ArbiterForge inherits Window {
             horizontal-stretch: 1;
 
             Rectangle {
-                height: 64px;
+                height: Theme.header-height;
                 background: Theme.bg-app;
                 border-width: 1px;
                 border-color: Theme.border;
+                animate background { duration: Theme.dur-fast; }
                 HorizontalLayout {
                     padding-left: 24px;
                     padding-right: 24px;
@@ -891,7 +918,7 @@ export component ArbiterForge inherits Window {
                         HorizontalLayout {
                             spacing: 12px;
                             FocusScope {
-                                width: input-label.preferred-width + 20px;
+                                width: max(120px, input-label.preferred-width + 20px);
                                 height: input-label.preferred-height;
                                 input-label := TextInput {
                                     text <=> root.active-decree-label;
@@ -956,6 +983,8 @@ export component ArbiterForge inherits Window {
             Rectangle {
                 vertical-stretch: 1;
                 clip: true;
+                background: Theme.bg-app;
+                animate background { duration: Theme.dur-slow; }
                 if root.active-page == 0: ScrollView {
                     VerticalLayout {
                         padding: 40px;
@@ -980,7 +1009,7 @@ export component ArbiterForge inherits Window {
                                 VerticalLayout {
                                     padding: 20px;
                                     spacing: 20px;
-                                    
+
                                     Rectangle {
                                         height: 34px;
                                         background: Theme.bg-input;
@@ -1053,7 +1082,7 @@ export component ArbiterForge inherits Window {
                                             }
 
                                             Rectangle {
-                                                height: 36px;
+                                                height: Theme.input-height;
                                                 background: Theme.bg-input;
                                                 border-radius: 6px;
                                                 ta-rec := TouchArea {
@@ -1061,6 +1090,7 @@ export component ArbiterForge inherits Window {
                                                         root.summons-ward-recursive = !root.summons-ward-recursive;
                                                     }
                                                 }
+
                                                 Text {
                                                     text: root.summons-ward-recursive ? "RECURSIVE" : "SHALLOW";
                                                     color: root.summons-ward-recursive ? Theme.accent : Theme.text-muted;
@@ -1180,7 +1210,7 @@ export component ArbiterForge inherits Window {
 
                                 HorizontalLayout {
                                     spacing: 12px;
-                                    height: 36px;
+                                    height: Theme.input-height;
                                     ActionButton {
                                         horizontal-stretch: 1;
                                         label: "INSCRIBE";
@@ -1247,12 +1277,12 @@ export component ArbiterForge inherits Window {
 
             // ── Context Ribbon Header (Toggle) ────────────────────────────────
             if root.active-page == 0: Rectangle {
-                height: 36px;
+                height: Theme.input-height;
                 background: Theme.bg-sidebar;
                 border-width: 1px;
                 border-color: Theme.border;
                 z: 1000;
-                
+
                 TouchArea {
                     clicked => {
                         root.context-expanded = !root.context-expanded;
@@ -1264,7 +1294,7 @@ export component ArbiterForge inherits Window {
                     padding-right: 20px;
                     spacing: 12px;
                     alignment: start;
-                    
+
                     VerticalLayout {
                         alignment: center;
                         Path {
@@ -1296,7 +1326,10 @@ export component ArbiterForge inherits Window {
                 border-color: Theme.border;
                 clip: true;
                 z: 900;
-                animate height { duration: 100ms; easing: ease-out; }
+                animate height {
+                    duration: 100ms;
+                    easing: ease-out;
+                }
 
                 HorizontalLayout {
                     padding: 16px;
@@ -1309,56 +1342,117 @@ export component ArbiterForge inherits Window {
                     VerticalLayout {
                         spacing: 8px;
                         alignment: start;
-                        Text { text: "ARTIFACT"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
-                        for t in ["${env.file_name}", "${env.file_ext}", "${env.file_dir}", "${env.file_path}", "${env.file_size_human}", "${env.file_owner}"]: EnvChip {
+                        Text {
+                            text: "ARTIFACT";
+                            color: Theme.text-muted;
+                            font-size: 8px;
+                            font-weight: 800;
+                        }
+
+                        for t in [
+                            "${env.file_name}",
+                            "${env.file_ext}",
+                            "${env.file_dir}",
+                            "${env.file_path}",
+                            "${env.file_size_human}",
+                            "${env.file_owner}"
+                        ]: EnvChip {
                             token: t;
-                            clicked(v) => { root.copy-env(v); }
+                            clicked(v) => {
+                                root.copy-env(v);
+                            }
                         }
                     }
 
-                    Rectangle { width: 1px; background: Theme.border; }
+                    Rectangle {
+                        width: 1px;
+                        background: Theme.border;
+                    }
 
                     // Col 2: TEMPORAL
                     VerticalLayout {
                         spacing: 8px;
                         alignment: start;
-                        Text { text: "TEMPORAL"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
-                        for t in ["${env.timestamp}", "${env.timestamp_local}", "${env.file_created_local}", "${env.file_modified_local}", "${env.file_created_iso}", "${env.file_created_unix}"]: EnvChip {
+                        Text {
+                            text: "TEMPORAL";
+                            color: Theme.text-muted;
+                            font-size: 8px;
+                            font-weight: 800;
+                        }
+
+                        for t in [
+                            "${env.timestamp}",
+                            "${env.timestamp_local}",
+                            "${env.file_created_local}",
+                            "${env.file_modified_local}",
+                            "${env.file_created_iso}",
+                            "${env.file_created_unix}"
+                        ]: EnvChip {
                             token: t;
-                            clicked(v) => { root.copy-env(v); }
+                            clicked(v) => {
+                                root.copy-env(v);
+                            }
                         }
                     }
 
-                    Rectangle { width: 1px; background: Theme.border; }
+                    Rectangle {
+                        width: 1px;
+                        background: Theme.border;
+                    }
 
                     // Col 3: CONTENT
                     VerticalLayout {
                         spacing: 8px;
                         alignment: start;
-                        Text { text: "CONTENT"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
-                        for t in ["${env.content_sha256}", "${env.content_mime}", "${env.content_md5}", "${env.content_entropy}", "${env.text_lines}"]: EnvChip {
+                        Text {
+                            text: "CONTENT";
+                            color: Theme.text-muted;
+                            font-size: 8px;
+                            font-weight: 800;
+                        }
+
+                        for t in [
+                            "${env.content_sha256}",
+                            "${env.content_mime}",
+                            "${env.content_md5}",
+                            "${env.content_entropy}",
+                            "${env.text_lines}"
+                        ]: EnvChip {
                             token: t;
-                            clicked(v) => { root.copy-env(v); }
+                            clicked(v) => {
+                                root.copy-env(v);
+                            }
                         }
                     }
 
-                    Rectangle { width: 1px; background: Theme.border; }
+                    Rectangle {
+                        width: 1px;
+                        background: Theme.border;
+                    }
 
                     // Col 4: SIGNALS
                     VerticalLayout {
                         spacing: 8px;
                         alignment: start;
-                        Text { text: "SIGNALS"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
+                        Text {
+                            text: "SIGNALS";
+                            color: Theme.text-muted;
+                            font-size: 8px;
+                            font-weight: 800;
+                        }
+
                         for t in ["${env.process_name}", "${env.process_pid}", "${env.hotkey_combo}"]: EnvChip {
                             token: t;
-                            clicked(v) => { root.copy-env(v); }
+                            clicked(v) => {
+                                root.copy-env(v);
+                            }
                         }
                     }
                 }
             }
 
             Rectangle {
-                height: 140px;
+                height: Theme.log-height;
                 background: Theme.bg-sidebar;
                 border-width: 1px;
                 border-color: Theme.border;
@@ -1450,9 +1544,9 @@ export component ArbiterForge inherits Window {
     if root.show-modal: Rectangle {
         background: #00000080;
         TouchArea { }
-        
+
         Rectangle {
-            width: 400px;
+            width: Theme.modal-width;
             height: 220px;
             background: Theme.bg-card;
             border-radius: 12px;

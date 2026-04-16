@@ -185,20 +185,22 @@ pub mod fs {
 
                         for path in &event.paths {
                             let path_str = path.to_string_lossy().to_string();
+                            let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
-
-                            if filter.is_own(&path_str) { continue; }
-
-                            // ── Recursion Allowed/Denied (Jail) Check ──
-                            if crate::signet::is_path_restricted(&signet_config, path) {
-                                debug!(%path_str, "Vigil-fs: event DENIED — path is in a Restricted Zone (Jail)");
+                            // 1. Ignore directories and internal writes immediately
+                            if path.is_dir() || filename.is_empty() || filter.is_own(&path_str) {
                                 continue;
+                            }
+
+                            // 2. Recursion Allowed/Denied (Jail) Check
+                            if crate::signet::is_path_restricted(&signet_config, path) {
+                                continue; // Authoritative WARN is handled inside signet::is_path_restricted
                             }
 
                             if is_temp_file(&path_str) { continue; }
 
+
                             if let Some(ref m) = matcher {
-                                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
                                 if !m.is_match(filename) { continue; }
                             }
 
@@ -211,7 +213,7 @@ pub mod fs {
                             if let Some(parent) = path.parent() {
                                 context.insert("file_dir", &parent.to_string_lossy());
                             }
-                            context.insert("file_name", path.file_name().and_then(|n| n.to_str()).unwrap_or(""));
+                            context.insert("file_name", filename);
                             context.insert("file_ext", path.extension().and_then(|e| e.to_str()).unwrap_or(""));
                             
                             let now_unix = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
@@ -261,7 +263,9 @@ pub mod fs {
                                 context,
                             };
 
-                            if is_debounced(&summons.to_registry_key()) { continue; }
+                            // Debounce per-file to prevent rapid double-triggers for the same physical artifact
+                            let debounce_sig = format!("{}|{}", summons.to_registry_key(), filename);
+                            if is_debounced(&debounce_sig) { continue; }
 
                             if tx.blocking_send(summons).is_err() {
                                 return;

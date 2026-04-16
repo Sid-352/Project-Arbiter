@@ -5,13 +5,15 @@
       "id": "downloads-folder",
       "path": "C:\\Users\\user\\Downloads",
       "pattern": "*",
-      "layer": "Surface"
+      "layer": "Surface",
+      "recursive": true
     },
     {
       "id": "arbtest-monitor",
       "path": "N:\\Temp\\arbtest",
       "pattern": "*",
-      "layer": "Surface"
+      "layer": "Surface",
+      "recursive": true
     }
   ],
   "ordinances": [
@@ -22,7 +24,8 @@
         "type": "FileCreated",
         "data": {
           "ward_id": "C:\\Users\\user\\Downloads",
-          "pattern": "*.pdf"
+          "pattern": "*.pdf",
+          "recursive": true
         }
       },
       "nodes": [
@@ -55,7 +58,8 @@
         "type": "FileCreated",
         "data": {
           "ward_id": "N:\\Temp\\arbtest",
-          "pattern": "*.zip"
+          "pattern": "*.zip",
+          "recursive": false
         }
       },
       "nodes": [
@@ -71,14 +75,14 @@
         {
           "id": "move-zip",
           "label": "Move to ZIPs Folder",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\zips\\\\\"}},\"point\":null,\"delay_ms\":200}",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\zips\\\\\"}},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {}
         }
       ],
       "presence_config": {
-        "ignore_mouse": true,
-        "ignore_keyboard": true
+        "ignore_mouse": false,
+        "ignore_keyboard": false
       }
     },
     {
@@ -88,7 +92,8 @@
         "type": "FileCreated",
         "data": {
           "ward_id": "N:\\Temp\\arbtest",
-          "pattern": "*.png"
+          "pattern": "*.png",
+          "recursive": false
         }
       },
       "nodes": [
@@ -104,14 +109,14 @@
         {
           "id": "move-png",
           "label": "Move to PNGs Folder",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\pngs\\\\\"}},\"point\":null,\"delay_ms\":200}",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\pngs\\\\\"}},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {}
         }
       ],
       "presence_config": {
-        "ignore_mouse": true,
-        "ignore_keyboard": true
+        "ignore_mouse": false,
+        "ignore_keyboard": false
       }
     },
     {
@@ -162,7 +167,8 @@
         "type": "FileCreated",
         "data": {
           "ward_id": "C:\\Users\\user\\Downloads",
-          "pattern": "*.{jpg,jpeg,png,webp,gif}"
+          "pattern": "*.{jpg,jpeg,png,webp,gif}",
+          "recursive": true
         }
       },
       "nodes": [
@@ -195,7 +201,8 @@
         "type": "FileCreated",
         "data": {
           "ward_id": "N:\\Temp\\arbtest",
-          "pattern": "temp_*.log"
+          "pattern": "temp_*.log",
+          "recursive": true
         }
       },
       "nodes": [
