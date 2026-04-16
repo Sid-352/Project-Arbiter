@@ -226,6 +226,7 @@ impl Summons {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EnvKey {
     // ── Layer 1: Surface (Always available for file triggers) ──
+    FileDir,
     FilePath,
     FileName,
     FileExt,
@@ -241,16 +242,12 @@ pub enum EnvKey {
     FileOwner,
     FileIsLink,
     Timestamp,
+    TimestampLocal,
     // ── Layer 2: Analytical (Gated by Integrity Ward) ──
     ContentSha256,
     ContentMd5,
     ContentMime,
     ContentEntropy,
-    // ── Layer 3: Origin (Windows ADS) ──
-    OriginZone,
-    OriginUrl,
-    OriginHost,
-    OriginProcessName,
     // ── Layer 4: Deep ──
     ImgDims,
     ImgAspect,
@@ -267,6 +264,7 @@ pub enum EnvKey {
 impl EnvKey {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Self::FileDir => "file_dir",
             Self::FilePath => "file_path",
             Self::FileName => "file_name",
             Self::FileExt => "file_ext",
@@ -282,14 +280,11 @@ impl EnvKey {
             Self::FileOwner => "file_owner",
             Self::FileIsLink => "file_is_link",
             Self::Timestamp => "timestamp",
+            Self::TimestampLocal => "timestamp_local",
             Self::ContentSha256 => "content_sha256",
             Self::ContentMd5 => "content_md5",
             Self::ContentMime => "content_mime",
             Self::ContentEntropy => "content_entropy",
-            Self::OriginZone => "origin_zone",
-            Self::OriginUrl => "origin_url",
-            Self::OriginHost => "origin_host",
-            Self::OriginProcessName => "origin_process_name",
             Self::ImgDims => "img_dims",
             Self::ImgAspect => "img_aspect",
             Self::ImgModel => "img_model",
@@ -303,6 +298,7 @@ impl EnvKey {
 
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
+            "file_dir" => Some(Self::FileDir),
             "file_path" => Some(Self::FilePath),
             "file_name" => Some(Self::FileName),
             "file_ext" => Some(Self::FileExt),
@@ -318,14 +314,11 @@ impl EnvKey {
             "file_owner" => Some(Self::FileOwner),
             "file_is_link" => Some(Self::FileIsLink),
             "timestamp" => Some(Self::Timestamp),
+            "timestamp_local" => Some(Self::TimestampLocal),
             "content_sha256" => Some(Self::ContentSha256),
             "content_md5" => Some(Self::ContentMd5),
             "content_mime" => Some(Self::ContentMime),
             "content_entropy" => Some(Self::ContentEntropy),
-            "origin_zone" => Some(Self::OriginZone),
-            "origin_url" => Some(Self::OriginUrl),
-            "origin_host" => Some(Self::OriginHost),
-            "origin_process_name" => Some(Self::OriginProcessName),
             "img_dims" => Some(Self::ImgDims),
             "img_aspect" => Some(Self::ImgAspect),
             "img_model" => Some(Self::ImgModel),
@@ -345,10 +338,6 @@ impl EnvKey {
                 | Self::ContentMd5
                 | Self::ContentMime
                 | Self::ContentEntropy
-                | Self::OriginZone
-                | Self::OriginUrl
-                | Self::OriginHost
-                | Self::OriginProcessName
                 | Self::ImgDims
                 | Self::ImgAspect
                 | Self::ImgModel

@@ -5,7 +5,7 @@
 //!
 //! Tray menu items:
 //!   • "Arbiter — Standing By"  (disabled status label)
-//!   • "Open Terminal"         (future: show the iced Terminal of Commands)
+//!   • "Open Forge"         (future: show the Forge Terminal)
 //!   • separator
 //!   • "Quit Arbiter"           (graceful shutdown)
 //!
@@ -64,7 +64,7 @@ pub fn build_tray() -> Result<(TrayIcon, MenuItem), Box<dyn std::error::Error>> 
     let menu = Menu::new();
     let status_item = MenuItem::with_id("status", "Arbiter — Standing By", false, None);
     let reset_item = MenuItem::with_id("reset", "Reset Engine", true, None);
-    let open_item = MenuItem::with_id("terminal", "Open Terminal", true, None);
+    let open_item = MenuItem::with_id("forge", "Open Forge", true, None);
     let quit_item = MenuItem::with_id("quit", "Quit Arbiter", true, None);
 
     menu.append(&status_item)?;
@@ -108,7 +108,7 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
     let event_loop = EventLoopBuilder::<TrayAppEvent>::with_user_event().build();
     let proxy = event_loop.create_proxy();
 
-    // Track spawned terminal processes to kill them on exit
+    // Track spawned forge processes to kill them on exit
     let children = Arc::new(Mutex::new(Vec::<std::process::Child>::new()));
 
     // Build tray inside the event loop (Windows COM requirement).
@@ -141,8 +141,8 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
                 on_event(TrayAppEvent::Reset, proxy.clone());
             }
 
-            if id == "terminal" {
-                info!("Tray: Spawning Terminal user interface");
+            if id == "forge" {
+                info!("Tray: Spawning Forge user interface");
                 
                 let mut term_path = std::env::current_exe()
                     .unwrap_or_default()
@@ -164,7 +164,7 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
                             kids.push(child);
                         }
                     }
-                    Err(e) => tracing::error!(%e, "Failed to spawn Terminal process"),
+                    Err(e) => tracing::error!(%e, "Failed to spawn Forge process"),
                 }
             }
         }

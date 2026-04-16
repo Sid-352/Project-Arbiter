@@ -163,7 +163,11 @@ pub fn apply(
                 }
             }
             SummonsDef::ProcessAppeared { name } => {
-                crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
+                if !atlas.watched_processes.contains(name) {
+                    info!(%name, "Ledger: spawning new process watcher");
+                    crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
+                    atlas.watched_processes.insert(name.clone());
+                }
                 Summons::ProcessAppeared {
                     name: name.clone(),
                     context: EnvContext::new(),

@@ -1,9 +1,15 @@
 {
-  "version": 0,
+  "version": 1,
   "wards": [
     {
       "id": "downloads-folder",
       "path": "C:\\Users\\user\\Downloads",
+      "pattern": "*",
+      "layer": "Surface"
+    },
+    {
+      "id": "arbtest-monitor",
+      "path": "N:\\Temp\\arbtest",
       "pattern": "*",
       "layer": "Surface"
     }
@@ -43,13 +49,13 @@
       }
     },
     {
-      "id": "report-sorter",
-      "label": "Sort Business Reports",
+      "id": "arbtest-zip-sorter",
+      "label": "Arbtest ZIP Sorter",
       "summons": {
         "type": "FileCreated",
         "data": {
-          "ward_id": "C:\\Users\\user\\Downloads",
-          "pattern": "{report,data}_*.{csv,xlsx}"
+          "ward_id": "N:\\Temp\\arbtest",
+          "pattern": "*.zip"
         }
       },
       "nodes": [
@@ -59,13 +65,46 @@
           "internal_state": "",
           "kind": "Entry",
           "next_nodes": {
-            "Next": "move-report"
+            "Next": "move-zip"
           }
         },
         {
-          "id": "move-report",
-          "label": "Archive Report",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Documents\\\\Reports\\\\Archive\\\\\"}},\"point\":null,\"delay_ms\":200}",
+          "id": "move-zip",
+          "label": "Move to ZIPs Folder",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\zips\\\\\"}},\"point\":null,\"delay_ms\":200}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "arbtest-png-sorter",
+      "label": "Arbtest PNG Sorter",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "N:\\Temp\\arbtest",
+          "pattern": "*.png"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "move-png"
+          }
+        },
+        {
+          "id": "move-png",
+          "label": "Move to PNGs Folder",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\pngs\\\\\"}},\"point\":null,\"delay_ms\":200}",
           "kind": "Action",
           "next_nodes": {}
         }
@@ -97,7 +136,7 @@
         {
           "id": "delay-before-type",
           "label": "Wait for Notepad",
-          "internal_state": "{\"action_type\":{\"Wait\":200},\"point\":null,\"delay_ms\":0}",
+          "internal_state": "{\"action_type\":{\"Wait\":500},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {
             "Next": "type-header"
@@ -106,7 +145,7 @@
         {
           "id": "type-header",
           "label": "Type Log Header",
-          "internal_state": "{\"action_type\":{\"Type\":\"--- ARBITER SESSION START ---\\nDate: ${env.timestamp}\\nSource: ${env.process_name}\\n----------------------------\\n\"},\"point\":null,\"delay_ms\":0}",
+          "internal_state": "{\"action_type\":{\"Type\":\"--- ARBITER SESSION START ---\\nLocal Time: ${env.timestamp_local}\\nTrigger: ${env.process_name} (PID: ${env.process_pid})\\n----------------------------\\n\\n\"},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {}
         }
@@ -117,12 +156,13 @@
       }
     },
     {
-      "id": "edge-shortcut",
-      "label": "Open Edge",
+      "id": "image-organizer",
+      "label": "Auto-Archive Images",
       "summons": {
-        "type": "Hotkey",
+        "type": "FileCreated",
         "data": {
-          "combo": "Ctrl+Alt+U"
+          "ward_id": "C:\\Users\\user\\Downloads",
+          "pattern": "*.{jpg,jpeg,png,webp,gif}"
         }
       },
       "nodes": [
@@ -132,13 +172,46 @@
           "internal_state": "",
           "kind": "Entry",
           "next_nodes": {
-            "Next": "step-1"
+            "Next": "move-image"
           }
         },
         {
-          "id": "step-1",
-          "label": "Launch Edge",
-          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"C:\\\\Program Files (x86)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"args\":[],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "id": "move-image",
+          "label": "Move to Pictures",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Pictures\\\\Arbiter\\\\${env.file_name}\"}},\"point\":null,\"delay_ms\":500}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "log-cleanup",
+      "label": "Auto-Purge Temp Logs",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "N:\\Temp\\arbtest",
+          "pattern": "temp_*.log"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "delete-log"
+          }
+        },
+        {
+          "id": "delete-log",
+          "label": "Delete Temp Log",
+          "internal_state": "{\"action_type\":{\"InscribeDelete\":{\"target\":\"${env.file_path}\"}},\"point\":null,\"delay_ms\":1000}",
           "kind": "Action",
           "next_nodes": {}
         }

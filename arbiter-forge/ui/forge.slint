@@ -55,12 +55,11 @@ export struct DecreeStep {
 component EnvChip inherits Rectangle {
     in property <string> token;
     callback clicked(string);
-    height: 22px;
+    height: 20px;
     border-radius: 4px;
-    // Always use amber tint for variables
-    background: ta.has-hover ? #f59e0b25 : #f59e0b14;
+    background: ta.has-hover ? #f59e0b25 : transparent;
     border-width: 1px;
-    border-color: Theme.warning;
+    border-color: ta.has-hover ? Theme.warning : #f59e0b20;
     ta := TouchArea {
         mouse-cursor: pointer;
         clicked => {
@@ -69,35 +68,15 @@ component EnvChip inherits Rectangle {
     }
 
     HorizontalLayout {
-        padding-left: 8px;
-        padding-right: 8px;
+        padding-left: 6px;
+        padding-right: 6px;
         Text {
             text: root.token;
-            color: Theme.warning;
+            color: ta.has-hover ? Theme.text-main : Theme.warning;
             font-size: 9px;
             font-family: "Geist Mono";
             vertical-alignment: center;
             animate color { duration: 100ms; }
-        }
-    }
-
-    // Micro Tooltip
-    if ta.has-hover: Rectangle {
-        x: (parent.width - self.width) / 2;
-        y: -24px;
-        width: 70px;
-        height: 18px;
-        background: Theme.bg-card;
-        border-radius: 4px;
-        border-width: 1px;
-        border-color: Theme.border;
-        Text {
-            text: "Click to copy";
-            color: Theme.text-main;
-            font-size: 8px;
-            font-weight: 700;
-            horizontal-alignment: center;
-            vertical-alignment: center;
         }
     }
 }
@@ -139,7 +118,6 @@ component SidebarItem inherits Rectangle {
     border-radius: 6px;
     background: root.active ? Theme.accent-subtle : (root.is-hovered ? (Theme.is-dark ? #ffffff08 : #00000008) : transparent);
     animate background { duration: 150ms; }
-    // Using a more robust hover detection that can see ta-del
     property <bool> is-hovered: ta.has-hover || ta-del.has-hover;
     ta := TouchArea {
         mouse-cursor: pointer;
@@ -172,7 +150,6 @@ component SidebarItem inherits Rectangle {
             font-weight: root.active ? 600 : 400;
             vertical-alignment: center;
             horizontal-stretch: 1;
-            animate color { duration: 100ms; }
         }
 
         if root.decree-status != 0: VerticalLayout {
@@ -185,7 +162,6 @@ component SidebarItem inherits Rectangle {
             }
         }
         
-        // Use visible instead of 'if' so ta-del ID is always accessible to is-hovered
         VerticalLayout {
             width: root.deletable ? 22px : 0px;
             visible: root.deletable;
@@ -194,7 +170,6 @@ component SidebarItem inherits Rectangle {
                 width: 22px;
                 height: 22px;
                 opacity: root.is-hovered ? 1.0 : 0.0;
-                animate opacity { duration: 150ms; }
                 clicked => {
                     root.remove();
                 }
@@ -226,7 +201,6 @@ component InputPill inherits Rectangle {
     border-width: 1px;
     border-color: input.has-focus ? Theme.border-focus : Theme.border;
     height: 36px;
-    animate border-color { duration: 150ms; }
     HorizontalLayout {
         padding-left: 12px;
         padding-right: 12px;
@@ -261,7 +235,6 @@ component TextEdit inherits Rectangle {
     border-width: 1px;
     border-color: input.has-focus ? Theme.border-focus : Theme.border;
     height: 100px;
-    animate border-color { duration: 150ms; }
     FocusScope {
         HorizontalLayout {
             padding: 8px;
@@ -297,7 +270,6 @@ component ActionButton inherits Rectangle {
     background: root.primary ? (ta.has-hover ? root.btn-color.darker(10%) : root.btn-color) : (ta.has-hover ? Theme.accent-subtle : transparent);
     border-width: root.primary ? 0px : 1px;
     border-color: Theme.border;
-    animate background { duration: 100ms; }
     ta := TouchArea {
         mouse-cursor: pointer;
         clicked => {
@@ -320,7 +292,7 @@ component OrdinanceStepItem inherits Rectangle {
     in property <string> title;
     in property <string> subtext;
     in property <int> step-type;
-    in property <int> trigger-type; // 0=File, 1=Hotkey, 2=Process, 3=Manual
+    in property <int> trigger-type;
     in property <bool> baton-required;
     in property <bool> is-active;
     in property <bool> is-editing;
@@ -330,18 +302,15 @@ component OrdinanceStepItem inherits Rectangle {
     callback edited(string, string, string, string);
     callback remove();
     callback selected();
-    callback copy-env(string);
     background: Theme.bg-card;
     border-radius: Theme.radius;
     border-width: 1px;
     border-color: root.is-editing ? Theme.accent : Theme.border;
-    animate border-color { duration: 150ms; }
     property <color> type-color: 
         root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
     property <string> type-label: 
         root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
     
-    // Selection Capture - First so it's at the bottom of Z-order but above the background
     ta-select := TouchArea {
         width: 100%;
         height: 100%;
@@ -352,12 +321,11 @@ component OrdinanceStepItem inherits Rectangle {
         }
     }
 
-    // Connector - Sibling of the layout, NOT inside it. Starts from circle bottom.
     if !root.is-last: Rectangle {
-        x: 16px + 10px - 1px; // Center of 20px circle (16 padding + 10 half-width) - 1px half-line-width
-        y: 16px + 20px; // Starts at bottom of circle
+        x: 16px + 10px - 1px;
+        y: 16px + 20px;
         width: 2px;
-        height: root.height - 8px; // Dynamically spans to top of next node
+        height: root.height - 8px;
         background: Theme.border;
     }
     VerticalLayout {
@@ -365,8 +333,6 @@ component OrdinanceStepItem inherits Rectangle {
         spacing: 12px;
         HorizontalLayout {
             spacing: 16px;
-            
-            // Step Circle
             VerticalLayout {
                 width: 20px;
                 alignment: start;
@@ -377,10 +343,7 @@ component OrdinanceStepItem inherits Rectangle {
                     background: (root.is-active || root.is-editing) ? Theme.accent : Theme.bg-app;
                     border-width: 1.5px;
                     border-color: (root.is-active || root.is-editing) ? Theme.accent : Theme.border;
-                    drop-shadow-color: (root.is-active || root.is-editing) ? Theme.accent : transparent;
-                    drop-shadow-blur: 10px;
-                    z: 1; // Above the connector
-                    animate background, border-color, drop-shadow-color { duration: 150ms; }
+                    z: 1;
                 }
             }
 
@@ -471,7 +434,6 @@ component OrdinanceStepItem inherits Rectangle {
             padding-left: 36px;
             spacing: 12px;
             
-            // Renaming Field
             VerticalLayout {
                 spacing: 8px;
                 Text {
@@ -618,102 +580,15 @@ component OrdinanceStepItem inherits Rectangle {
                 }
             }
 
-            // Context helper
-            VerticalLayout {
-                spacing: 0px; // Remove top spacing
-                
-                Rectangle {
-                    height: 140px;
-                    background: Theme.bg-input;
-                    border-radius: 6px;
-                    border-width: 1px;
-                    border-color: Theme.border;
-                    clip: true; // Hide content that overflows during scroll
-                    
-                    ScrollView {
-                        VerticalLayout {
-                            padding: 12px;
-                            spacing: 10px;
-                            alignment: start;
-                            
-                            // Surface Row
-                            HorizontalLayout {
-                                alignment: start;
-                                spacing: 8px;
-                                for token in [
-                                    "${env.file_path}",
-                                    "${env.file_name}",
-                                    "${env.file_ext}",
-                                    "${env.file_size}",
-                                    "${env.file_size_human}"
-                                ]: EnvChip {
-                                    token: token;
-                                    clicked(t) => { root.copy-env(t); }
-                                }
-                            }
-                            
-                            // Temporal Row
-                            HorizontalLayout {
-                                alignment: start;
-                                spacing: 8px;
-                                for token in [
-                                    "${env.timestamp}",
-                                    "${env.file_created_local}",
-                                    "${env.file_modified_local}",
-                                    "${env.file_created_iso}",
-                                    "${env.file_created_unix}"
-                                ]: EnvChip {
-                                    token: token;
-                                    clicked(t) => { root.copy-env(t); }
-                                }
-                            }
-
-                            // Attributes & Security Row
-                            HorizontalLayout {
-                                alignment: start;
-                                spacing: 8px;
-                                for token in [
-                                    "${env.file_readonly}",
-                                    "${env.file_hidden}",
-                                    "${env.file_owner}",
-                                    "${env.file_is_link}",
-                                    "${env.content_sha256}",
-                                    "${env.content_mime}"
-                                ]: EnvChip {
-                                    token: token;
-                                    clicked(t) => { root.copy-env(t); }
-                                }
-                            }
-
-                            // Signal-specific Row
-                            HorizontalLayout {
-                                alignment: start;
-                                spacing: 8px;
-                                for token in [
-                                    "${env.process_name}",
-                                    "${env.process_pid}",
-                                    "${env.hotkey_combo}"
-                                ]: EnvChip {
-                                    token: token;
-                                    clicked(t) => { root.copy-env(t); }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             HorizontalLayout {
                 alignment: end;
-                // Destructive Button Refinement
                 Rectangle {
                     width: 110px;
                     height: 32px;
                     border-radius: 6px;
                     background: ta-rem.has-hover ? Theme.critical : transparent;
                     border-width: 1px;
-                    border-color: Theme.critical;
-                    animate background { duration: 150ms; }
+                    border-color: Theme.border;
                     ta-rem := TouchArea {
                         mouse-cursor: pointer;
                         clicked => {
@@ -728,7 +603,6 @@ component OrdinanceStepItem inherits Rectangle {
                         font-weight: 700;
                         horizontal-alignment: center;
                         vertical-alignment: center;
-                        animate color { duration: 100ms; }
                     }
                 }
             }
@@ -746,11 +620,11 @@ export component ArbiterForge inherits Window {
     background: Theme.bg-app;
     default-font-family: "Inter";
 
-    // ── Properties (Synced with main.rs) ──────────────────────────────────────
     in-out property <int> active-page: 0;
     in-out property <string> active-decree-id: "";
     in-out property <string> active-decree-label: "Untitled Decree";
     in-out property <int> active-decree-status: 0;
+    in-out property <bool> context-expanded: false;
     in-out property <string> selected-step-id: "";
     in property <[DecreeEntry]> decree-list: [];
     in property <[DecreeStep]> decree-steps: [];
@@ -766,7 +640,6 @@ export component ArbiterForge inherits Window {
     property <string> modal-message: "";
     property <int> modal-action-type: 0;
 
-    // ── Callbacks ─────────────────────────────────────────────────────────────
     callback save-decree;
     callback new-decree;
     callback select-decree(string);
@@ -778,10 +651,9 @@ export component ArbiterForge inherits Window {
     callback active-decree-renamed(string, string);
     callback request-close;
     public function scroll-logs-to-bottom() {
-        log-scroll.viewport-y = - max(0px, log-scroll.viewport-height - log-scroll.visible-height);
+        log-scroll.viewport-y = - max(0px, log-scroll.viewport-height - log-scroll.height);
     }
     HorizontalLayout {
-        // ── Sidebar ───────────────────────────────────────────────────────────
         Rectangle {
             width: 260px;
             background: Theme.bg-sidebar;
@@ -791,7 +663,6 @@ export component ArbiterForge inherits Window {
                 padding: 24px;
                 spacing: 28px;
 
-                // Brand - Clean Text
                 HorizontalLayout {
                     padding-left: 4px;
                     alignment: start;
@@ -805,7 +676,6 @@ export component ArbiterForge inherits Window {
                     }
                 }
 
-                // Nav
                 VerticalLayout {
                     spacing: 4px;
                     VerticalLayout {
@@ -847,7 +717,6 @@ export component ArbiterForge inherits Window {
                     }
                 }
 
-                // Decrees
                 VerticalLayout {
                     spacing: 4px;
                     horizontal-stretch: 1;
@@ -915,7 +784,6 @@ export component ArbiterForge inherits Window {
                     }
                 }
 
-                // Theme Toggle
                 Rectangle {
                     height: 36px;
                     border-radius: 18px;
@@ -944,8 +812,6 @@ export component ArbiterForge inherits Window {
                                     Theme.is-dark = false;
                                 }
                             }
-
-                            animate background { duration: 150ms; }
                         }
 
                         Rectangle {
@@ -967,19 +833,15 @@ export component ArbiterForge inherits Window {
                                     Theme.is-dark = true;
                                 }
                             }
-
-                            animate background { duration: 150ms; }
                         }
                     }
                 }
             }
         }
 
-        // ── Main Content ──────────────────────────────────────────────────────
         VerticalLayout {
             horizontal-stretch: 1;
 
-            // Header
             Rectangle {
                 height: 64px;
                 background: Theme.bg-app;
@@ -1056,7 +918,6 @@ export component ArbiterForge inherits Window {
                 }
             }
 
-            // Editor Area
             Rectangle {
                 vertical-stretch: 1;
                 clip: true;
@@ -1066,7 +927,6 @@ export component ArbiterForge inherits Window {
                         spacing: 40px;
                         alignment: start;
 
-                        // Summons Section
                         VerticalLayout {
                             spacing: 16px;
                             Text {
@@ -1086,7 +946,6 @@ export component ArbiterForge inherits Window {
                                     padding: 20px;
                                     spacing: 20px;
                                     
-                                    // Tabs
                                     Rectangle {
                                         height: 34px;
                                         background: Theme.bg-input;
@@ -1115,7 +974,6 @@ export component ArbiterForge inherits Window {
                                         }
                                     }
 
-                                    // Trigger Details
                                     if root.summons-trigger-type == 0: HorizontalLayout {
                                         spacing: 12px;
                                         VerticalLayout {
@@ -1190,7 +1048,6 @@ export component ArbiterForge inherits Window {
                             }
                         }
 
-                        // Sequence Section
                         VerticalLayout {
                             spacing: 16px;
                             HorizontalLayout {
@@ -1230,9 +1087,6 @@ export component ArbiterForge inherits Window {
                                     selected => {
                                         root.selected-step-id = step.id;
                                     }
-                                    copy-env(t) => {
-                                        root.copy-env(t);
-                                    }
                                 }
                                 if root.decree-steps.length == 0: Rectangle {
                                     height: 100px;
@@ -1249,7 +1103,6 @@ export component ArbiterForge inherits Window {
                                 }
                             }
 
-                            // Append Actions
                             VerticalLayout {
                                 spacing: 12px;
                                 padding-top: 12px;
@@ -1328,7 +1181,118 @@ export component ArbiterForge inherits Window {
                 }
             }
 
-            // Telemetry Console
+            // ── Context Ribbon Header (Toggle) ────────────────────────────────
+            if root.active-page == 0: Rectangle {
+                height: 36px;
+                background: Theme.bg-sidebar;
+                border-width: 1px;
+                border-color: Theme.border;
+                z: 1000;
+                
+                TouchArea {
+                    clicked => {
+                        root.context-expanded = !root.context-expanded;
+                    }
+                }
+
+                HorizontalLayout {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                    spacing: 12px;
+                    alignment: start;
+                    
+                    VerticalLayout {
+                        alignment: center;
+                        Path {
+                            width: 12px;
+                            height: 12px;
+                            viewbox-width: 24;
+                            viewbox-height: 24;
+                            stroke: Theme.accent;
+                            stroke-width: 2.5px;
+                            commands: root.context-expanded ? "M 4 15 L 12 7 L 20 15" : "M 4 9 L 12 17 L 20 9";
+                        }
+                    }
+
+                    Text {
+                        text: "CONTEXT VARIABLES (CLICK TO COPY)";
+                        color: Theme.accent;
+                        font-size: 9px;
+                        font-weight: 800;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            // ── Expandable Tray (Reference Library Grid) ──────────────────────
+            if root.active-page == 0: Rectangle {
+                height: root.context-expanded ? 200px : 0px;
+                background: Theme.bg-sidebar;
+                border-width: root.context-expanded ? 1px : 0px;
+                border-color: Theme.border;
+                clip: true;
+                z: 900;
+                animate height { duration: 100ms; easing: ease-out; }
+
+                HorizontalLayout {
+                    padding: 16px;
+                    padding-left: 24px;
+                    padding-right: 24px;
+                    spacing: 32px;
+                    alignment: start;
+
+                    // Col 1: OS PHYSICAL
+                    VerticalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Text { text: "ARTIFACT"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
+                        for t in ["${env.file_name}", "${env.file_ext}", "${env.file_dir}", "${env.file_path}", "${env.file_size_human}", "${env.file_owner}"]: EnvChip {
+                            token: t;
+                            clicked(v) => { root.copy-env(v); }
+                        }
+                    }
+
+                    Rectangle { width: 1px; background: Theme.border; }
+
+                    // Col 2: TEMPORAL
+                    VerticalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Text { text: "TEMPORAL"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
+                        for t in ["${env.timestamp}", "${env.timestamp_local}", "${env.file_created_local}", "${env.file_modified_local}", "${env.file_created_iso}", "${env.file_created_unix}"]: EnvChip {
+                            token: t;
+                            clicked(v) => { root.copy-env(v); }
+                        }
+                    }
+
+                    Rectangle { width: 1px; background: Theme.border; }
+
+                    // Col 3: CONTENT
+                    VerticalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Text { text: "CONTENT"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
+                        for t in ["${env.content_sha256}", "${env.content_mime}", "${env.content_md5}", "${env.content_entropy}", "${env.text_lines}"]: EnvChip {
+                            token: t;
+                            clicked(v) => { root.copy-env(v); }
+                        }
+                    }
+
+                    Rectangle { width: 1px; background: Theme.border; }
+
+                    // Col 4: SIGNALS
+                    VerticalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Text { text: "SIGNALS"; color: Theme.text-muted; font-size: 8px; font-weight: 800; }
+                        for t in ["${env.process_name}", "${env.process_pid}", "${env.hotkey_combo}"]: EnvChip {
+                            token: t;
+                            clicked(v) => { root.copy-env(v); }
+                        }
+                    }
+                }
+            }
+
             Rectangle {
                 height: 140px;
                 background: Theme.bg-sidebar;
@@ -1419,11 +1383,9 @@ export component ArbiterForge inherits Window {
         }
     }
 
-    // ── Overlays ──────────────────────────────────────────────────────────────
-    
     if root.show-modal: Rectangle {
         background: #00000080;
-        TouchArea { } // Block clicks
+        TouchArea { }
         
         Rectangle {
             width: 400px;

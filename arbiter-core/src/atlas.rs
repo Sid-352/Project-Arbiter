@@ -7,7 +7,7 @@
 //!   - Emits `RunEvent`s to connected consumers and handles UI log pushes.
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex},
     time::Instant,
 };
@@ -45,6 +45,9 @@ pub struct Atlas {
     pub registry: HashMap<String, Ordinance>,
     pub active_presence_config: PresenceConfig,
     pub active_ordinance_id: Option<DecreeId>,
+    
+    /// Tracks process names that already have an active watcher task.
+    pub watched_processes: HashSet<String>,
 
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
@@ -66,6 +69,7 @@ impl Atlas {
             registry: HashMap::new(),
             active_presence_config: PresenceConfig::default(),
             active_ordinance_id: None,
+            watched_processes: HashSet::new(),
             active_abort: None,
         }
     }
@@ -123,7 +127,7 @@ impl Atlas {
                     match cmd {
                         ForgeCommand::SaveDecree(def) => {
                             info!(id = %def.id, "Atlas: received SaveDecree command");
-                            
+
                             // 1. Update the Ledger on disk
                             let mut ledger = crate::ledger::load().unwrap_or_else(|e| {
                                 error!("Atlas: failed to load ledger for save: {}", e);
@@ -138,6 +142,14 @@ impl Atlas {
                             let _ = crate::ledger::save(&ledger);
 
                             // 2. Hot-reload the registry entry
+                            let mut context = EnvContext::new();
+                            let now_unix = std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_secs();
+                            context.insert("timestamp", &now_unix.to_string());
+                            context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
+
                             let summons = match &def.summons {
                                 crate::ledger::SummonsDef::FileCreated { ward_id, pattern } => {
                                     let ward = ledger.wards.iter().find(|w| w.path.to_string_lossy() == *ward_id);
@@ -145,7 +157,7 @@ impl Atlas {
                                         Summons::FileCreated {
                                             watch_path: w.path.clone(),
                                             pattern: pattern.clone(),
-                                            context: EnvContext::new(),
+                                            context,
                                         }
                                     } else {
                                         warn!(id = %def.id, ward_id, "Atlas: Ward not found for dynamic registration");
@@ -156,18 +168,24 @@ impl Atlas {
                                     let _ = crate::vigil::keys::register_hotkey(combo.clone(), vigil_tx.clone());
                                     Summons::Hotkey {
                                         combo: combo.clone(),
-                                        context: EnvContext::new(),
+                                        context,
                                     }
                                 }
                                 crate::ledger::SummonsDef::ProcessAppeared { name } => {
-                                    crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
+                                    if !self.watched_processes.contains(name) {
+                                        info!(%name, "Atlas: spawning new process watcher");
+                                        crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
+                                        self.watched_processes.insert(name.clone());
+                                    } else {
+                                        debug!(%name, "Atlas: process watcher already active, skipping spawn");
+                                    }
                                     Summons::ProcessAppeared {
                                         name: name.clone(),
-                                        context: EnvContext::new(),
+                                        context,
                                     }
                                 }
                                 crate::ledger::SummonsDef::Manual => Summons::Manual {
-                                    context: EnvContext::new(),
+                                    context,
                                 },
                             };
 
@@ -352,7 +370,7 @@ impl Atlas {
                     time: chrono::Utc::now().to_rfc3339(),
                     tag: "ATLAS".into(), 
                     message: msg.into(), 
-                    is_error: false,
+                    is_error: false, 
                     ordinance_id: self.active_ordinance_id.as_ref().map(|id| id.0.clone()),
                 });
                 info!("Atlas sequence complete — returning to Idle");
@@ -421,3 +439,4 @@ pub fn push_log(
         });
     }
 }
+

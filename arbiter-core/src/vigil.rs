@@ -118,7 +118,7 @@ pub fn is_write_complete(path: &str) -> bool {
 pub mod fs {
     use super::*;
     use notify::{recommended_watcher, Event, EventKind, RecursiveMode, Watcher};
-    use globset::{Glob, GlobMatcher};
+    use globset::GlobMatcher;
 
     /// Spawn a file-system watcher for the Ward described by `ward` and forward
     /// matching `FileCreated` events into `tx`.
@@ -146,9 +146,12 @@ pub mod fs {
 
         info!(%pattern, path = %watch_path.display(), analytical, "Vigil-fs: spawning watcher");
 
-        // Pre-compile glob for performance
+        // Pre-compile glob for performance (case-insensitive for Windows-style matching)
         let matcher: Option<GlobMatcher> = if !pattern.is_empty() {
-            match Glob::new(&pattern) {
+            match globset::GlobBuilder::new(&pattern)
+                .case_insensitive(true)
+                .build()
+            {
                 Ok(g) => Some(g.compile_matcher()),
                 Err(e) => {
                     warn!(%e, %pattern, "Vigil-fs: invalid pattern, falling back to match-all");
@@ -210,6 +213,9 @@ pub mod fs {
 
                             // ── Always-present identity variables ───────────────
                             context.insert("file_path", &path_str);
+                            if let Some(parent) = path.parent() {
+                                context.insert("file_dir", &parent.to_string_lossy());
+                            }
                             context.insert(
                                 "file_name",
                                 path.file_name().and_then(|n| n.to_str()).unwrap_or(""),
@@ -226,6 +232,7 @@ pub mod fs {
                                 .unwrap_or_default()
                                 .as_secs();
                             context.insert("timestamp", &now_unix.to_string());
+                            context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
 
                             // ── Layer 1: Physical Attributes (OS metadata) ───────
                             // Free — no file handles opened, just stat() calls.
@@ -373,6 +380,7 @@ pub mod keys {
                         "timestamp",
                         &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()),
                     );
+                    context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
                     let summons = Summons::Hotkey {
                         combo: combo.clone(),
                         context,
