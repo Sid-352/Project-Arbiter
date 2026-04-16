@@ -187,6 +187,7 @@ fn sync_ledger_to_ui() {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    std::env::set_var("SLINT_STYLE", "fluent");
     tracing_subscriber::fmt::init();
     info!("Arbiter Forge: Launching Slint Interface");
 

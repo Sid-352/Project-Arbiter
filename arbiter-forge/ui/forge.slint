@@ -2,7 +2,7 @@
 //  ARBITER FORGE — Slint UI (Rebuilt)
 // ============================================================
 
-import { Button } from "std-widgets.slint";
+import { ScrollView, Button } from "std-widgets.slint";
 
 // ── Theme global ──────────────────────────────────────────────────────────────
 export global Theme {
@@ -51,49 +51,6 @@ export struct DecreeStep {
 }
 
 // ── Components ────────────────────────────────────────────────────────────────
-
-component ThemedScroll inherits Flickable {
-    in property <bool> show-horizontal: true;
-    in property <bool> show-vertical: true;
-    
-    // Minimalist Vertical Scrollbar
-    if root.show-vertical && root.viewport-height > root.height: Rectangle {
-        x: parent.width - 4px;
-        y: 2px;
-        width: 2px;
-        height: parent.height - 4px;
-        background: Theme.is-dark ? #ffffff10 : #00000010;
-        border-radius: 1px;
-        z: 100;
-        
-        Rectangle {
-            width: 2px;
-            height: max(20px, (parent.height / root.viewport-height) * parent.height);
-            y: (-root.viewport-y / root.viewport-height) * parent.height;
-            background: Theme.accent;
-            border-radius: 1px;
-        }
-    }
-
-    // Minimalist Horizontal Scrollbar
-    if root.show-horizontal && root.viewport-width > root.width: Rectangle {
-        y: parent.height - 4px;
-        x: 2px;
-        height: 2px;
-        width: parent.width - 4px;
-        background: Theme.is-dark ? #ffffff10 : #00000010;
-        border-radius: 1px;
-        z: 100;
-        
-        Rectangle {
-            height: 2px;
-            width: max(20px, (parent.width / root.viewport-width) * parent.width);
-            x: (-root.viewport-x / root.viewport-width) * parent.width;
-            background: Theme.accent;
-            border-radius: 1px;
-        }
-    }
-}
 
 component EnvChip inherits Rectangle {
     in property <string> token;
@@ -673,7 +630,7 @@ component OrdinanceStepItem inherits Rectangle {
                     border-color: Theme.border;
                     clip: true; // Hide content that overflows during scroll
                     
-                    ThemedScroll {
+                    ScrollView {
                         VerticalLayout {
                             padding: 12px;
                             spacing: 10px;
@@ -821,7 +778,7 @@ export component ArbiterForge inherits Window {
     callback active-decree-renamed(string, string);
     callback request-close;
     public function scroll-logs-to-bottom() {
-        log-scroll.viewport-y = - max(0px, log-scroll.viewport-height - log-scroll.height);
+        log-scroll.viewport-y = - max(0px, log-scroll.viewport-height - log-scroll.visible-height);
     }
     HorizontalLayout {
         // ── Sidebar ───────────────────────────────────────────────────────────
@@ -929,7 +886,7 @@ export component ArbiterForge inherits Window {
                         }
                     }
 
-                    ThemedScroll {
+                    ScrollView {
                         VerticalLayout {
                             spacing: 2px;
                             alignment: start;
@@ -1103,7 +1060,7 @@ export component ArbiterForge inherits Window {
             Rectangle {
                 vertical-stretch: 1;
                 clip: true;
-                if root.active-page == 0: ThemedScroll {
+                if root.active-page == 0: ScrollView {
                     VerticalLayout {
                         padding: 40px;
                         spacing: 40px;
@@ -1421,7 +1378,7 @@ export component ArbiterForge inherits Window {
                         height: 6px;
                     }
 
-                    log-scroll := ThemedScroll {
+                    log-scroll := ScrollView {
                         VerticalLayout {
                             alignment: start;
                             for entry in root.telemetry-logs: HorizontalLayout {
