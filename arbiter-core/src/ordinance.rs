@@ -375,6 +375,18 @@ pub struct EnvContext {
     /// Cached MIME type string.
     #[serde(skip)]
     mime_cache: OnceLock<Option<String>>,
+
+    /// Cached MD5 hex string (Layer 2).
+    #[serde(skip)]
+    md5_cache: OnceLock<Option<String>>,
+
+    /// Cached Shannon entropy (Layer 2).
+    #[serde(skip)]
+    entropy_cache: OnceLock<Option<String>>,
+
+    /// Cached newline count for text files (Layer 2).
+    #[serde(skip)]
+    text_lines_cache: OnceLock<Option<String>>,
 }
 
 impl Default for EnvContext {
@@ -385,6 +397,9 @@ impl Default for EnvContext {
             integrity_scan: false,
             sha256_cache: OnceLock::new(),
             mime_cache: OnceLock::new(),
+            md5_cache: OnceLock::new(),
+            entropy_cache: OnceLock::new(),
+            text_lines_cache: OnceLock::new(),
         }
     }
 }
@@ -397,6 +412,9 @@ impl Clone for EnvContext {
             integrity_scan: self.integrity_scan,
             sha256_cache: OnceLock::new(),
             mime_cache: OnceLock::new(),
+            md5_cache: OnceLock::new(),
+            entropy_cache: OnceLock::new(),
+            text_lines_cache: OnceLock::new(),
         }
     }
 }
@@ -443,6 +461,33 @@ impl EnvContext {
                     })
                     .as_deref()
             }
+            EnvKey::ContentMd5 => {
+                self.md5_cache
+                    .get_or_init(|| {
+                        self.source_path
+                            .as_ref()
+                            .and_then(|p| compute_md5(p))
+                    })
+                    .as_deref()
+            }
+            EnvKey::ContentEntropy => {
+                self.entropy_cache
+                    .get_or_init(|| {
+                        self.source_path
+                            .as_ref()
+                            .and_then(|p| compute_entropy(p))
+                    })
+                    .as_deref()
+            }
+            EnvKey::TextLines => {
+                self.text_lines_cache
+                    .get_or_init(|| {
+                        self.source_path
+                            .as_ref()
+                            .and_then(|p| compute_text_lines(p))
+                    })
+                    .as_deref()
+            }
             _ => None,
         }
     }
@@ -474,6 +519,61 @@ fn compute_mime(path: &PathBuf) -> Option<String> {
 
 #[cfg(not(feature = "vigil-deep"))]
 fn compute_mime(_path: &PathBuf) -> Option<String> {
+    None
+}
+
+#[cfg(feature = "vigil-deep")]
+fn compute_md5(path: &PathBuf) -> Option<String> {
+    use md5::{Digest, Md5};
+    let bytes = std::fs::read(path).ok()?;
+    let hash = Md5::digest(&bytes);
+    Some(format!("{:x}", hash))
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_md5(_path: &PathBuf) -> Option<String> {
+    None
+}
+
+/// Compute Shannon entropy H = -Σ p(x) * log2(p(x)) over the byte distribution.
+/// Returns a 4-decimal-place string (max 8.0 for perfectly random data).
+#[cfg(feature = "vigil-deep")]
+fn compute_entropy(path: &PathBuf) -> Option<String> {
+    let bytes = std::fs::read(path).ok()?;
+    if bytes.is_empty() {
+        return Some("0.0000".to_string());
+    }
+    let mut freq = [0u64; 256];
+    for &b in &bytes {
+        freq[b as usize] += 1;
+    }
+    let len = bytes.len() as f64;
+    let entropy: f64 = freq
+        .iter()
+        .filter(|&&c| c > 0)
+        .map(|&c| {
+            let p = c as f64 / len;
+            -p * p.log2()
+        })
+        .sum();
+    Some(format!("{:.4}", entropy))
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_entropy(_path: &PathBuf) -> Option<String> {
+    None
+}
+
+/// Count newline characters — a fast proxy for line count on text files.
+#[cfg(feature = "vigil-deep")]
+fn compute_text_lines(path: &PathBuf) -> Option<String> {
+    let bytes = std::fs::read(path).ok()?;
+    let count = bytes.iter().filter(|&&b| b == b'\n').count();
+    Some(count.to_string())
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_text_lines(_path: &PathBuf) -> Option<String> {
     None
 }
 

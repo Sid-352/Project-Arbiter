@@ -14,7 +14,7 @@ vigil-sys  = ["dep:sysinfo"]
 presence   = ["dep:rdev"]
 signet     = ["dep:aes-gcm", "dep:base64", "dep:hostname", "dep:typenum"]
 # Layer 2 (Analytical) content extraction: SHA-256 hashing and MIME detection.
-vigil-deep = ["dep:sha2", "dep:infer"]
+vigil-deep = ["dep:sha2", "dep:md-5", "dep:infer"]
 
 [dependencies]
 serde      = { workspace = true }
@@ -46,5 +46,6 @@ typenum  = { workspace = true, optional = true }
 
 # Feature: vigil-deep
 sha2  = { workspace = true, optional = true }
+"md-5"  = { workspace = true, optional = true }
 infer = { workspace = true, optional = true }
 globset = "0.4.18"
