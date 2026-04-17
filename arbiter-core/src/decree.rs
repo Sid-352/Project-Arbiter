@@ -1,17 +1,46 @@
-//! ordinance.rs — The Arbiter data contract.
-//!
-//! Defines all pure data types for triggers, actions, sequences, and
-//! I/O messaging. No logic lives here — this is the shared vocabulary
-//! used by The Atlas, The Vigil, and the UI terminal.
-
+//! decree.rs — Data contract. Defines pure data types for triggers, actions, and sequences.
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{OnceLock},
     time::Instant,
 };
+
+// ── Strong ID Types ──────────────────────────────────────────────────────────
+
+/// Unique identifier for an Decree (Decree).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct DecreeId(pub String);
+
+impl From<&str> for DecreeId {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
+
+impl std::fmt::Display for DecreeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Unique identifier for a Node within a sequence.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NodeId(pub String);
+
+impl From<&str> for NodeId {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
+
+impl std::fmt::Display for NodeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
@@ -49,7 +78,7 @@ pub enum ActionType {
     },
 }
 
-/// An absolute screen coordinate validated by The Hand.
+/// An absolute screen coordinate validated by Hand.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
@@ -103,31 +132,30 @@ pub enum WardLayer {
 }
 
 /// Runtime configuration for a monitored Ward (watched directory).
-///
-/// Constructed by `main.rs` and passed into `vigil::fs::spawn_watcher`.
-/// The Vigil itself makes no policy decisions — it only fires events.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WardConfig {
     /// Unique identifier for this Ward.
     pub id: String,
     /// The absolute path of the directory to be watched.
     pub path: PathBuf,
-    /// Glob pattern for filename matching (e.g. "*.zip"). Empty = match all.
-    pub glob: String,
+    /// File pattern for filename matching (e.g. "*.zip"). Empty = match all.
+    pub pattern: String,
     /// The permission layer granted to this Ward.
     pub layer: WardLayer,
+    /// If true, monitors all subdirectories recursively.
+    pub recursive: bool,
 }
 
-// ── Ordinance Nodes (Sequence Graph) ─────────────────────────────────────────
+// ── Decree Nodes (Sequence Graph) ─────────────────────────────────────────
 
-/// A full Ordinance definition: the nodes and its execution configuration.
+/// A full Decree definition: the nodes and its execution configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Ordinance {
-    pub nodes: Vec<OrdNode>,
+pub struct Decree {
+    pub nodes: Vec<DecreeNode>,
     pub presence_config: PresenceConfig,
 }
 
-/// The kind of node in an Ordinance sequence graph.
+/// The kind of node in an Decree sequence graph.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NodeKind {
     /// Entry point — every sequence must have exactly one.
@@ -138,14 +166,11 @@ pub enum NodeKind {
     Trigger,
 }
 
-/// A single node in a compiled Ordinance sequence.
-///
-/// Derived from the graph editor's blueprint, stripped of all visual
-/// perception fields that existed in the Lithos era.
+/// A single node in a compiled Decree sequence.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OrdNode {
+pub struct DecreeNode {
     /// Stable UUID for this node, used for graph wiring.
-    pub id: String,
+    pub id: NodeId,
     /// Human-readable label shown in the editor.
     pub label: String,
     /// The action this node executes (serialised as a string key for the editor).
@@ -153,7 +178,7 @@ pub struct OrdNode {
     pub kind: NodeKind,
     /// Adjacency map: output-port-name → next node UUID.
     #[serde(default)]
-    pub next_nodes: HashMap<String, String>,
+    pub next_nodes: HashMap<String, NodeId>,
 }
 
 // ── Summons (Triggers) ────────────────────────────────────────────────────────
@@ -161,11 +186,11 @@ pub struct OrdNode {
 /// The specific signal that starts or gates a sequence — The Summons.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Summons {
-    /// A file matching `glob` finished writing inside `watch_path`.
+    /// A file matching `pattern` finished writing inside `watch_path`.
     #[cfg(feature = "vigil-fs")]
     FileCreated {
         watch_path: PathBuf,
-        glob: String,
+        pattern: String,
         context: EnvContext,
     },
     /// A user-defined global hotkey combination.
@@ -182,8 +207,8 @@ impl Summons {
         match self {
             #[cfg(feature = "vigil-fs")]
             Self::FileCreated {
-                watch_path, glob, ..
-            } => format!("FileCreated|{}|{}", watch_path.display(), glob),
+                watch_path, pattern, ..
+            } => format!("FileCreated|{}|{}", watch_path.display(), pattern),
             #[cfg(feature = "vigil-keys")]
             Self::Hotkey { combo, .. } => format!("Hotkey|{}", combo),
             Self::ProcessAppeared { name, .. } => format!("ProcessAppeared|{}", name),
@@ -198,41 +223,107 @@ impl Summons {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EnvKey {
     // ── Layer 1: Surface (Always available for file triggers) ──
+    FileDir,
     FilePath,
     FileName,
     FileExt,
     FileSize,
-    FileCreated,
+    FileSizeHuman,
+    FileReadonly,
+    FileHidden,
+    FileCreatedUnix,
+    FileCreatedIso,
+    FileCreatedLocal,
+    FileModifiedIso,
+    FileModifiedLocal,
+    FileOwner,
+    FileIsLink,
+    Timestamp,
+    TimestampLocal,
     // ── Layer 2: Analytical (Gated by Integrity Ward) ──
     ContentSha256,
     ContentMd5,
     ContentMime,
+    ContentEntropy,
+    // ── Layer 4: Deep ──
+    ImgDims,
+    ImgAspect,
+    ImgModel,
+    ImgGps,
+    TextLines,
+    // ── Process Layer ──
+    ProcessName,
+    ProcessPid,
+    // ── Hotkey Layer ──
+    HotkeyCombo,
 }
 
 impl EnvKey {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Self::FileDir => "file_dir",
             Self::FilePath => "file_path",
             Self::FileName => "file_name",
             Self::FileExt => "file_ext",
             Self::FileSize => "file_size",
-            Self::FileCreated => "file_created",
+            Self::FileSizeHuman => "file_size_human",
+            Self::FileReadonly => "file_readonly",
+            Self::FileHidden => "file_hidden",
+            Self::FileCreatedUnix => "file_created_unix",
+            Self::FileCreatedIso => "file_created_iso",
+            Self::FileCreatedLocal => "file_created_local",
+            Self::FileModifiedIso => "file_modified_iso",
+            Self::FileModifiedLocal => "file_modified_local",
+            Self::FileOwner => "file_owner",
+            Self::FileIsLink => "file_is_link",
+            Self::Timestamp => "timestamp",
+            Self::TimestampLocal => "timestamp_local",
             Self::ContentSha256 => "content_sha256",
             Self::ContentMd5 => "content_md5",
             Self::ContentMime => "content_mime",
+            Self::ContentEntropy => "content_entropy",
+            Self::ImgDims => "img_dims",
+            Self::ImgAspect => "img_aspect",
+            Self::ImgModel => "img_model",
+            Self::ImgGps => "img_gps",
+            Self::TextLines => "text_lines",
+            Self::ProcessName => "process_name",
+            Self::ProcessPid => "process_pid",
+            Self::HotkeyCombo => "hotkey_combo",
         }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
+            "file_dir" => Some(Self::FileDir),
             "file_path" => Some(Self::FilePath),
             "file_name" => Some(Self::FileName),
             "file_ext" => Some(Self::FileExt),
             "file_size" => Some(Self::FileSize),
-            "file_created" => Some(Self::FileCreated),
+            "file_size_human" => Some(Self::FileSizeHuman),
+            "file_readonly" => Some(Self::FileReadonly),
+            "file_hidden" => Some(Self::FileHidden),
+            "file_created_unix" => Some(Self::FileCreatedUnix),
+            "file_created_iso" => Some(Self::FileCreatedIso),
+            "file_created_local" => Some(Self::FileCreatedLocal),
+            "file_modified_iso" => Some(Self::FileModifiedIso),
+            "file_modified_local" => Some(Self::FileModifiedLocal),
+            "file_owner" => Some(Self::FileOwner),
+            "file_is_link" => Some(Self::FileIsLink),
+            "timestamp" => Some(Self::Timestamp),
+            "timestamp_local" => Some(Self::TimestampLocal),
             "content_sha256" => Some(Self::ContentSha256),
             "content_md5" => Some(Self::ContentMd5),
             "content_mime" => Some(Self::ContentMime),
+            "content_entropy" => Some(Self::ContentEntropy),
+            "img_dims" => Some(Self::ImgDims),
+            "img_aspect" => Some(Self::ImgAspect),
+            "img_model" => Some(Self::ImgModel),
+            "img_gps" => Some(Self::ImgGps),
+            "text_lines" => Some(Self::TextLines),
+            "process_name" => Some(Self::ProcessName),
+            "process_pid" => Some(Self::ProcessPid),
+            "hotkey_combo" => Some(Self::HotkeyCombo),
             _ => None,
         }
     }
@@ -240,7 +331,18 @@ impl EnvKey {
     pub fn is_analytical(&self) -> bool {
         matches!(
             self,
-            Self::ContentSha256 | Self::ContentMd5 | Self::ContentMime
+            Self::ContentSha256
+                | Self::ContentMd5
+                | Self::ContentMime
+                | Self::ContentEntropy
+                | Self::ImgDims
+                | Self::ImgAspect
+                | Self::ImgModel
+                | Self::ImgGps
+                | Self::TextLines
+                | Self::FileCreatedIso
+                | Self::FileCreatedLocal
+                | Self::FileModifiedLocal
         )
     }
 }
@@ -248,40 +350,38 @@ impl EnvKey {
 // ── Environment Context ───────────────────────────────────────────────────────
 
 /// The payload associated with a fired trigger.
-///
-/// Provides variables for string interpolation (e.g., `${env.file_path}`).
-///
-/// **Static variables** (file name, timestamp, etc.) are inserted eagerly by the
-/// Vigil at fire time via [`EnvContext::insert`].
-///
-/// **Lazy variables** (SHA256, MIME type) are computed on first access via
-/// [`EnvContext::resolve`] and cached using [`OnceLock`] — the file is read
-/// at most once per context lifetime regardless of how many times a macro
-/// requests the same hash.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EnvContext {
-    /// Eagerly-inserted static variables available to all ordinances.
+    /// Eagerly-inserted static variables available to all decrees.
     pub variables: HashMap<String, String>,
 
     /// The real `PathBuf` of the triggering file, used for lazy resolution.
-    /// Skipped during serialisation — re-populated from `file_path` on load if needed.
     #[serde(skip)]
     pub source_path: Option<PathBuf>,
 
     /// `true` when this Ward has Layer 2 (Analytical) access enabled.
-    /// The Signet Guard in `resolve()` consults this before performing any
-    /// content read; returns `None` if the required layer is not granted.
     #[serde(skip)]
     pub integrity_scan: bool,
 
-    /// Cached SHA-256 hex string. Computed once on first request, then frozen.
-    /// `None` = not yet computed *or* computation failed / not permitted.
+    /// Cached SHA-256 hex string.
     #[serde(skip)]
     sha256_cache: OnceLock<Option<String>>,
 
-    /// Cached MIME type string (e.g. `"application/zip"`). Same lazy semantics.
+    /// Cached MIME type string.
     #[serde(skip)]
     mime_cache: OnceLock<Option<String>>,
+
+    /// Cached MD5 hex string (Layer 2).
+    #[serde(skip)]
+    md5_cache: OnceLock<Option<String>>,
+
+    /// Cached Shannon entropy (Layer 2).
+    #[serde(skip)]
+    entropy_cache: OnceLock<Option<String>>,
+
+    /// Cached newline count for text files (Layer 2).
+    #[serde(skip)]
+    text_lines_cache: OnceLock<Option<String>>,
 }
 
 impl Default for EnvContext {
@@ -292,14 +392,14 @@ impl Default for EnvContext {
             integrity_scan: false,
             sha256_cache: OnceLock::new(),
             mime_cache: OnceLock::new(),
+            md5_cache: OnceLock::new(),
+            entropy_cache: OnceLock::new(),
+            text_lines_cache: OnceLock::new(),
         }
     }
 }
 
 impl Clone for EnvContext {
-    /// Clones the static `variables` map and `source_path`/`integrity_scan` flags.
-    /// The `OnceLock` caches are intentionally reset on clone so each clone
-    /// independently re-computes if needed (avoids cross-clone aliasing).
     fn clone(&self) -> Self {
         Self {
             variables: self.variables.clone(),
@@ -307,6 +407,9 @@ impl Clone for EnvContext {
             integrity_scan: self.integrity_scan,
             sha256_cache: OnceLock::new(),
             mime_cache: OnceLock::new(),
+            md5_cache: OnceLock::new(),
+            entropy_cache: OnceLock::new(),
+            text_lines_cache: OnceLock::new(),
         }
     }
 }
@@ -316,27 +419,17 @@ impl EnvContext {
         Self::default()
     }
 
-    /// Insert a static key/value variable (eagerly available to all ordinances).
+    /// Insert a static key/value variable.
     pub fn insert(&mut self, key: &str, value: &str) {
         self.variables.insert(key.to_string(), value.to_string());
     }
 
     /// Resolve a variable by key, performing lazy computation if necessary.
-    ///
-    /// **Resolution order:**
-    /// 1. Static `variables` map (always available).
-    /// 2. Lazy content variables — only if `integrity_scan` is `true`.
-    ///    If the Ward is Surface-only, these return `None` (Signet Guard).
-    ///
-    /// Returns `None` if the key is unknown, the Ward layer is insufficient,
-    /// or the underlying computation failed (e.g. I/O error).
     pub fn resolve(&self, key_str: &str) -> Option<&str> {
-        // ── 1. Static map ────────────────────────────────────────────────────
         if let Some(v) = self.variables.get(key_str) {
             return Some(v.as_str());
         }
 
-        // ── 2. Lazy / content-derived keys (Signet Guard) ────────────────────
         let key = EnvKey::from_str(key_str)?;
 
         if key.is_analytical() && !self.integrity_scan {
@@ -363,6 +456,33 @@ impl EnvContext {
                     })
                     .as_deref()
             }
+            EnvKey::ContentMd5 => {
+                self.md5_cache
+                    .get_or_init(|| {
+                        self.source_path
+                            .as_ref()
+                            .and_then(|p| compute_md5(p))
+                    })
+                    .as_deref()
+            }
+            EnvKey::ContentEntropy => {
+                self.entropy_cache
+                    .get_or_init(|| {
+                        self.source_path
+                            .as_ref()
+                            .and_then(|p| compute_entropy(p))
+                    })
+                    .as_deref()
+            }
+            EnvKey::TextLines => {
+                self.text_lines_cache
+                    .get_or_init(|| {
+                        self.source_path
+                            .as_ref()
+                            .and_then(|p| compute_text_lines(p))
+                    })
+                    .as_deref()
+            }
             _ => None,
         }
     }
@@ -370,13 +490,6 @@ impl EnvContext {
 
 // ── Lazy Content Helpers (vigil-deep) ─────────────────────────────────────────
 
-/// Compute the SHA-256 hex digest of the file at `path`.
-///
-/// Reads the entire file into memory. For very large files the caller should
-/// ensure this is invoked from a blocking context (the Runner already does so
-/// inside `tokio::task::spawn_blocking` where necessary).
-///
-/// Returns `None` on any I/O error.
 #[cfg(feature = "vigil-deep")]
 fn compute_sha256(path: &PathBuf) -> Option<String> {
     use sha2::{Digest, Sha256};
@@ -385,18 +498,13 @@ fn compute_sha256(path: &PathBuf) -> Option<String> {
     Some(format!("{:x}", hash))
 }
 
-/// Stub when `vigil-deep` is not compiled in — always returns `None`.
 #[cfg(not(feature = "vigil-deep"))]
 fn compute_sha256(_path: &PathBuf) -> Option<String> {
     None
 }
 
-/// Detect the MIME type of `path` by inspecting its magic bytes.
-///
-/// Returns `None` on I/O error or unknown format.
 #[cfg(feature = "vigil-deep")]
 fn compute_mime(path: &PathBuf) -> Option<String> {
-    // Read just the first 512 bytes — sufficient for magic-byte detection.
     use std::io::Read;
     let mut buf = [0u8; 512];
     let mut f = std::fs::File::open(path).ok()?;
@@ -404,19 +512,73 @@ fn compute_mime(path: &PathBuf) -> Option<String> {
     infer::get(&buf[..n]).map(|t| t.mime_type().to_string())
 }
 
-/// Stub when `vigil-deep` is not compiled in — always returns `None`.
 #[cfg(not(feature = "vigil-deep"))]
 fn compute_mime(_path: &PathBuf) -> Option<String> {
     None
 }
 
+#[cfg(feature = "vigil-deep")]
+fn compute_md5(path: &PathBuf) -> Option<String> {
+    use md5::{Digest, Md5};
+    let bytes = std::fs::read(path).ok()?;
+    let hash = Md5::digest(&bytes);
+    Some(format!("{:x}", hash))
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_md5(_path: &PathBuf) -> Option<String> {
+    None
+}
+
+/// Compute Shannon entropy H = -Σ p(x) * log2(p(x)) over the byte distribution.
+/// Returns a 4-decimal-place string (max 8.0 for perfectly random data).
+#[cfg(feature = "vigil-deep")]
+fn compute_entropy(path: &PathBuf) -> Option<String> {
+    let bytes = std::fs::read(path).ok()?;
+    if bytes.is_empty() {
+        return Some("0.0000".to_string());
+    }
+    let mut freq = [0u64; 256];
+    for &b in &bytes {
+        freq[b as usize] += 1;
+    }
+    let len = bytes.len() as f64;
+    let entropy: f64 = freq
+        .iter()
+        .filter(|&&c| c > 0)
+        .map(|&c| {
+            let p = c as f64 / len;
+            -p * p.log2()
+        })
+        .sum();
+    Some(format!("{:.4}", entropy))
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_entropy(_path: &PathBuf) -> Option<String> {
+    None
+}
+
+/// Count newline characters — a fast proxy for line count on text files.
+#[cfg(feature = "vigil-deep")]
+fn compute_text_lines(path: &PathBuf) -> Option<String> {
+    let bytes = std::fs::read(path).ok()?;
+    let count = bytes.iter().filter(|&&b| b == b'\n').count();
+    Some(count.to_string())
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_text_lines(_path: &PathBuf) -> Option<String> {
+    None
+}
+
 // ── Run-time Events ───────────────────────────────────────────────────────────
 
-/// Events emitted by the Atlas FSM to any listening consumers (UI, logger).
+/// Events emitted by the Atlas FSM to any listening consumers.
 #[derive(Debug, Clone)]
 pub enum RunEvent {
     /// A log line to be displayed in the Terminal of Commands.
-    Log(LogEntry),
+    Log(crate::protocol::LogEntry),
     /// The FSM advanced to node at index `usize`.
     Progress(usize),
     /// A non-recoverable fault — engine halted.
@@ -429,68 +591,10 @@ pub enum RunEvent {
 
 /// Payload sent from the Atlas to the mechanical Runner to start a sequence.
 pub struct ExecData {
-    pub nodes: Vec<OrdNode>,
+    pub nodes: Vec<DecreeNode>,
     pub context: EnvContext,
     pub presence_config: PresenceConfig,
-    pub ordinance_id: Option<String>,
+    pub decree_id: Option<DecreeId>,
     pub trigger_time: Instant,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
-}
-
-/// A single structured log entry.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LogEntry {
-    /// Short category tag shown in the terminal (e.g. "ATLAS", "VIGIL", "HAND").
-    pub tag: String,
-    pub message: String,
-    pub is_error: bool,
-    /// The ID of the ordinance currently executing, if any.
-    pub ordinance_id: Option<String>,
-}
-
-/// Helper: push a log entry into a shared log buffer, capping at 1 000 lines.
-pub fn push_log(
-    logs: &Arc<Mutex<Vec<LogEntry>>>,
-    tag: &str,
-    msg: &str,
-    is_error: bool,
-    ordinance_id: Option<String>,
-) {
-    if let Ok(mut v) = logs.lock() {
-        if v.len() >= 1_000 {
-            v.remove(0);
-        }
-        v.push(LogEntry {
-            tag: tag.into(),
-            message: msg.into(),
-            is_error,
-            ordinance_id,
-        });
-    }
-}
-
-// ── I/O Commands (Ordinance persistence) ─────────────────────────────────────
-
-/// Commands sent from the UI or engine to the I/O worker thread.
-#[derive(Debug)]
-pub enum IoCommand {
-    /// Serialise and persist the current sequence graph.
-    SaveGraph(String),
-    /// Load the persisted sequence graph from disk.
-    LoadGraph,
-}
-
-/// Commands sent from the Forge UI to the Arbiter Engine.
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ForgeCommand {
-    /// Save a new or updated ordinance definition.
-    SaveDecree(crate::ledger::OrdinanceDef),
-}
-
-/// Responses from the I/O worker thread.
-#[derive(Debug)]
-pub enum IoResult {
-    SaveSuccess,
-    LoadSuccess(serde_json::Value),
-    Error(String),
 }

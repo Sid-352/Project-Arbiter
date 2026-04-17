@@ -1,0 +1,49 @@
+export global Theme {
+    in-out property <bool> is-dark:         true;
+    in-out property <color> bg-app:         is-dark ? #18181b : #f8fafc;
+    in-out property <color> bg-sidebar:     is-dark ? #0f0f12 : #f1f5f9;
+    in-out property <color> bg-card:        is-dark ? #222226 : #ffffff;
+    in-out property <color> bg-input:       is-dark ? #0c0c0e : #ffffff;
+    in-out property <color> accent:         #6366f1; // Indigo
+    in-out property <color> accent-subtle:  is-dark ? #6366f125 : #6366f120;
+    in-out property <color> success:        #10b981;
+    in-out property <color> warning:        #f59e0b;
+    in-out property <color> critical:       #f43f5e;
+    in-out property <color> border:         is-dark ? #2d2d32 : #e2e8f0; // Slate 200
+    in-out property <color> border-focus:   #6366f1;
+    in-out property <color> text-main:      is-dark ? #fafafa : #0f172a; // Slate 900
+    in-out property <color> text-secondary: is-dark ? #a1a1aa : #475569; // Slate 600
+    in-out property <color> text-muted:     is-dark ? #52525b : #94a3b8; // Slate 400
+    in-out property <length> radius:        8px;
+    in-out property <length> radius-lg:     12px;
+    
+    // Standard Padding & Spacing Multipliers
+    in-out property <length> space-xs:      4px;
+    in-out property <length> space-sm:      8px;
+    in-out property <length> space-md:      12px;
+    in-out property <length> space-lg:      16px;
+    in-out property <length> space-xl:      24px;
+    in-out property <length> space-xxl:     32px;
+    in-out property <length> space-xxxl:    40px;
+
+    // Unified Font Sizes
+    in-out property <length> font-tiny:     10px;
+    in-out property <length> font-small:    12px;
+    in-out property <length> font-norm:     14px;
+    in-out property <length> font-large:    18px;
+    in-out property <length> font-title:    24px;
+
+    // Unified Durations
+    in-out property <duration> dur-fast:    150ms;
+    in-out property <duration> dur-norm:    200ms;
+    in-out property <duration> dur-slow:    250ms;
+
+    // Component Sizes
+    in-out property <length> sidebar-width: 260px;
+    in-out property <length> header-height:  72px;
+    in-out property <length> item-height:    40px;
+    in-out property <length> btn-height:     36px;
+    in-out property <length> log-height:     160px;
+    in-out property <length> modal-width:    440px;
+    in-out property <length> input-height:   40px;
+}

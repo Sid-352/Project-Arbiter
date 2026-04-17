@@ -1,15 +1,31 @@
 {
-  "version": 0,
-  "wards": [],
+  "version": 1,
+  "wards": [
+    {
+      "id": "downloads-folder",
+      "path": "C:\\Users\\user\\Downloads",
+      "pattern": "*",
+      "layer": "Surface",
+      "recursive": true
+    },
+    {
+      "id": "arbtest-monitor",
+      "path": "N:\\Temp\\arbtest",
+      "pattern": "*",
+      "layer": "Surface",
+      "recursive": true
+    }
+  ],
   "ordinances": [
     {
-      "id": "id-1",
-      "label": "Sid",
+      "id": "pdf-organizer",
+      "label": "Auto-Archive PDFs",
       "summons": {
         "type": "FileCreated",
         "data": {
-          "ward_id": "",
-          "glob": ""
+          "ward_id": "C:\\Users\\user\\Downloads",
+          "pattern": "*.pdf",
+          "recursive": true
         }
       },
       "nodes": [
@@ -18,6 +34,224 @@
           "label": "Start",
           "internal_state": "",
           "kind": "Entry",
+          "next_nodes": {
+            "Next": "move-pdf"
+          }
+        },
+        {
+          "id": "move-pdf",
+          "label": "Move to PDFs",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Documents\\\\PDFs\\\\\"}},\"point\":null,\"delay_ms\":500}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "arbtest-zip-sorter",
+      "label": "Arbtest ZIP Sorter",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "N:\\Temp\\arbtest",
+          "pattern": "*.zip",
+          "recursive": false
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "move-zip"
+          }
+        },
+        {
+          "id": "move-zip",
+          "label": "Move to ZIPs Folder",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\zips\\\\\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": false,
+        "ignore_keyboard": false
+      }
+    },
+    {
+      "id": "arbtest-png-sorter",
+      "label": "Arbtest PNG Sorter",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "N:\\Temp\\arbtest",
+          "pattern": "*.png",
+          "recursive": false
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "move-png"
+          }
+        },
+        {
+          "id": "move-png",
+          "label": "Move to PNGs Folder",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\pngs\\\\\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": false,
+        "ignore_keyboard": false
+      }
+    },
+    {
+      "id": "notepad-header",
+      "label": "Notepad Auto-Header",
+      "summons": {
+        "type": "ProcessAppeared",
+        "data": {
+          "name": "notepad.exe"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "delay-before-type"
+          }
+        },
+        {
+          "id": "delay-before-type",
+          "label": "Wait for Notepad",
+          "internal_state": "{\"action_type\":{\"Wait\":500},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
+            "Next": "type-header"
+          }
+        },
+        {
+          "id": "type-header",
+          "label": "Type Log Header",
+          "internal_state": "{\"action_type\":{\"Type\":\"--- ARBITER SESSION START ---\\nLocal Time: ${env.timestamp_local}\\nTrigger: ${env.process_name} (PID: ${env.process_pid})\\n----------------------------\\n\\n\"},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": false,
+        "ignore_keyboard": false
+      }
+    },
+    {
+      "id": "image-organizer",
+      "label": "Auto-Archive Images",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "C:\\Users\\user\\Downloads",
+          "pattern": "*.{jpg,jpeg,png,webp,gif}",
+          "recursive": true
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "move-image"
+          }
+        },
+        {
+          "id": "move-image",
+          "label": "Move to Pictures",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Pictures\\\\Arbiter\\\\\"}},\"point\":null,\"delay_ms\":500}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "log-cleanup",
+      "label": "Auto-Purge Temp Logs",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "N:\\Temp\\arbtest",
+          "pattern": "temp_*.log",
+          "recursive": true
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "delete-log"
+          }
+        },
+        {
+          "id": "delete-log",
+          "label": "Delete Temp Log",
+          "internal_state": "{\"action_type\":{\"InscribeDelete\":{\"target\":\"${env.file_path}\"}},\"point\":null,\"delay_ms\":1000}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "id-1",
+      "label": "Edge opener",
+      "summons": {
+        "type": "Hotkey",
+        "data": {
+          "combo": "ctrl+alt+u"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "id-2"
+          }
+        },
+        {
+          "id": "id-2",
+          "label": "Open Edge",
+          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"program.exe\",\"args\":[],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
           "next_nodes": {}
         }
       ],

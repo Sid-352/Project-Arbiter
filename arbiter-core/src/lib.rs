@@ -1,14 +1,15 @@
-//! arbiter-core — The engine's nerve center.
+//! arbiter-core — Engine's nerve center.
 //!
-//! Module layout follows the Arbiter Lexicon:
-//!   ordinance  — Data types: triggers, actions, sequences, log events.
-//!   atlas      — The FSM orchestrator and run-loop (The Atlas).
-//!   vigil      // System-event watchers: file changes, hotkeys (The Vigil).
-//!   presence   — Human-input detection and yield logic (Presence).
-//!   signet     — Encrypted config vault (The Signet).
+//! Module layout:
+//!   decree     — Data types: triggers, actions, sequences.
+//!   atlas      — Orchestrator and run-loop.
+//!   vigil      — System-event watchers.
+//!   presence   — Yield logic for human interference.
+//!   signet     — Encrypted config vault.
 
 pub mod atlas;
-pub mod ordinance;
+pub mod decree;
+pub mod protocol;
 pub mod ledger;
 
 #[cfg(any(feature = "vigil-fs", feature = "vigil-keys"))]

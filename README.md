@@ -11,39 +11,44 @@ Arbiter is an industrial-grade, deterministic system orchestration and automatio
 
 Arbiter is split into four strictly walled component crates to isolate scope and enforce native restrictions.
 
-### 1. arbiter-core (The Brain)
+### 1. arbiter-core
 Handles all logical state, permissions, configurations, and signal observation. It provides data contracts but executes no OS mutations.
-* **The Vigil**: Pluggable observation listeners for hotkeys and file monitoring.
-* **The Atlas**: The Finite State Machine evaluation loop that maps triggers to sequences.
-* **The Signet**: Secure configuration vault managing trusted paths and command whitelists.
-* **The Filter**: In-memory path lock state that prevents infinite event observation loops.
+* **Vigil**: Pluggable observation listeners for hotkeys and file monitoring.
+* **Atlas**: The Finite State Machine evaluation loop that maps triggers to sequences.
+* **Signet**: Secure configuration vault managing trusted paths and command whitelists.
+* **Filter**: In-memory path lock state that prevents infinite event observation loops.
 
-### 2. arbiter-bridge (The Muscle)
+### 2. arbiter-bridge
 A single-responsibility hardware and file execution layer. It processes incoming logical directives through a global queuing lock.
-* **The Runner**: Background orchestration task that manages sequential action execution.
-* **The Hand**: Physical keyboard and mouse routing handler with coordinate bounds checks.
-* **The Inscribe**: Secure file system IO manager handling localized file manipulation using PathBuf for cross-platform safety.
-* **The Baton**: Hardened sub-process launching utility handling independent executions.
+* **Runner**: Background orchestration task that manages sequential action execution.
+* **Hardware Bridge**: Physical keyboard and mouse routing handler with coordinate bounds checks.
+* **Filesystem Bridge**: Secure file system IO manager handling localized file manipulation using `PathBuf` for cross-platform safety.
+* **Shell Bridge**: Hardened sub-process launching utility handling independent executions.
 
-### 3. arbiter-app (The Host)
+### 3. arbiter-app
 The thin entrypoint wrapper managing lifecycle state, custom daily rolling loggers, Tokio asynchronous runtime initialization, and system-tray integration.
 
-### 4. arbiter-forge (The Terminal)
+### 4. arbiter-forge
 A Slint-based visual interface for monitoring live telemetry and managing engine state. It connects to the host via high-performance Named Pipe IPC.
 
-## Safety and Fallbacks (The Guards)
+## Safety and Fallbacks
 
 Arbiter is mechanically prevented from operating beyond user-defined constraints. Six critical systems guarantee runtime safety.
 
-1. **The Conservatory Guard**: All disk operations are clamped to a user-defined whitelist of Trusted Roots.
-2. **The Baton Guard**: Arbitrary shell and process executions are strictly bounded by a pre-calculated whitelist.
-3. **The Hardware Guard**: Coordinate constraints enforce bounding pointer logic within known monitor dimensions.
-4. **The Steady State Filter**: Automatic filesystem observation ignores file modifications issued by Arbiter itself.
-5. **The Somatic Lock**: Detects human presence and enforces a grace period to prevent collisions between the user and automation.
-6. **The Panic to Safe Guard**: Automatic hardware release ensures no keys are left in a stuck state if the engine process terminates unexpectedly.
+> [!WARNING]
+> Security Boundaries are hard-coded into the engine execution pipeline. Failure to authorize paths or binaries will result in immediate sequence termination.
+
+1. **Jail Guard**: All disk operations are clamped to a user-defined whitelist of trusted root paths.
+2. **Execution Guard**: Arbitrary shell and process executions are strictly bounded by a pre-calculated whitelist.
+3. **Hardware Guard**: Coordinate constraints enforce bounding pointer logic within known monitor dimensions.
+4. **Steady State Filter**: Automatic filesystem observation ignores file modifications issued by Arbiter itself.
+5. **Interference Guard**: Detects human presence and enforces a grace period to prevent collisions between the user and automation.
+6. **Hardware Reset Guard**: Automatic hardware release ensures no keys are left in a stuck state if the engine process terminates unexpectedly.
 
 ## Advanced Features
 
-* **Real-time Telemetry**: Sub-millisecond log streaming from the background service to the UI using Windows Named Pipes.
+> [!TIP]
+> **Real-time Telemetry:** View sub-millisecond log streaming from the background service to the UI using Windows Named Pipes.
+
 * **Scope-bound Presence Sensitivity**: Granular control over human input detection, allowing specific sequences to ignore mouse movement while remaining reactive to keyboard safety yields.
-* **Custom Daily Rolling Logs**: Automated log management using a custom writer that organizes history by date in the arbiter-data directory.
+* **Custom Daily Rolling Logs**: Automated log management using a custom writer that organizes history by date in the `arbiter-data` directory.

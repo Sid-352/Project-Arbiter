@@ -17,7 +17,8 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 use arbiter_core::{
     atlas::Atlas,
     filter::ArbiterFilter,
-    ordinance::{ExecData, LogEntry},
+    decree::ExecData,
+    protocol::{LogEntry, ForgeCommand, PIPE_TELEMETRY, PIPE_COMMAND},
 };
 
 mod tray;
@@ -83,7 +84,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     println!(r#"
-    
     █▀▀█ █▀▀█ █▀▀█ ▀█▀ ▀▀█▀▀ █▀▀ █▀▀█
     █▄▄█ █▄▄▀ █▀▀▄  █    █   █▀▀ █▄▄▀
     ▀  ▀ ▀ ▀▀ ▀▀▀▀ ▀▀▀   ▀   ▀▀▀ ▀ ▀▀
@@ -104,24 +104,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (atlas_shutdown_tx, mut atlas_shutdown_rx) = tokio::sync::oneshot::channel();
     let (atlas_exec_tx, mut atlas_exec_rx) = mpsc::channel::<ExecData>(100);
     let (reset_tx, mut reset_rx) = mpsc::channel::<()>(1);
-    let (forge_cmd_tx, mut forge_cmd_rx) = mpsc::channel::<arbiter_core::ordinance::ForgeCommand>(10);
+    let (forge_cmd_tx, mut forge_cmd_rx) = mpsc::channel::<ForgeCommand>(10);
 
     // IPC Broadcast for Named Pipe consumers
     let (log_broadcast_tx, _) = broadcast::channel::<LogEntry>(1024);
 
     // ── Components ────────────────────────────────────────────────────────────
 
-    // IPC Server (Telemetry): Named Pipe \\.\pipe\arbiter_telemetry
+    // IPC Server (Telemetry): Named Pipe PIPE_TELEMETRY
     let ipc_broadcast = log_broadcast_tx.clone();
     tokio::spawn(async move {
         use tokio::net::windows::named_pipe::ServerOptions;
-        let pipe_name = r"\\.\pipe\arbiter_telemetry";
         
         loop {
             let server = ServerOptions::new()
                 .first_pipe_instance(true)
-                .create(pipe_name)
-                .or_else(|_| ServerOptions::new().create(pipe_name));
+                .create(PIPE_TELEMETRY)
+                .or_else(|_| ServerOptions::new().create(PIPE_TELEMETRY));
             
             if let Ok(server) = server {
                 if server.connect().await.is_ok() {
@@ -139,17 +138,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // IPC Server (Commands): Named Pipe \\.\pipe\arbiter_command
+    // IPC Server (Commands): Named Pipe PIPE_COMMAND
     let cmd_tx = forge_cmd_tx.clone();
     tokio::spawn(async move {
         use tokio::net::windows::named_pipe::ServerOptions;
         use tokio_util::codec::FramedRead;
-        let pipe_name = r"\\.\pipe\arbiter_command";
         loop {
             let server = ServerOptions::new()
                 .first_pipe_instance(true)
-                .create(pipe_name)
-                .or_else(|_| ServerOptions::new().create(pipe_name));
+                .create(PIPE_COMMAND)
+                .or_else(|_| ServerOptions::new().create(PIPE_COMMAND));
 
             if let Ok(server) = server {
                 if server.connect().await.is_ok() {
@@ -157,7 +155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut framed = FramedRead::new(reader, LinesCodec::new());
                     while let Some(res) = framed.next().await {
                         if let Ok(line) = res {
-                            if let Ok(cmd) = serde_json::from_str::<arbiter_core::ordinance::ForgeCommand>(&line) {
+                            if let Ok(cmd) = serde_json::from_str::<ForgeCommand>(&line) {
                                 let _ = cmd_tx.send(cmd).await;
                             }
                         }
@@ -172,10 +170,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ...
     info!("Arbiter Engine: standing by");
     let _ = log_broadcast_tx.send(LogEntry {
+        time: chrono::Utc::now().to_rfc3339(),
         tag: "ATLAS".into(),
         message: "Arbiter Engine: system services active and standing by.".into(),
         is_error: false,
-        ordinance_id: None,
+        decree_id: None,
     });
 
     // Heartbeat task
@@ -185,10 +184,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             interval.tick().await;
             let _ = heartbeat_broadcast.send(LogEntry {
+                time: chrono::Utc::now().to_rfc3339(),
                 tag: "VIGIL".into(),
                 message: "Heartbeat: Watchers operational.".into(),
                 is_error: false,
-                ordinance_id: None,
+                decree_id: None,
             });
         }
     });
@@ -217,8 +217,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 event_tx: map_run_event_tx.clone(),
                 trusted_roots: map_trusted.iter().cloned().collect(),
                 baton_allowed: map_baton.clone(),
-                ordinance_id: exec_data.ordinance_id,
+                decree_id: exec_data.decree_id,
                 trigger_time: exec_data.trigger_time,
+                dry_run: false,
             };
             let _ = exec_cmd_tx.send(cmd).await;
         }
@@ -230,7 +231,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 4. Initialise Atlas & Load Ledger
     let mut atlas = Atlas::new();
-    let ledger = arbiter_core::ledger::load().unwrap_or_default();
+    let ledger = arbiter_core::ledger::load().unwrap_or_else(|e| {
+        tracing::error!("Failed to load ledger: {}", e);
+        arbiter_core::ledger::ArbiterLedger::default()
+    });
     arbiter_core::ledger::apply(&ledger, &mut atlas, &vigil_tx, &filter);
     info!("Atlas: engine core ready");
 
@@ -238,6 +242,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let atlas_broadcast = log_broadcast_tx.clone();
     let atlas_loop_broadcast = atlas_broadcast.clone();
     let atlas_vigil_tx = vigil_tx.clone();
+    let atlas_filter = filter.clone();
     tokio::spawn(async move {
         atlas.run(
             &mut vigil_rx,
@@ -250,6 +255,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut forge_cmd_rx,
             &mut atlas_shutdown_rx,
             atlas_loop_broadcast.clone(),
+            atlas_filter,
         ).await;
         info!("Atlas: run loop terminated cleanly");
     });
@@ -282,7 +288,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match entry.tag.as_str() {
                         "ATLAS" => {
                             if entry.message.contains("matched") {
-                                if let Some(id) = entry.ordinance_id {
+                                if let Some(id) = entry.decree_id {
                                     let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate(format!("Executing: {}", id)));
                                 }
                             } else if entry.message.contains("complete") {

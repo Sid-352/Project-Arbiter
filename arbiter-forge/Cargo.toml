@@ -19,6 +19,7 @@ tokio = { workspace = true }
 chrono = { workspace = true }
 tokio-util = { workspace = true }
 futures = { workspace = true }
+rfd = "0.17.2"
 
 [build-dependencies]
 slint-build = { workspace = true }

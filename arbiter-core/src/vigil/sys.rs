@@ -10,7 +10,7 @@ use sysinfo::System;
 use tokio::sync::mpsc;
 use tracing::{debug, info};
 
-use crate::ordinance::{EnvContext, Summons};
+use crate::decree::{EnvContext, Summons};
 
 /// Spawns a background task watching for a specific executable name.
 /// e.g. "photoshop.exe" or "Notepad".
@@ -28,12 +28,12 @@ pub fn spawn_watcher(target_process_name: String, tx: mpsc::Sender<Summons>) {
 
         loop {
             // refresh_processes() without loading CPU/Memory data is incredibly fast.
-            sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+            sys.refresh_processes();
 
             let mut current_pids = HashSet::new();
 
             for (pid, process) in sys.processes() {
-                let p_name = process.name().to_string_lossy().to_lowercase();
+                let p_name = process.name().to_lowercase();
                 
                 if p_name.contains(&target_lower) {
                     current_pids.insert(*pid);
@@ -42,9 +42,10 @@ pub fn spawn_watcher(target_process_name: String, tx: mpsc::Sender<Summons>) {
                         debug!(%pid, %p_name, "Vigil: Target process discovered");
                         
                         let mut context = EnvContext::new();
-                        context.insert("process_name", process.name().to_string_lossy().as_ref());
+                        context.insert("process_name", process.name());
                         context.insert("process_pid", &pid.to_string());
                         context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
+                        context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
 
                         let summons = Summons::ProcessAppeared {
                             name: target_process_name.clone(),

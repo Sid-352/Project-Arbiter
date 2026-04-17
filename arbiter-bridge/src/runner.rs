@@ -1,7 +1,4 @@
-//! runner.rs — The Runner: background orchestration task.
-//!
-//! Owns The Hand, interfaces with The Inscribe and The Baton, and
-//! processes instructions sequentially under a Singleton Queue Lock.
+//! runner.rs — Orchestrates system actions (Hand, Shell, FS) under a global lock.
 
 use std::{collections::HashSet, sync::Arc};
 use regex::Regex;
@@ -11,7 +8,8 @@ use tracing::{error, info, warn};
 use crate::{hand::HardwareBridge, inscribe, shell};
 use arbiter_core::{
     filter::ArbiterFilter,
-    ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent, LogEntry},
+    decree::{Action, ActionType, EnvContext, NodeKind, DecreeNode, RunEvent, DecreeId},
+    protocol::LogEntry,
 };
 
 // ── Runner Commands ────────────────────────────────────────────────────────
@@ -19,15 +17,16 @@ use arbiter_core::{
 pub enum ExecCmd {
     /// Request to run a sequence of nodes.
     Run {
-        nodes: Vec<OrdNode>,
+        nodes: Vec<DecreeNode>,
         context: EnvContext,
         abort_rx: oneshot::Receiver<()>,
         event_tx: mpsc::Sender<RunEvent>,
         // Signet contextual data
         trusted_roots: Vec<String>,
         baton_allowed: HashSet<String>,
-        ordinance_id: Option<String>,
+        decree_id: Option<DecreeId>,
         trigger_time: std::time::Instant,
+        dry_run: bool,
     },
 }
 
@@ -126,7 +125,7 @@ fn get_idle_secs() -> u64 {
 
 /// Spawn the long-running background Runner task.
 ///
-/// This task owns `The Hand` and processes `ExecCmd` requests one at a time.
+/// This task owns `Hand` and processes `ExecCmd` requests one at a time.
 pub fn spawn(
     mut rx: mpsc::Receiver<ExecCmd>,
     screen_width: i32,
@@ -136,7 +135,7 @@ pub fn spawn(
     tokio::spawn(async move {
         info!("Runner task started");
 
-        // The Hand is owned locally by this task and only used while holding QUEUE_LOCK
+        // Hand is owned locally by this task and only used while holding QUEUE_LOCK
         let mut hand = HardwareBridge::new(screen_width, screen_height);
 
         while let Some(cmd) = rx.recv().await {
@@ -147,8 +146,9 @@ pub fn spawn(
                 event_tx,
                 trusted_roots,
                 baton_allowed,
-                ordinance_id,
+                decree_id,
                 trigger_time,
+                dry_run,
             } = cmd;
 
             info!("Runner: acquiring queue lock");
@@ -168,10 +168,11 @@ pub fn spawn(
             info!(idle_secs = idle, "Runner: user idle time at sequence start");
 
             let _ = event_tx.send(RunEvent::Log(LogEntry {
+                time: chrono::Utc::now().to_rfc3339(),
                 tag: "HAND".into(),
-                message: format!("Macro iteration started (Last User Input: {}s ago)", idle),
+                message: format!("Macro iteration started (Last User Input: {}s ago){}", idle, if dry_run { " [DRY RUN]" } else { "" }),
                 is_error: false,
-                ordinance_id: ordinance_id.clone(),
+                decree_id: decree_id.as_ref().map(|id| id.0.clone()),
             })).await;
 
             let mut current_idx = 0;
@@ -202,12 +203,16 @@ pub fn spawn(
 
                         // Async Wait: Handle ActionType::Wait without blocking
                         if let ActionType::Wait(ms) = action.action_type {
-                            tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                            if !dry_run {
+                                tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                            } else {
+                                info!(ms, "DRY RUN: Would wait");
+                            }
                             let _ = event_tx.send(RunEvent::Progress(idx)).await;
                             continue;
                         }
 
-                        let exec_result = match action.action_type {
+                        let exec_result = match &action.action_type {
                             // Somatic actions
                             ActionType::Click
                             | ActionType::DoubleClick
@@ -215,61 +220,85 @@ pub fn spawn(
                             | ActionType::Type(_)
                             | ActionType::Scroll(_)
                             | ActionType::Navigate(_) => {
-                                filter.inhibit_presence();
-                                let res = hand.execute(&action);
-                                filter.resume_presence();
-                                res
+                                if !dry_run {
+                                    filter.inhibit_presence();
+                                    let res = hand.execute(&action);
+                                    filter.resume_presence();
+                                    res
+                                } else {
+                                    info!(action = ?action.action_type, "DRY RUN: Would execute synthetic action");
+                                    Ok(())
+                                }
                             }
 
                             // Inscribe actions
                             ActionType::InscribeMove {
-                                ref source,
-                                ref destination,
+                                source,
+                                destination,
                             } => {
-                                filter.mark(destination);
-                                let r = inscribe::move_file(
-                                    source,
-                                    destination,
-                                    &trusted_roots,
-                                )
-                                .map_err(|e| e.to_string());
-                                filter.unmark(destination);
-                                r
+                                if !dry_run {
+                                    let r = inscribe::move_file(
+                                        source,
+                                        destination,
+                                        &trusted_roots,
+                                    );
+                                    if let Ok(ref final_dst) = r {
+                                        filter.mark(final_dst);
+                                    }
+                                    r.map(|_| ()).map_err(|e| e.to_string())
+                                } else {
+                                    info!(?source, ?destination, "DRY RUN: Would move file");
+                                    Ok(())
+                                }
                             }
                             ActionType::InscribeCopy {
-                                ref source,
-                                ref destination,
+                                source,
+                                destination,
                             } => {
-                                filter.mark(destination);
-                                let r = inscribe::copy_file(
-                                    source,
-                                    destination,
-                                    &trusted_roots,
-                                )
-                                .map(|_| ())
-                                .map_err(|e| e.to_string());
-                                filter.unmark(destination);
-                                r
+                                if !dry_run {
+                                    let r = inscribe::copy_file(
+                                        source,
+                                        destination,
+                                        &trusted_roots,
+                                    );
+                                    if let Ok((ref final_dst, _)) = r {
+                                        filter.mark(final_dst);
+                                    }
+                                    r.map(|_| ()).map_err(|e| e.to_string())
+                                } else {
+                                    info!(?source, ?destination, "DRY RUN: Would copy file");
+                                    Ok(())
+                                }
                             }
-                            ActionType::InscribeDelete { ref target } => {
-                                inscribe::delete_file(target, &trusted_roots)
-                                    .map_err(|e| e.to_string())
+                            ActionType::InscribeDelete { target } => {
+                                if !dry_run {
+                                    inscribe::delete_file(target, &trusted_roots)
+                                        .map_err(|e| e.to_string())
+                                } else {
+                                    info!(?target, "DRY RUN: Would delete file");
+                                    Ok(())
+                                }
                             }
 
                             // Shell actions
                             ActionType::Shell {
-                                ref command,
-                                ref args,
+                                command,
+                                args,
                                 detached,
                             } => {
-                                let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-                                if detached {
-                                    shell::spawn_detached(command, command, &arg_refs, &baton_allowed)
-                                        .map_err(|e| e.to_string())
+                                if !dry_run {
+                                    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+                                    if *detached {
+                                        shell::spawn_detached(command, command, &arg_refs, &baton_allowed)
+                                            .map_err(|e| e.to_string())
+                                    } else {
+                                        shell::run(command, command, &arg_refs, &baton_allowed)
+                                            .map(|_| ())
+                                            .map_err(|e| e.to_string())
+                                    }
                                 } else {
-                                    shell::run(command, command, &arg_refs, &baton_allowed)
-                                        .map(|_| ())
-                                        .map_err(|e| e.to_string())
+                                    info!(%command, ?args, detached = *detached, "DRY RUN: Would execute shell command");
+                                    Ok(())
                                 }
                             }
                             _ => Ok(()),
@@ -284,12 +313,13 @@ pub fn spawn(
                     Err(e) => {
                         error!(%e, id = %node.id, "Runner: failed to parse JSON action");
                         let _ = event_tx.send(RunEvent::Log(LogEntry {
+                            time: chrono::Utc::now().to_rfc3339(),
                             tag: "HAND".into(),
                             message: format!("Corrupt Action data in step '{}'", node.label),
                             is_error: true,
-                            ordinance_id: ordinance_id.clone(),
+                            decree_id: decree_id.as_ref().map(|id| id.0.clone()),
                         })).await;
-                        let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed ordinance data".into())).await;
+                        let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed decree data".into())).await;
                         break;
                     }
                 }

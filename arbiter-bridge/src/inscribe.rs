@@ -1,4 +1,4 @@
-//! inscribe.rs — Inscribe: file-system write operations.
+//! inscribe.rs — file-system write operations.
 //!
 //! Provides directory-jail-aware file operations. Every write is checked
 //! against the Conservatory (trusted paths from The Signet) before execution.
@@ -11,6 +11,8 @@
 use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
 use walkdir::WalkDir;
+
+use globset::{Glob, GlobMatcher};
 
 // ── Directory Jail Guard ──────────────────────────────────────────────────────
 
@@ -107,15 +109,34 @@ where
     }
 }
 
-/// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
-    let src = src.as_ref();
-    let dst = dst.as_ref();
-    assert_trusted(dst, trusted_roots)?;
+/// Helper to ensure destination is a full file path.
+/// If `dst` is an existing directory or ends with a slash, appends the filename from `src`.
+fn ensure_file_path(src: &Path, dst: &Path) -> PathBuf {
+    let mut final_dst = dst.to_path_buf();
+    
+    // Check if dst is a directory or intended to be one (ends with slash)
+    let is_dir_intent = dst.to_string_lossy().ends_with('/') || dst.to_string_lossy().ends_with('\\');
+    
+    if dst.is_dir() || is_dir_intent {
+        if let Some(filename) = src.file_name() {
+            final_dst = final_dst.join(filename);
+        }
+    }
+    final_dst
+}
 
+/// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
+/// Returns the final destination path used.
+pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<PathBuf, InscribeError> {
+    let src = src.as_ref();
+    let dst_raw = dst.as_ref();
+    
     if !src.exists() {
         return Err(InscribeError::SourceNotFound(src.display().to_string()));
     }
+
+    let dst = ensure_file_path(src, dst_raw);
+    assert_trusted(&dst, trusted_roots)?;
 
     if let Some(parent) = dst.parent() {
         std::fs::create_dir_all(parent)?;
@@ -123,34 +144,37 @@ pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[
 
     // Attempt rename first (atomic on same volume), fall back to copy+delete
     retry_with_backoff(|| {
-        if std::fs::rename(src, dst).is_err() {
-            std::fs::copy(src, dst)?;
+        if std::fs::rename(src, &dst).is_err() {
+            std::fs::copy(src, &dst)?;
             std::fs::remove_file(src)?;
         }
         Ok(())
     })?;
 
     info!(src = %src.display(), dst = %dst.display(), "Inscribe: file moved");
-    Ok(())
+    Ok(dst)
 }
 
 /// Copy `src` to `dst`, verifying `dst` parent is in a trusted directory.
-pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<u64, InscribeError> {
+/// Returns the final destination path used and bytes copied.
+pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(PathBuf, u64), InscribeError> {
     let src = src.as_ref();
-    let dst = dst.as_ref();
-    assert_trusted(dst, trusted_roots)?;
+    let dst_raw = dst.as_ref();
 
     if !src.exists() {
         return Err(InscribeError::SourceNotFound(src.display().to_string()));
     }
 
+    let dst = ensure_file_path(src, dst_raw);
+    assert_trusted(&dst, trusted_roots)?;
+
     if let Some(parent) = dst.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    let bytes = retry_with_backoff(|| std::fs::copy(src, dst))?;
+    let bytes = retry_with_backoff(|| std::fs::copy(src, &dst))?;
     info!(src = %src.display(), dst = %dst.display(), bytes, "Inscribe: file copied");
-    Ok(bytes)
+    Ok((dst, bytes))
 }
 
 /// Delete a file, verifying it is in a trusted directory.
@@ -186,12 +210,26 @@ pub fn dry_run_walk(root: &Path, pattern: &str) -> DryRunReport {
     let mut affected = Vec::new();
     let mut warnings = Vec::new();
 
-    let re = regex_for_glob(pattern);
+    let matcher: Option<GlobMatcher> = if !pattern.is_empty() {
+        match Glob::new(pattern) {
+            Ok(g) => Some(g.compile_matcher()),
+            Err(_) => None,
+        }
+    } else {
+        None
+    };
 
     for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
             let name = entry.file_name().to_string_lossy();
-            if re.is_match(&name) {
+            
+            let matched = if let Some(ref m) = matcher {
+                m.is_match(&*name)
+            } else {
+                true
+            };
+
+            if matched {
                 let path = entry.path().to_path_buf();
                 let path_str = path.to_string_lossy().to_lowercase();
 
@@ -206,13 +244,6 @@ pub fn dry_run_walk(root: &Path, pattern: &str) -> DryRunReport {
     }
 
     DryRunReport { affected, warnings }
-}
-
-/// Convert a simple glob pattern (`*.ext`, `prefix*`) to a `regex::Regex`.
-fn regex_for_glob(glob: &str) -> regex::Regex {
-    use regex::Regex;
-    let escaped = regex::escape(glob).replace("\\*", ".*");
-    Regex::new(&format!("(?i)^{escaped}$")).unwrap_or_else(|_| Regex::new(".*").unwrap())
 }
 
 #[cfg(test)]
