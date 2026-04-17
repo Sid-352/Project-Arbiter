@@ -1,7 +1,4 @@
-//! runner.rs — The Runner: background orchestration task.
-//!
-//! Owns The Hand, interfaces with The Inscribe and The Baton, and
-//! processes instructions sequentially under a Singleton Queue Lock.
+//! runner.rs — Orchestrates system actions (Hand, Shell, FS) under a global lock.
 
 use std::{collections::HashSet, sync::Arc};
 use regex::Regex;
@@ -11,7 +8,7 @@ use tracing::{error, info, warn};
 use crate::{hand::HardwareBridge, inscribe, shell};
 use arbiter_core::{
     filter::ArbiterFilter,
-    ordinance::{Action, ActionType, EnvContext, NodeKind, OrdNode, RunEvent, DecreeId},
+    decree::{Action, ActionType, EnvContext, NodeKind, DecreeNode, RunEvent, DecreeId},
     protocol::LogEntry,
 };
 
@@ -20,14 +17,14 @@ use arbiter_core::{
 pub enum ExecCmd {
     /// Request to run a sequence of nodes.
     Run {
-        nodes: Vec<OrdNode>,
+        nodes: Vec<DecreeNode>,
         context: EnvContext,
         abort_rx: oneshot::Receiver<()>,
         event_tx: mpsc::Sender<RunEvent>,
         // Signet contextual data
         trusted_roots: Vec<String>,
         baton_allowed: HashSet<String>,
-        ordinance_id: Option<DecreeId>,
+        decree_id: Option<DecreeId>,
         trigger_time: std::time::Instant,
         dry_run: bool,
     },
@@ -128,7 +125,7 @@ fn get_idle_secs() -> u64 {
 
 /// Spawn the long-running background Runner task.
 ///
-/// This task owns `The Hand` and processes `ExecCmd` requests one at a time.
+/// This task owns `Hand` and processes `ExecCmd` requests one at a time.
 pub fn spawn(
     mut rx: mpsc::Receiver<ExecCmd>,
     screen_width: i32,
@@ -138,7 +135,7 @@ pub fn spawn(
     tokio::spawn(async move {
         info!("Runner task started");
 
-        // The Hand is owned locally by this task and only used while holding QUEUE_LOCK
+        // Hand is owned locally by this task and only used while holding QUEUE_LOCK
         let mut hand = HardwareBridge::new(screen_width, screen_height);
 
         while let Some(cmd) = rx.recv().await {
@@ -149,7 +146,7 @@ pub fn spawn(
                 event_tx,
                 trusted_roots,
                 baton_allowed,
-                ordinance_id,
+                decree_id,
                 trigger_time,
                 dry_run,
             } = cmd;
@@ -175,7 +172,7 @@ pub fn spawn(
                 tag: "HAND".into(),
                 message: format!("Macro iteration started (Last User Input: {}s ago){}", idle, if dry_run { " [DRY RUN]" } else { "" }),
                 is_error: false,
-                ordinance_id: ordinance_id.as_ref().map(|id| id.0.clone()),
+                decree_id: decree_id.as_ref().map(|id| id.0.clone()),
             })).await;
 
             let mut current_idx = 0;
@@ -229,7 +226,7 @@ pub fn spawn(
                                     filter.resume_presence();
                                     res
                                 } else {
-                                    info!(action = ?action.action_type, "DRY RUN: Would execute somatic action");
+                                    info!(action = ?action.action_type, "DRY RUN: Would execute synthetic action");
                                     Ok(())
                                 }
                             }
@@ -320,9 +317,9 @@ pub fn spawn(
                             tag: "HAND".into(),
                             message: format!("Corrupt Action data in step '{}'", node.label),
                             is_error: true,
-                            ordinance_id: ordinance_id.as_ref().map(|id| id.0.clone()),
+                            decree_id: decree_id.as_ref().map(|id| id.0.clone()),
                         })).await;
-                        let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed ordinance data".into())).await;
+                        let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed decree data".into())).await;
                         break;
                     }
                 }

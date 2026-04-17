@@ -1,4 +1,4 @@
-//! protocol.rs — The Arbiter IPC Protocol.
+//! protocol.rs — Arbiter IPC Protocol.
 //!
 //! Shared definitions for communication between the background service
 //! (arbiter-app) and the UI terminal (arbiter-forge).
@@ -20,11 +20,11 @@ pub const PIPE_COMMAND: &str = r"\\.\pipe\arbiter_command";
 /// Commands sent from the Forge UI to the Arbiter Engine.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ForgeCommand {
-    /// Save a new or updated ordinance definition.
-    SaveDecree(arbiter_core::ledger::OrdinanceDef),
+    /// Save a new or updated decree definition.
+    SaveDecree(arbiter_core::ledger::DecreeDef),
     /// Request a reload of all ward configurations.
     ReloadWards,
-    /// Manually trigger a specific ordinance.
+    /// Manually trigger a specific decree.
     ManualRun { summons_key: String },
 }
 
@@ -39,6 +39,6 @@ pub struct LogEntry {
     pub message: String,
     /// True if this represents a fault or error state.
     pub is_error: bool,
-    /// The ID of the ordinance currently executing, if any.
-    pub ordinance_id: Option<String>,
+    /// The ID of the decree currently executing, if any.
+    pub decree_id: Option<String>,
 }

@@ -12,7 +12,7 @@ import {
     TextEdit,
     ActionButton,
 } from "widgets.slint";
-import { OrdinanceStepItem } from "ordinance_step.slint";
+import { DecreeStepItem } from "decree_step.slint";
 import { ConservatoryPage } from "pages/conservatory.slint";
 import { SignetPage } from "pages/signet.slint";
 
@@ -71,6 +71,7 @@ export component ArbiterForge inherits Window {
     callback add-baton;
     callback update-baton(int, string);
     callback remove-baton(int);
+    callback step-moved(string, int);
 
     // Explicit manual save callbacks
     callback save-wards;
@@ -349,7 +350,7 @@ export component ArbiterForge inherits Window {
                             width: 160px;
                             clicked => {
                                 root.modal-title = "Confirm Deployment";
-                                root.modal-message = "Submit this ordinance to the Arbiter core? This will update active triggers.";
+                                root.modal-message = "Submit this decree to the Arbiter core? This will update active triggers.";
                                 root.modal-action-type = 1;
                                 root.show-modal = true;
                             }
@@ -659,7 +660,7 @@ export component ArbiterForge inherits Window {
 
                             VerticalLayout {
                                 spacing: 12px;
-                                for step[idx] in root.decree-steps: OrdinanceStepItem {
+                                for step[idx] in root.decree-steps: DecreeStepItem {
                                     step-id: step.id;
                                     title: step.title;
                                     subtext: step.subtext;
@@ -680,6 +681,9 @@ export component ArbiterForge inherits Window {
                                     }
                                     selected => {
                                         root.selected-step-id = step.id;
+                                    }
+                                    move-step(id, delta) => {
+                                        root.step-moved(id, delta);
                                     }
                                 }
                                 if root.decree-steps.length == 0: Rectangle {
@@ -729,7 +733,7 @@ export component ArbiterForge inherits Window {
 
                                     ActionButton {
                                         horizontal-stretch: 1;
-                                        label: "SOMATIC";
+                                        label: "SYNTHETIC";
                                         clicked => {
                                             root.append-step(2);
                                         }

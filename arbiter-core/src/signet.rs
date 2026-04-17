@@ -1,4 +1,4 @@
-//! signet.rs — The Signet: encrypted config vault.
+//! signet.rs — encrypted config vault.
 //!
 //! Manages the `ArbiterConfig` — a set of "Trusted Roots" (filesystem paths)
 //! and "Baton Whitelists" (allowed shell commands).

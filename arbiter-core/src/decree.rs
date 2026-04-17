@@ -1,9 +1,4 @@
-//! ordinance.rs — The Arbiter data contract.
-//!
-//! Defines all pure data types for triggers, actions, sequences, and
-//! I/O messaging. No logic lives here — this is the shared vocabulary
-//! used by The Atlas, The Vigil, and the UI terminal.
-
+//! decree.rs — Data contract. Defines pure data types for triggers, actions, and sequences.
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 use std::{
@@ -15,7 +10,7 @@ use std::{
 
 // ── Strong ID Types ──────────────────────────────────────────────────────────
 
-/// Unique identifier for an Ordinance (Decree).
+/// Unique identifier for an Decree (Decree).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DecreeId(pub String);
 
@@ -83,7 +78,7 @@ pub enum ActionType {
     },
 }
 
-/// An absolute screen coordinate validated by The Hand.
+/// An absolute screen coordinate validated by Hand.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
@@ -151,16 +146,16 @@ pub struct WardConfig {
     pub recursive: bool,
 }
 
-// ── Ordinance Nodes (Sequence Graph) ─────────────────────────────────────────
+// ── Decree Nodes (Sequence Graph) ─────────────────────────────────────────
 
-/// A full Ordinance definition: the nodes and its execution configuration.
+/// A full Decree definition: the nodes and its execution configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Ordinance {
-    pub nodes: Vec<OrdNode>,
+pub struct Decree {
+    pub nodes: Vec<DecreeNode>,
     pub presence_config: PresenceConfig,
 }
 
-/// The kind of node in an Ordinance sequence graph.
+/// The kind of node in an Decree sequence graph.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NodeKind {
     /// Entry point — every sequence must have exactly one.
@@ -171,9 +166,9 @@ pub enum NodeKind {
     Trigger,
 }
 
-/// A single node in a compiled Ordinance sequence.
+/// A single node in a compiled Decree sequence.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OrdNode {
+pub struct DecreeNode {
     /// Stable UUID for this node, used for graph wiring.
     pub id: NodeId,
     /// Human-readable label shown in the editor.
@@ -357,7 +352,7 @@ impl EnvKey {
 /// The payload associated with a fired trigger.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EnvContext {
-    /// Eagerly-inserted static variables available to all ordinances.
+    /// Eagerly-inserted static variables available to all decrees.
     pub variables: HashMap<String, String>,
 
     /// The real `PathBuf` of the triggering file, used for lazy resolution.
@@ -596,10 +591,10 @@ pub enum RunEvent {
 
 /// Payload sent from the Atlas to the mechanical Runner to start a sequence.
 pub struct ExecData {
-    pub nodes: Vec<OrdNode>,
+    pub nodes: Vec<DecreeNode>,
     pub context: EnvContext,
     pub presence_config: PresenceConfig,
-    pub ordinance_id: Option<DecreeId>,
+    pub decree_id: Option<DecreeId>,
     pub trigger_time: Instant,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
 }

@@ -1,4 +1,4 @@
-//! filter.rs — The Filter: explicit thread-ID / path tagging guard.
+//! filter.rs — explicit thread-ID / path tagging guard.
 //!
 //! Prevents The Vigil from reacting to file creations caused by The Inscribe
 //! (Arbiter's own File I/O component).
@@ -30,9 +30,9 @@ fn normalize_key(path: impl AsRef<Path>) -> String {
 pub struct ArbiterFilter {
     /// Maps normalized paths to the time they were last marked.
     active_paths: Arc<Mutex<HashMap<String, Instant>>>,
-    /// When true, the engine is generating hardware input (The Hand is active).
+    /// When true, the engine is generating hardware input (Hand is active).
     /// Used by The Presence to inhibit self-abort cycles.
-    somatic_lock: Arc<AtomicBool>,
+    interference_lock: Arc<AtomicBool>,
 }
 
 impl ArbiterFilter {
@@ -72,19 +72,19 @@ impl ArbiterFilter {
         }
     }
 
-    /// Inhibit presence detection (The Hand is about to act).
+    /// Inhibit presence detection (Hand is about to act).
     pub fn inhibit_presence(&self) {
-        self.somatic_lock.store(true, Ordering::SeqCst);
+        self.interference_lock.store(true, Ordering::SeqCst);
     }
 
-    /// Resume presence detection (The Hand has finished).
+    /// Resume presence detection (Hand has finished).
     pub fn resume_presence(&self) {
-        self.somatic_lock.store(false, Ordering::SeqCst);
+        self.interference_lock.store(false, Ordering::SeqCst);
     }
 
     /// Returns `true` if presence detection is currently inhibited.
     pub fn is_inhibited(&self) -> bool {
-        self.somatic_lock.load(Ordering::SeqCst)
+        self.interference_lock.load(Ordering::SeqCst)
     }
 }
 

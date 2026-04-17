@@ -2,7 +2,7 @@ import { ScrollView } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { InputPill, TextEdit } from "widgets.slint";
 
-export component OrdinanceStepItem inherits Rectangle {
+export component DecreeStepItem inherits Rectangle {
     in property <string> step-id;
     in property <string> title;
     in property <string> subtext;
@@ -18,22 +18,33 @@ export component OrdinanceStepItem inherits Rectangle {
     callback edited(string, string, string, string);
     callback remove();
     callback selected();
-    background: Theme.bg-card;
+    callback move-step(string, int);
+
+    property <bool> dragging: false;
+    property <length> drag-start-y;
+    property <length> drag-offset-y: 0px;
+
+    background: transparent;
     border-radius: Theme.radius-lg;
     border-width: 1px;
-    border-color: root.is-editing ? Theme.accent : Theme.border;
-
-    // Smooth transition for editing state
-    animate border-color { duration: Theme.dur-fast; }
+    border-color: transparent;
 
     property <color> type-color: 
         root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
     property <string> type-label: 
-        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
+        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SYNTHETIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
 
     property <float> pulse: 0.5 + 0.5 * Math.sin((animation-tick() / 250ms) * 1deg);
 
-    ta-select := TouchArea {
+    inner := Rectangle {
+        background: Theme.bg-card;
+        border-radius: Theme.radius-lg;
+        border-width: 1px;
+        border-color: root.is-editing ? Theme.accent : Theme.border;
+        opacity: root.dragging ? 0.3 : 1.0;
+        animate border-color { duration: Theme.dur-fast; }
+
+        ta-select := TouchArea {
         width: 100%;
         height: 100%;
         mouse-cursor: root.is-editing ? default : pointer;
@@ -68,12 +79,38 @@ export component OrdinanceStepItem inherits Rectangle {
             VerticalLayout {
                 alignment: center;
                 Rectangle {
-                    width: 12px;
-                    height: 24px;
+                    width: 18px;
+                    height: 36px;
+                    background: ta-drag.has-hover ? Theme.bg-input : transparent;
+                    border-radius: 4px;
+                    
+                    ta-drag := TouchArea {
+                        mouse-cursor: pointer;
+                        pointer-event(event) => {
+                            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                                root.dragging = true;
+                                root.drag-start-y = self.mouse-y;
+                                root.drag-offset-y = 0px;
+                            } else if (event.button == PointerEventButton.left && event.kind == PointerEventKind.up) {
+                                let offset-slots = Math.round(root.drag-offset-y / root.height);
+                                if offset-slots != 0 {
+                                    root.move-step(root.step-id, offset-slots);
+                                }
+                                root.dragging = false;
+                                root.drag-offset-y = 0px;
+                            }
+                        }
+                        moved => {
+                            if (root.dragging) {
+                                root.drag-offset-y = self.mouse-y - root.drag-start-y;
+                            }
+                        }
+                    }
+
                     Text {
                         text: "⣿";
-                        color: Theme.border;
-                        font-size: 10px;
+                        color: ta-drag.has-hover ? Theme.text-main : Theme.border;
+                        font-size: 14px;
                         vertical-alignment: center;
                         horizontal-alignment: center;
                     }
@@ -391,6 +428,33 @@ export component OrdinanceStepItem inherits Rectangle {
                         horizontal-alignment: center;
                         vertical-alignment: center;
                     }
+                }
+            }
+        }
+    }
+    } // <-- Missing closing brace for inner := Rectangle {
+
+    if root.dragging: Rectangle {
+        y: root.drag-offset-y;
+        width: 100%;
+        height: 100%;
+        background: Theme.bg-app;
+        border-color: Theme.accent;
+        border-width: 1px;
+        border-radius: Theme.radius-lg;
+        drop-shadow-color: Theme.accent;
+        drop-shadow-blur: 16px;
+        
+        HorizontalLayout {
+            alignment: center;
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: root.title + " (Moving " + Math.round(root.drag-offset-y / root.height) + " slots)";
+                    color: Theme.accent;
+                    font-size: Theme.font-norm;
+                    font-weight: 800;
+                    letter-spacing: 1px;
                 }
             }
         }

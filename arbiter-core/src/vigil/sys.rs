@@ -10,7 +10,7 @@ use sysinfo::System;
 use tokio::sync::mpsc;
 use tracing::{debug, info};
 
-use crate::ordinance::{EnvContext, Summons};
+use crate::decree::{EnvContext, Summons};
 
 /// Spawns a background task watching for a specific executable name.
 /// e.g. "photoshop.exe" or "Notepad".

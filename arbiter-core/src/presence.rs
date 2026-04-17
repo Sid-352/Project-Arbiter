@@ -1,4 +1,4 @@
-//! presence.rs — Presence: human-input awareness and yield logic.
+//! presence.rs — human-input awareness and yield logic.
 //!
 //! Detects when a human touches the keyboard or mouse during an active
 //! sequence and signals The Atlas to yield immediately.

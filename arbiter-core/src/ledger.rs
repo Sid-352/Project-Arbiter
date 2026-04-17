@@ -1,6 +1,6 @@
-//! ledger.rs — The Ledger: persistence engine for user-defined configuration.
+//! ledger.rs — persistence engine for user-defined configuration.
 //!
-//! Handles loading and saving the ordinance registry and ward configurations
+//! Handles loading and saving the decree registry and ward configurations
 //! to `arbiter-data/ledger.json`.
 
 use std::fs;
@@ -11,7 +11,7 @@ use tokio::sync::mpsc;
 
 use crate::atlas::Atlas;
 use crate::filter::ArbiterFilter;
-use crate::ordinance::{DecreeId, EnvContext, OrdNode, Ordinance, PresenceConfig, Summons, WardConfig};
+use crate::decree::{DecreeId, EnvContext, DecreeNode, Decree, PresenceConfig, Summons, WardConfig};
 
 // ── Persistence Structures ───────────────────────────────────────────────────
 
@@ -20,24 +20,24 @@ use crate::ordinance::{DecreeId, EnvContext, OrdNode, Ordinance, PresenceConfig,
 pub struct ArbiterLedger {
     pub version: u32,
     pub wards: Vec<WardConfig>,
-    pub ordinances: Vec<OrdinanceDef>,
+    pub decrees: Vec<DecreeDef>,
 }
 
-/// A named, serializable ordinance definition.
+/// A named, serializable decree definition.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OrdinanceDef {
+pub struct DecreeDef {
     pub id: DecreeId,
     pub label: String,
     pub summons: SummonsDef,
-    pub nodes: Vec<OrdNode>,
+    pub nodes: Vec<DecreeNode>,
     pub presence_config: PresenceConfig,
 }
 
-impl OrdinanceDef {
-    /// Validates the structural integrity of the ordinance sequence.
+impl DecreeDef {
+    /// Validates the structural integrity of the decree sequence.
     pub fn validate(&self) -> Result<(), String> {
         if self.nodes.is_empty() {
-            return Err("Ordinance sequence is empty".into());
+            return Err("Decree sequence is empty".into());
         }
 
         let mut has_entry = false;
@@ -45,13 +45,13 @@ impl OrdinanceDef {
 
         for node in &self.nodes {
             node_ids.insert(&node.id);
-            if node.kind == crate::ordinance::NodeKind::Entry {
+            if node.kind == crate::decree::NodeKind::Entry {
                 has_entry = true;
             }
         }
 
         if !has_entry {
-            return Err("Ordinance sequence is missing an Entry node".into());
+            return Err("Decree sequence is missing an Entry node".into());
         }
 
         // Check for orphaned transitions
@@ -134,7 +134,7 @@ pub fn save(ledger: &ArbiterLedger) -> Result<(), String> {
 
 /// Apply the ledger configuration to the running engine.
 ///
-/// Wires loaded ordinances into the Atlas and spawns watchers for Wards.
+/// Wires loaded decrees into the Atlas and spawns watchers for Wards.
 pub fn apply(
     ledger: &ArbiterLedger,
     atlas: &mut Atlas,
@@ -149,8 +149,8 @@ pub fn apply(
         atlas.active_watchers.insert(ward.path.to_string_lossy().to_string(), stop_tx);
     }
 
-    // 2. Register Ordinances
-    for def in &ledger.ordinances {
+    // 2. Register Decrees
+    for def in &ledger.decrees {
         let summons = match &def.summons {
             SummonsDef::FileCreated { ward_id, pattern, recursive: _recursive } => {
                 // Find the ward to get the path
@@ -165,7 +165,7 @@ pub fn apply(
                         context: EnvContext::new(),
                     }
                 } else {
-                    warn!(%def.id, ward_id, "Ledger: Ordinance ward not found, skipping");
+                    warn!(%def.id, ward_id, "Ledger: Decree ward not found, skipping");
                     continue;
                 }
             }
@@ -193,9 +193,9 @@ pub fn apply(
         };
 
         let key = summons.to_registry_key();
-        atlas.register_ordinance(
+        atlas.register_decree(
             key,
-            Ordinance {
+            Decree {
                 nodes: def.nodes.clone(),
                 presence_config: def.presence_config.clone(),
             },

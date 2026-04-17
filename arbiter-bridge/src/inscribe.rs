@@ -1,4 +1,4 @@
-//! inscribe.rs — Inscribe: file-system write operations.
+//! inscribe.rs — file-system write operations.
 //!
 //! Provides directory-jail-aware file operations. Every write is checked
 //! against the Conservatory (trusted paths from The Signet) before execution.

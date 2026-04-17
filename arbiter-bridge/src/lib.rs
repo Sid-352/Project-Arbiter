@@ -1,7 +1,7 @@
-//! arbiter-bridge — The mechanical execution bridge.
+//! arbiter-bridge — mechanical execution bridge.
 //!
 //! Provides three independent, focused modules:
-//!   hand     — enigo hardware bridge: mouse + keyboard (The Hand).
+//!   hand     — enigo hardware bridge: mouse + keyboard (Hand).
 //!   inscribe — file-system write operations (Inscribe).
 //!   shell    — process spawning with Baton toggle guard (The Baton).
 

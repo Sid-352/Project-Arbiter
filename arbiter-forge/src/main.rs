@@ -6,7 +6,7 @@ use slint::{ComponentHandle, Model, ModelRc, VecModel, Color, SharedString};
 use tracing::info;
 
 use arbiter_core::protocol::{ForgeCommand, LogEntry as WireLogEntry, PIPE_COMMAND, PIPE_TELEMETRY};
-use arbiter_core::ordinance::{DecreeId, NodeId, NodeKind, OrdNode, Action, ActionType, PresenceConfig};
+use arbiter_core::decree::{DecreeId, NodeId, NodeKind, DecreeNode, Action, ActionType, PresenceConfig};
 use arbiter_core::ledger::SummonsDef;
 
 thread_local! {
@@ -42,7 +42,7 @@ async fn send_command(cmd: &ForgeCommand) {
     }
 }
 
-fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::OrdinanceDef {
+fn collect_decree_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::DecreeDef {
     let id = DecreeId(ui.get_active_decree_id().to_string());
     let label = ui.get_active_decree_label().to_string();
     
@@ -65,7 +65,7 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
 
     let mut nodes = Vec::new();
     // Entry node
-    nodes.push(OrdNode {
+    nodes.push(DecreeNode {
         id: NodeId("entry".into()),
         label: "Start".into(),
         kind: NodeKind::Entry,
@@ -73,7 +73,7 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
         next_nodes: std::collections::HashMap::new(),
     });
 
-    // Map DecreeStep -> OrdNode
+    // Map DecreeStep -> DecreeNode
     STEP_MODEL.with(|m| {
         for i in 0..m.row_count() {
             if let Some(step) = m.row_data(i) {
@@ -122,7 +122,7 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
                     next_nodes.insert("Next".into(), nid);
                 }
 
-                nodes.push(OrdNode {
+                nodes.push(DecreeNode {
                     id: step_id,
                     label: step.title.to_string(),
                     kind: NodeKind::Action,
@@ -141,7 +141,7 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
         }
     }
 
-    arbiter_core::ledger::OrdinanceDef {
+    arbiter_core::ledger::DecreeDef {
         id,
         label,
         summons,
@@ -174,7 +174,7 @@ fn sync_ledger_to_ui() {
 
         let mut seen_ids = std::collections::HashSet::new();
 
-        for ord in &ledger.ordinances {
+        for ord in &ledger.decrees {
             let id_str = ord.id.0.clone();
             seen_ids.insert(id_str.clone());
 
@@ -218,8 +218,8 @@ fn sync_ledger_to_ui() {
                 pattern: SharedString::from(&ward.pattern),
                 recursive: ward.recursive,
                 layer: match ward.layer {
-                    arbiter_core::ordinance::WardLayer::Surface => 0,
-                    arbiter_core::ordinance::WardLayer::Analytical => 1,
+                    arbiter_core::decree::WardLayer::Surface => 0,
+                    arbiter_core::decree::WardLayer::Analytical => 1,
                 },
             };
             if let Some(&idx) = model_indices.get(&id_str) {
@@ -290,7 +290,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tag: "FORGE".into(),
         tag_color: Color::from_rgb_u8(99, 102, 241),
         msg: "Terminal interface active. Waiting for telemetry pipe...".into(),
-        ordinance_id: "".into(),
+        decree_id: "".into(),
     });
 
     // Select the first decree by default if it exists
@@ -370,7 +370,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     tag:       core_entry.tag.into(),
                                     msg:       core_entry.message.into(),
                                     tag_color,
-                                    ordinance_id: core_entry.ordinance_id.unwrap_or_default().into(),
+                                    decree_id: core_entry.decree_id.unwrap_or_default().into(),
                                 };
 
                                 let _ = ui_copy.upgrade_in_event_loop(move |ui| {
@@ -425,7 +425,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let ui_handle = ui_handle.clone();
         move || {
             if let Some(ui) = ui_handle.upgrade() {
-                let def = collect_ordinance_from_ui(&ui);
+                let def = collect_decree_from_ui(&ui);
                 // Validate before sending (Phase 3.2)
                 if let Err(e) = def.validate() {
                     LOG_MODEL.with(|m| {
@@ -434,7 +434,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             tag: "VALIDATE".into(),
                             tag_color: Color::from_rgb_u8(244, 63, 94),
                             msg: format!("Validation Error: {}", e).into(),
-                            ordinance_id: "".into(),
+                            decree_id: "".into(),
                         });
                     });
                     return;
@@ -493,7 +493,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tracing::error!("Forge: Failed to load ledger for selection: {}", e);
                 arbiter_core::ledger::ArbiterLedger::default()
             });
-            if let Some(ord) = ledger.ordinances.iter().find(|o| id == o.id.0) {
+            if let Some(ord) = ledger.decrees.iter().find(|o| id == o.id.0) {
                 if let Some(ui) = ui_handle.upgrade() {
                     ui.set_active_decree_id(ord.id.0.clone().into());
                     ui.set_active_decree_label(ord.label.clone().into());
@@ -546,7 +546,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             (1, command.clone(), args.join(" "), "Shell: execute program".to_string())
                                         }
                                         ActionType::Type(s) => {
-                                            (2, s.clone(), "".to_string(), "Somatic: emit keys".to_string())
+                                            (2, s.clone(), "".to_string(), "Synthetic: emit keys".to_string())
                                         }
                                         ActionType::Wait(ms) => {
                                             (3, ms.to_string(), "".to_string(), "Steady Wait".to_string())
@@ -625,7 +625,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let (title, subtext, arg_a, arg_b) = match step_type {
                 0 => ("Move File",     "Inscribe: relocate artifact",      "${env.file_path}", "C:/Destination/"),
                 1 => ("Shell Command", "Shell: execute external program",  "program.exe",      "${env.file_path}"),
-                2 => ("Type Text",     "Somatic: emit keystrokes",         "TYPE",             "${env.file_name}"),
+                2 => ("Type Text",     "Synthetic: emit keystrokes",         "TYPE",             "${env.file_name}"),
                 3 => ("Steady Wait",   "Wait for condition to stabilise",  "1000",             ""),
                 4 => ("Navigate",      "OS-native navigation keystroke",  "win+s",            ""),
                 _ => ("Action",        "Arbiter node",                     "",                 ""),
@@ -656,7 +656,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tracing::error!("Forge: Failed to load ledger for removal: {}", e);
                 arbiter_core::ledger::ArbiterLedger::default()
             });
-            ledger.ordinances.retain(|o| id != o.id.0);
+            ledger.decrees.retain(|o| id != o.id.0);
             let _ = arbiter_core::ledger::save(&ledger);
             
             sync_ledger_to_ui();
@@ -683,6 +683,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if s.id == step_id {
                         step_model.remove(i);
                         break;
+                    }
+                }
+            }
+        }
+    });
+
+    ui.on_step_moved({
+        let step_model = step_model.clone();
+        move |step_id, delta| {
+            info!(step_id = %step_id, delta = delta, "Forge: step-moved");
+            let mut current_idx = None;
+            for i in 0..step_model.row_count() {
+                if let Some(s) = step_model.row_data(i) {
+                    if s.id == step_id {
+                        current_idx = Some(i);
+                        break;
+                    }
+                }
+            }
+            if let Some(idx) = current_idx {
+                let mut target_idx = (idx as i32 + delta).clamp(0, step_model.row_count() as i32 - 1) as usize;
+                if idx != target_idx {
+                    if let Some(row) = step_model.row_data(idx) {
+                        step_model.remove(idx);
+                        step_model.insert(target_idx, row);
                     }
                 }
             }
@@ -720,7 +745,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Also update in ledger file
         let mut ledger = arbiter_core::ledger::load().unwrap_or_else(|_| arbiter_core::ledger::ArbiterLedger::default());
-        if let Some(ord) = ledger.ordinances.iter_mut().find(|o| o.id.0 == id.as_str()) {
+        if let Some(ord) = ledger.decrees.iter_mut().find(|o| o.id.0 == id.as_str()) {
             ord.label = new_label.to_string();
             let _ = arbiter_core::ledger::save(&ledger);
         }
@@ -886,13 +911,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(w) = ward_model_cb.row_data(i) {
                     // Quick validation - do not save if path is empty
                     if !w.path.is_empty() {
-                        wards.push(arbiter_core::ordinance::WardConfig {
+                        wards.push(arbiter_core::decree::WardConfig {
                             id: w.id.to_string(),
                             path: w.path.to_string().into(),
                             pattern: w.pattern.to_string(),
                             layer: match w.layer {
-                                1 => arbiter_core::ordinance::WardLayer::Analytical,
-                                _ => arbiter_core::ordinance::WardLayer::Surface,
+                                1 => arbiter_core::decree::WardLayer::Analytical,
+                                _ => arbiter_core::decree::WardLayer::Surface,
                             },
                             recursive: w.recursive,
                         });

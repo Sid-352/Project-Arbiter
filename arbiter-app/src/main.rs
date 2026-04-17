@@ -17,7 +17,7 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 use arbiter_core::{
     atlas::Atlas,
     filter::ArbiterFilter,
-    ordinance::ExecData,
+    decree::ExecData,
     protocol::{LogEntry, ForgeCommand, PIPE_TELEMETRY, PIPE_COMMAND},
 };
 
@@ -174,7 +174,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tag: "ATLAS".into(),
         message: "Arbiter Engine: system services active and standing by.".into(),
         is_error: false,
-        ordinance_id: None,
+        decree_id: None,
     });
 
     // Heartbeat task
@@ -188,7 +188,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tag: "VIGIL".into(),
                 message: "Heartbeat: Watchers operational.".into(),
                 is_error: false,
-                ordinance_id: None,
+                decree_id: None,
             });
         }
     });
@@ -217,7 +217,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 event_tx: map_run_event_tx.clone(),
                 trusted_roots: map_trusted.iter().cloned().collect(),
                 baton_allowed: map_baton.clone(),
-                ordinance_id: exec_data.ordinance_id,
+                decree_id: exec_data.decree_id,
                 trigger_time: exec_data.trigger_time,
                 dry_run: false,
             };
@@ -288,7 +288,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match entry.tag.as_str() {
                         "ATLAS" => {
                             if entry.message.contains("matched") {
-                                if let Some(id) = entry.ordinance_id {
+                                if let Some(id) = entry.decree_id {
                                     let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate(format!("Executing: {}", id)));
                                 }
                             } else if entry.message.contains("complete") {

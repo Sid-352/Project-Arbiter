@@ -1,17 +1,4 @@
-//! vigil.rs — The Vigil: signal watchers.
-//!
-//! Listens for OS-level triggers and dispatches them into the Atlas.
-//! Each signal source is compiled only when its feature flag is active,
-//! keeping the binary footprint minimal.
-//!
-//! Responsibilities:
-//!   - Watch directory trees for file-write completion (vigil-fs).
-//!   - Register and detect global hotkey combinations (vigil-keys).
-//!   - Filter temporary/partial files (.tmp, .part) before dispatching.
-//!   - Apply the Hibernation Guard: discard events older than 5 seconds
-//!     on system wake to prevent post-sleep event floods.
-//!
-//! The Vigil does NOT execute actions — it only fires Summons events.
+//! vigil.rs — OS-level signal watchers (File System, Hotkeys, Processes).
 
 #[cfg(feature = "vigil-sys")]
 pub mod sys;
@@ -23,7 +10,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use crate::ordinance::{EnvContext, Summons, WardConfig, WardLayer};
+use crate::decree::{EnvContext, Summons, WardConfig, WardLayer};
 
 lazy_static::lazy_static! {
     /// Tracks the last fire time of event signatures to prevent rapid double-execution.

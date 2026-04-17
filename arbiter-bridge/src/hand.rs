@@ -1,13 +1,13 @@
-//! hand.rs — The Hand: the hardware execution bridge.
+//! hand.rs — hardware execution bridge.
 //!
 //! Wraps `enigo` to provide a safe, coordinate-validated interface for
-//! mouse and keyboard actions. Every operation goes through The Hand —
+//! mouse and keyboard actions. Every operation goes through Hand —
 //! no other crate touches raw input APIs.
 //!
 //! Responsibilities:
 //!   - Execute `Action` structs produced by The Atlas.
 //!   - Validate screen coordinates before moving the mouse (Hardware Guard).
-//!   - Queue semantics are enforced by the caller (The Queue); The Hand
+//!   - Queue semantics are enforced by the caller (The Queue); Hand
 //!     is intentionally stateless beyond `enigo` internals.
 //!
 //! Salvaged from: lithos-core/src/hardware.rs (full port, zero changes to logic).
@@ -16,11 +16,11 @@ use enigo::{
     Axis, Button, Coordinate, Direction, Enigo, Keyboard, Mouse, Settings,
 };
 use tracing::{debug, warn};
-use arbiter_core::ordinance::{Action, ActionType};
+use arbiter_core::decree::{Action, ActionType};
 
 // ── Hardware Bridge ───────────────────────────────────────────────────────────
 
-/// The Hand: a stateful wrapper around `enigo` with coordinate validation.
+/// Hand: a stateful wrapper around `enigo` with coordinate validation.
 pub struct HardwareBridge {
     enigo: Enigo,
     screen_width: i32,
@@ -28,13 +28,13 @@ pub struct HardwareBridge {
 }
 
 impl HardwareBridge {
-    /// Initialise The Hand for the given screen dimensions.
+    /// Initialise Hand for the given screen dimensions.
     ///
     /// Panics only if `enigo` itself fails to initialise — a hard system error.
     pub fn new(width: i32, height: i32) -> Self {
         let enigo = Enigo::new(&Settings::default())
-            .expect("The Hand: failed to initialise enigo hardware bridge");
-        debug!(width, height, "The Hand initialised");
+            .expect("Hand: failed to initialise enigo hardware bridge");
+        debug!(width, height, "Hand initialised");
         Self {
             enigo,
             screen_width: width,
@@ -52,28 +52,28 @@ impl HardwareBridge {
             self.validate_coordinate(pt.x, pt.y)?;
             self.enigo
                 .move_mouse(pt.x, pt.y, Coordinate::Abs)
-                .map_err(|e| format!("The Hand: mouse move failed: {e:?}"))?;
+                .map_err(|e| format!("Hand: mouse move failed: {e:?}"))?;
         }
 
         match &action.action_type {
             ActionType::Click => {
                 self.enigo
                     .button(Button::Left, Direction::Click)
-                    .map_err(|e| format!("The Hand: click failed: {e:?}"))?;
+                    .map_err(|e| format!("Hand: click failed: {e:?}"))?;
             }
             ActionType::DoubleClick => {
                 self.enigo
                     .button(Button::Left, Direction::Click)
-                    .map_err(|e| format!("The Hand: double-click (1) failed: {e:?}"))?;
+                    .map_err(|e| format!("Hand: double-click (1) failed: {e:?}"))?;
                 std::thread::sleep(std::time::Duration::from_millis(80)); // Fine-grained internal click-speed delay
                 self.enigo
                     .button(Button::Left, Direction::Click)
-                    .map_err(|e| format!("The Hand: double-click (2) failed: {e:?}"))?;
+                    .map_err(|e| format!("Hand: double-click (2) failed: {e:?}"))?;
             }
             ActionType::RightClick => {
                 self.enigo
                     .button(Button::Right, Direction::Click)
-                    .map_err(|e| format!("The Hand: right-click failed: {e:?}"))?;
+                    .map_err(|e| format!("Hand: right-click failed: {e:?}"))?;
             }
             ActionType::Type(text) => {
                 if !text.is_empty() {
@@ -81,17 +81,17 @@ impl HardwareBridge {
                         match c {
                             '\n' => {
                                 self.enigo.key(enigo::Key::Return, Direction::Click)
-                                    .map_err(|e| format!("The Hand: newline failed: {e:?}"))?;
+                                    .map_err(|e| format!("Hand: newline failed: {e:?}"))?;
                             }
                             '\r' => { /* skip carriage returns */ }
                             '\t' => {
                                 self.enigo.key(enigo::Key::Tab, Direction::Click)
-                                    .map_err(|e| format!("The Hand: tab failed: {e:?}"))?;
+                                    .map_err(|e| format!("Hand: tab failed: {e:?}"))?;
                             }
                             _ => {
                                 let s = c.to_string();
                                 self.enigo.text(&s)
-                                    .map_err(|e| format!("The Hand: char type failed ('{c}'): {e:?}"))?;
+                                    .map_err(|e| format!("Hand: char type failed ('{c}'): {e:?}"))?;
                             }
                         }
                         std::thread::sleep(std::time::Duration::from_millis(2));
@@ -101,7 +101,7 @@ impl HardwareBridge {
             ActionType::Scroll(amount) => {
                 self.enigo
                     .scroll(*amount, Axis::Vertical)
-                    .map_err(|e| format!("The Hand: scroll failed: {e:?}"))?;
+                    .map_err(|e| format!("Hand: scroll failed: {e:?}"))?;
             }
             ActionType::Navigate(keys) => {
                 // OS-native navigation: parse and press keys
@@ -130,7 +130,7 @@ impl HardwareBridge {
                             target_key = Some(enigo::Key::Unicode(s.chars().next().unwrap()));
                         }
                         other => {
-                            warn!(%other, "The Hand: unknown navigation key - ignoring");
+                            warn!(%other, "Hand: unknown navigation key - ignoring");
                         }
                     }
                 }
@@ -139,29 +139,29 @@ impl HardwareBridge {
                 for &mod_key in &modifiers {
                     self.enigo
                         .key(mod_key, Direction::Press)
-                        .map_err(|e| format!("The Hand: modifier press failed: {e:?}"))?;
+                        .map_err(|e| format!("Hand: modifier press failed: {e:?}"))?;
                 }
 
                 if let Some(k) = target_key {
                     self.enigo
                         .key(k, Direction::Click)
-                        .map_err(|e| format!("The Hand: key click failed: {e:?}"))?;
+                        .map_err(|e| format!("Hand: key click failed: {e:?}"))?;
                 }
 
                 for &mod_key in modifiers.iter().rev() {
                     self.enigo
                         .key(mod_key, Direction::Release)
-                        .map_err(|e| format!("The Hand: modifier release failed: {e:?}"))?;
+                        .map_err(|e| format!("Hand: modifier release failed: {e:?}"))?;
                 }
 
-                debug!(%keys, "The Hand: navigation executed");
+                debug!(%keys, "Hand: navigation executed");
             }
             ActionType::Wait(_) => {
                 // No-op here: waits are now handled asynchronously by the Runner
             }
-            // File & Shell actions are handled directly by the Runner, not The Hand.
+            // File & Shell actions are handled directly by the Runner, not Hand.
             other => {
-                warn!(action = ?other, "The Hand received a non-somatic action — ignoring");
+                warn!(action = ?other, "Hand received a non-synthetic action — ignoring");
             }
         }
 
@@ -177,7 +177,7 @@ impl HardwareBridge {
                 "Hardware Guard: ({x}, {y}) outside monitor bounds ({}×{})",
                 self.screen_width, self.screen_height
             );
-            warn!(%msg, "The Hand: coordinate rejected");
+            warn!(%msg, "Hand: coordinate rejected");
             return Err(msg);
         }
         Ok(())
@@ -198,7 +198,7 @@ impl HardwareBridge {
         for &key in &modifiers {
             let _ = self.enigo.key(key, Direction::Release);
         }
-        debug!("The Hand: safety release executed (all modifiers up)");
+        debug!("Hand: safety release executed (all modifiers up)");
         }
         }
 
@@ -207,7 +207,7 @@ impl HardwareBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arbiter_core::ordinance::{Action, ActionType};
+    use arbiter_core::decree::{Action, ActionType};
 
     #[test]
     fn coordinate_guard_rejects_out_of_bounds() {
