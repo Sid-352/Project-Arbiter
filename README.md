@@ -1,5 +1,8 @@
 # Project Arbiter
 
+[![CI](https://github.com/Sid-352/Project-Vassal/actions/workflows/ci.yml/badge.svg)](https://github.com/Sid-352/Project-Vassal/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Sid-352/Project-Vassal?label=release)](https://github.com/Sid-352/Project-Vassal/releases/latest)
+
 Arbiter is a deterministic system orchestration and automation engine. It acts as a silent background service designed to perform complex physical and system-level workflows reliably. It prioritizes security, structural stability, and protection against unbounded behavior. I made it to more or less execute scripts that I don't wish to open the terminal for, to arrange my downloads and to perform other repetitive tasks. It's not made for production use, but it can still perform on there, tho its moreso geared towards personal use.
 
 ## Core Philosophy

@@ -703,7 +703,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             if let Some(idx) = current_idx {
-                let mut target_idx = (idx as i32 + delta).clamp(0, step_model.row_count() as i32 - 1) as usize;
+                let target_idx = (idx as i32 + delta).clamp(0, step_model.row_count() as i32 - 1) as usize;
                 if idx != target_idx {
                     if let Some(row) = step_model.row_data(idx) {
                         step_model.remove(idx);
