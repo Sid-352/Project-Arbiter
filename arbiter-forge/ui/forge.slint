@@ -44,6 +44,8 @@ export component ArbiterForge inherits Window {
     in-out property <string> summons-combo: "";
     in-out property <string> summons-process: "";
     in-out property <int> summons-ward-layer: 0;
+    in-out property <bool> presence-ignore-mouse: false;
+    in-out property <bool> presence-ignore-keyboard: false;
     property <bool> show-modal: false;
     property <string> modal-title: "";
     property <string> modal-message: "";
@@ -554,6 +556,84 @@ export component ArbiterForge inherits Window {
                                                 value <=> root.summons-process;
                                                 placeholder: "notepad.exe";
                                                 monospaced: true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        VerticalLayout {
+                            spacing: 16px;
+                            Text {
+                                text: "PRESENCE CONFIGURATION";
+                                color: Theme.accent;
+                                font-size: Theme.font-small;
+                                font-weight: 800;
+                                letter-spacing: 0.5px;
+                            }
+
+                            Rectangle {
+                                background: Theme.bg-card;
+                                border-radius: Theme.radius;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                HorizontalLayout {
+                                    padding: 20px;
+                                    spacing: 20px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        horizontal-stretch: 1;
+                                        Text {
+                                            text: "Ignore Mouse";
+                                            color: Theme.text-muted;
+                                            font-size: Theme.font-tiny + 1px;
+                                        }
+                                        Rectangle {
+                                            height: Theme.input-height;
+                                            background: Theme.bg-input;
+                                            border-radius: 6px;
+                                            TouchArea {
+                                                clicked => {
+                                                    root.presence-ignore-mouse = !root.presence-ignore-mouse;
+                                                }
+                                            }
+                                            Text {
+                                                text: root.presence-ignore-mouse ? "IGNORE" : "ABORT ON MOVE";
+                                                color: root.presence-ignore-mouse ? Theme.accent : Theme.text-muted;
+                                                font-size: Theme.font-tiny;
+                                                font-weight: 800;
+                                                horizontal-alignment: center;
+                                                vertical-alignment: center;
+                                            }
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        horizontal-stretch: 1;
+                                        Text {
+                                            text: "Ignore Keyboard";
+                                            color: Theme.text-muted;
+                                            font-size: Theme.font-tiny + 1px;
+                                        }
+                                        Rectangle {
+                                            height: Theme.input-height;
+                                            background: Theme.bg-input;
+                                            border-radius: 6px;
+                                            TouchArea {
+                                                clicked => {
+                                                    root.presence-ignore-keyboard = !root.presence-ignore-keyboard;
+                                                }
+                                            }
+                                            Text {
+                                                text: root.presence-ignore-keyboard ? "IGNORE" : "ABORT ON TYPE";
+                                                color: root.presence-ignore-keyboard ? Theme.accent : Theme.text-muted;
+                                                font-size: Theme.font-tiny;
+                                                font-weight: 800;
+                                                horizontal-alignment: center;
+                                                vertical-alignment: center;
                                             }
                                         }
                                     }

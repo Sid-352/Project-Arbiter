@@ -146,7 +146,10 @@ fn collect_ordinance_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::Ordinan
         label,
         summons,
         nodes,
-        presence_config: PresenceConfig::default(),
+        presence_config: PresenceConfig {
+            ignore_mouse: ui.get_presence_ignore_mouse(),
+            ignore_keyboard: ui.get_presence_ignore_keyboard(),
+        },
     }
 }
 
@@ -470,6 +473,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ui.set_active_decree_label("New Decree".into());
                 ui.set_active_decree_status(0);
                 ui.set_selected_step_id("".into());
+                ui.set_presence_ignore_mouse(false);
+                ui.set_presence_ignore_keyboard(false);
                 ui.set_summons_trigger_type(0);
                 ui.set_summons_path("".into());
                 ui.set_summons_pattern("".into());
@@ -494,6 +499,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ui.set_active_decree_label(ord.label.clone().into());
                     ui.set_active_decree_status(1); 
                     ui.set_selected_step_id("".into());
+                    ui.set_presence_ignore_mouse(ord.presence_config.ignore_mouse);
+                    ui.set_presence_ignore_keyboard(ord.presence_config.ignore_keyboard);
                     
                     // Clear all Summons fields first to prevent 'bleeding'
                     ui.set_summons_path("".into());
