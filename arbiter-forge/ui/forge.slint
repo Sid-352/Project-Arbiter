@@ -25,7 +25,8 @@ export component ArbiterForge inherits Window {
     preferred-width: 1120px;
     preferred-height: 800px;
     background: Theme.bg-app;
-    default-font-family: "Segoe UI";
+    default-font-family: "Segoe UI Variable";
+    default-font-size: 14px;
 
     in-out property <int> active-page: 0;
     in-out property <string> active-decree-id: "";
@@ -681,9 +682,6 @@ export component ArbiterForge inherits Window {
                                     }
                                     selected => {
                                         root.selected-step-id = step.id;
-                                    }
-                                    move-step(id, delta) => {
-                                        root.step-moved(id, delta);
                                     }
                                 }
                                 if root.decree-steps.length == 0: Rectangle {

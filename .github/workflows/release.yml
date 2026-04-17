@@ -42,7 +42,7 @@ jobs:
 
           Copy-Item "target\release\arbiter.exe"       "$outDir\arbiter.exe"
           Copy-Item "target\release\arbiter-forge.exe" "$outDir\arbiter-forge.exe"
-          Copy-Item "arbiter-data"                     "$outDir\arbiter-data" -Recurse
+          Copy-Item "arbiter-app\assets\icon.ico"      "$outDir\icon.ico" -ErrorAction SilentlyContinue
           Copy-Item "README.md"                        "$outDir\README.md"
 
           Compress-Archive -Path "$outDir\*" -DestinationPath "arbiter-$version-windows-x64.zip"
@@ -76,10 +76,10 @@ jobs:
 
             ### Installation
             1. Download and extract the zip archive.
-            2. Run `arbiter.exe` as Administrator to start the background service.
-            3. Run `arbiter-forge.exe` to open the control interface.
+            2. Run `arbiter.exe` as Administrator to start the background service. The control interface can be opened via the system tray icon.
+            3. Run `arbiter-forge.exe` to open the control interface directly (not recommended for regular use).
 
-            The background service must be running for the Forge UI to receive telemetry.
+            Configuration (ledger.json and signet.vault) is created automatically in an `arbiter-data` directory next to the executables on first launch.
           files: arbiter-*.zip
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

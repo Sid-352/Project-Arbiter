@@ -2,126 +2,31 @@
   "version": 1,
   "wards": [
     {
-      "id": "downloads-folder",
+      "id": "downloads-ward",
       "path": "C:\\Users\\user\\Downloads",
       "pattern": "*",
       "layer": "Surface",
       "recursive": true
     },
     {
-      "id": "arbtest-monitor",
+      "id": "arbtest-ward",
       "path": "N:\\Temp\\arbtest",
       "pattern": "*",
       "layer": "Surface",
       "recursive": true
+    },
+    {
+      "id": "projects-ward",
+      "path": "N:\\Projects",
+      "pattern": "*",
+      "layer": "Surface",
+      "recursive": false
     }
   ],
-  "ordinances": [
+  "decrees": [
     {
-      "id": "pdf-organizer",
-      "label": "Auto-Archive PDFs",
-      "summons": {
-        "type": "FileCreated",
-        "data": {
-          "ward_id": "C:\\Users\\user\\Downloads",
-          "pattern": "*.pdf",
-          "recursive": true
-        }
-      },
-      "nodes": [
-        {
-          "id": "entry",
-          "label": "Start",
-          "internal_state": "",
-          "kind": "Entry",
-          "next_nodes": {
-            "Next": "move-pdf"
-          }
-        },
-        {
-          "id": "move-pdf",
-          "label": "Move to PDFs",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Documents\\\\PDFs\\\\\"}},\"point\":null,\"delay_ms\":500}",
-          "kind": "Action",
-          "next_nodes": {}
-        }
-      ],
-      "presence_config": {
-        "ignore_mouse": true,
-        "ignore_keyboard": true
-      }
-    },
-    {
-      "id": "arbtest-zip-sorter",
-      "label": "Arbtest ZIP Sorter",
-      "summons": {
-        "type": "FileCreated",
-        "data": {
-          "ward_id": "N:\\Temp\\arbtest",
-          "pattern": "*.zip",
-          "recursive": false
-        }
-      },
-      "nodes": [
-        {
-          "id": "entry",
-          "label": "Start",
-          "internal_state": "",
-          "kind": "Entry",
-          "next_nodes": {
-            "Next": "move-zip"
-          }
-        },
-        {
-          "id": "move-zip",
-          "label": "Move to ZIPs Folder",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\zips\\\\\"}},\"point\":null,\"delay_ms\":0}",
-          "kind": "Action",
-          "next_nodes": {}
-        }
-      ],
-      "presence_config": {
-        "ignore_mouse": false,
-        "ignore_keyboard": false
-      }
-    },
-    {
-      "id": "arbtest-png-sorter",
-      "label": "Arbtest PNG Sorter",
-      "summons": {
-        "type": "FileCreated",
-        "data": {
-          "ward_id": "N:\\Temp\\arbtest",
-          "pattern": "*.png",
-          "recursive": false
-        }
-      },
-      "nodes": [
-        {
-          "id": "entry",
-          "label": "Start",
-          "internal_state": "",
-          "kind": "Entry",
-          "next_nodes": {
-            "Next": "move-png"
-          }
-        },
-        {
-          "id": "move-png",
-          "label": "Move to PNGs Folder",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\pngs\\\\\"}},\"point\":null,\"delay_ms\":0}",
-          "kind": "Action",
-          "next_nodes": {}
-        }
-      ],
-      "presence_config": {
-        "ignore_mouse": false,
-        "ignore_keyboard": false
-      }
-    },
-    {
-      "id": "notepad-header",
-      "label": "Notepad Auto-Header",
+      "id": "decree-notepad-header",
+      "label": "Notepad: Auto-Header",
       "summons": {
         "type": "ProcessAppeared",
         "data": {
@@ -135,13 +40,13 @@
           "internal_state": "",
           "kind": "Entry",
           "next_nodes": {
-            "Next": "delay-before-type"
+            "Next": "wait-notepad"
           }
         },
         {
-          "id": "delay-before-type",
-          "label": "Wait for Notepad",
-          "internal_state": "{\"action_type\":{\"Wait\":500},\"point\":null,\"delay_ms\":0}",
+          "id": "wait-notepad",
+          "label": "Steady Wait",
+          "internal_state": "{\"action_type\":{\"Wait\":600},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {
             "Next": "type-header"
@@ -149,8 +54,8 @@
         },
         {
           "id": "type-header",
-          "label": "Type Log Header",
-          "internal_state": "{\"action_type\":{\"Type\":\"--- ARBITER SESSION START ---\\nLocal Time: ${env.timestamp_local}\\nTrigger: ${env.process_name} (PID: ${env.process_pid})\\n----------------------------\\n\\n\"},\"point\":null,\"delay_ms\":0}",
+          "label": "Type Session Header",
+          "internal_state": "{\"action_type\":{\"Type\":\"--- SESSION START ---\\nTime: ${env.timestamp_local}\\n---------------------\"},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {}
         }
@@ -161,80 +66,12 @@
       }
     },
     {
-      "id": "image-organizer",
-      "label": "Auto-Archive Images",
-      "summons": {
-        "type": "FileCreated",
-        "data": {
-          "ward_id": "C:\\Users\\user\\Downloads",
-          "pattern": "*.{jpg,jpeg,png,webp,gif}",
-          "recursive": true
-        }
-      },
-      "nodes": [
-        {
-          "id": "entry",
-          "label": "Start",
-          "internal_state": "",
-          "kind": "Entry",
-          "next_nodes": {
-            "Next": "move-image"
-          }
-        },
-        {
-          "id": "move-image",
-          "label": "Move to Pictures",
-          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"C:\\\\Users\\\\user\\\\Pictures\\\\Arbiter\\\\\"}},\"point\":null,\"delay_ms\":500}",
-          "kind": "Action",
-          "next_nodes": {}
-        }
-      ],
-      "presence_config": {
-        "ignore_mouse": true,
-        "ignore_keyboard": true
-      }
-    },
-    {
-      "id": "log-cleanup",
-      "label": "Auto-Purge Temp Logs",
-      "summons": {
-        "type": "FileCreated",
-        "data": {
-          "ward_id": "N:\\Temp\\arbtest",
-          "pattern": "temp_*.log",
-          "recursive": true
-        }
-      },
-      "nodes": [
-        {
-          "id": "entry",
-          "label": "Start",
-          "internal_state": "",
-          "kind": "Entry",
-          "next_nodes": {
-            "Next": "delete-log"
-          }
-        },
-        {
-          "id": "delete-log",
-          "label": "Delete Temp Log",
-          "internal_state": "{\"action_type\":{\"InscribeDelete\":{\"target\":\"${env.file_path}\"}},\"point\":null,\"delay_ms\":1000}",
-          "kind": "Action",
-          "next_nodes": {}
-        }
-      ],
-      "presence_config": {
-        "ignore_mouse": true,
-        "ignore_keyboard": true
-      }
-    },
-    {
-      "id": "id-1",
-      "label": "Edge opener",
+      "id": "decree-hotkey-lock",
+      "label": "Hotkey: Lock Workstation",
       "summons": {
         "type": "Hotkey",
         "data": {
-          "combo": "ctrl+alt+u"
+          "combo": "ctrl+alt+l"
         }
       },
       "nodes": [
@@ -244,20 +81,297 @@
           "internal_state": "",
           "kind": "Entry",
           "next_nodes": {
-            "Next": "id-2"
+            "Next": "lock-ws"
           }
         },
         {
-          "id": "id-2",
-          "label": "Open Edge",
-          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"program.exe\",\"args\":[],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "id": "lock-ws",
+          "label": "Lock via Win+L",
+          "internal_state": "{\"action_type\":{\"Navigate\":\"win+l\"},\"point\":null,\"delay_ms\":0}",
           "kind": "Action",
           "next_nodes": {}
         }
       ],
       "presence_config": {
-        "ignore_mouse": false,
-        "ignore_keyboard": false
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-hotkey-terminal",
+      "label": "Hotkey: Open Terminal on N:",
+      "summons": {
+        "type": "Hotkey",
+        "data": {
+          "combo": "ctrl+alt+t"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "open-wt"
+          }
+        },
+        {
+          "id": "open-wt",
+          "label": "Launch Windows Terminal",
+          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"wt.exe\",\"args\":[\"-d\",\"N:\\\\\"],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-hotkey-vs",
+      "label": "Hotkey: Open VS Code on Projects",
+      "summons": {
+        "type": "Hotkey",
+        "data": {
+          "combo": "ctrl+alt+v"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "open-vscode"
+          }
+        },
+        {
+          "id": "open-vscode",
+          "label": "Launch VS Code",
+          "internal_state": "{\"action_type\":{\"Shell\":{\"command\":\"code\",\"args\":[\"N:\\\\Projects\"],\"detached\":true}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-sort-zip",
+      "label": "Downloads: Sort ZIPs",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "downloads-ward",
+          "pattern": "*.zip",
+          "recursive": false
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "wait-stable"
+          }
+        },
+        {
+          "id": "wait-stable",
+          "label": "Steady Wait",
+          "internal_state": "{\"action_type\":{\"Wait\":1500},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
+            "Next": "move-zip"
+          }
+        },
+        {
+          "id": "move-zip",
+          "label": "Move to Archives",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"N:\\\\Archives\\\\ZIPs\\\\\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-sort-pdf",
+      "label": "Downloads: Sort PDFs",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "downloads-ward",
+          "pattern": "*.pdf",
+          "recursive": false
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "wait-dl"
+          }
+        },
+        {
+          "id": "wait-dl",
+          "label": "Steady Wait",
+          "internal_state": "{\"action_type\":{\"Wait\":1500},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
+            "Next": "move-pdf"
+          }
+        },
+        {
+          "id": "move-pdf",
+          "label": "Move to Documents",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"N:\\\\Documents\\\\PDFs\\\\\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-sort-images",
+      "label": "Downloads: Sort Images",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "downloads-ward",
+          "pattern": "*.{jpg,jpeg,png,webp,gif}",
+          "recursive": false
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "wait-img"
+          }
+        },
+        {
+          "id": "wait-img",
+          "label": "Steady Wait",
+          "internal_state": "{\"action_type\":{\"Wait\":1500},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
+            "Next": "move-img"
+          }
+        },
+        {
+          "id": "move-img",
+          "label": "Move to Pictures",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"N:\\\\Pictures\\\\Downloads\\\\\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-arbtest-zip",
+      "label": "Arbtest: Archive ZIPs",
+      "summons": {
+        "type": "FileCreated",
+        "data": {
+          "ward_id": "arbtest-ward",
+          "pattern": "*.zip",
+          "recursive": false
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "wait-arb"
+          }
+        },
+        {
+          "id": "wait-arb",
+          "label": "Steady Wait",
+          "internal_state": "{\"action_type\":{\"Wait\":2000},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
+            "Next": "move-arb-zip"
+          }
+        },
+        {
+          "id": "move-arb-zip",
+          "label": "Move to zips subfolder",
+          "internal_state": "{\"action_type\":{\"InscribeMove\":{\"source\":\"${env.file_path}\",\"destination\":\"${env.file_dir}\\\\zips\\\\\"}},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
+      }
+    },
+    {
+      "id": "decree-notepad-header-v2",
+      "label": "Notepad: Auto-Header",
+      "summons": {
+        "type": "ProcessAppeared",
+        "data": {
+          "name": "notepad.exe"
+        }
+      },
+      "nodes": [
+        {
+          "id": "entry",
+          "label": "Start",
+          "internal_state": "",
+          "kind": "Entry",
+          "next_nodes": {
+            "Next": "wait-np"
+          }
+        },
+        {
+          "id": "wait-np",
+          "label": "Steady Wait",
+          "internal_state": "{\"action_type\":{\"Wait\":600},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {
+            "Next": "type-np"
+          }
+        },
+        {
+          "id": "type-np",
+          "label": "Type Header",
+          "internal_state": "{\"action_type\":{\"Type\":\"Hi\"},\"point\":null,\"delay_ms\":0}",
+          "kind": "Action",
+          "next_nodes": {}
+        }
+      ],
+      "presence_config": {
+        "ignore_mouse": true,
+        "ignore_keyboard": true
       }
     }
   ]

@@ -689,31 +689,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    ui.on_step_moved({
-        let step_model = step_model.clone();
-        move |step_id, delta| {
-            info!(step_id = %step_id, delta = delta, "Forge: step-moved");
-            let mut current_idx = None;
-            for i in 0..step_model.row_count() {
-                if let Some(s) = step_model.row_data(i) {
-                    if s.id == step_id {
-                        current_idx = Some(i);
-                        break;
-                    }
-                }
-            }
-            if let Some(idx) = current_idx {
-                let target_idx = (idx as i32 + delta).clamp(0, step_model.row_count() as i32 - 1) as usize;
-                if idx != target_idx {
-                    if let Some(row) = step_model.row_data(idx) {
-                        step_model.remove(idx);
-                        step_model.insert(target_idx, row);
-                    }
-                }
-            }
-        }
-    });
-
     ui.on_copy_env(move |text| {
         #[cfg(windows)]
         {

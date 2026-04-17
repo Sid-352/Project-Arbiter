@@ -233,6 +233,9 @@ export component TextEdit inherits Rectangle {
                 font-family: root.monospaced ? "Consolas" : "Segoe UI";
                 wrap: word-wrap;
                 single-line: false;
+                edited => {
+                    root.edited(self.text);
+                }
             }
         }
 
