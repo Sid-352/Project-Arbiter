@@ -85,6 +85,7 @@ impl Atlas {
     }
 
     /// The main async event loop.
+    #[allow(clippy::too_many_arguments)]
     pub async fn run(
         &mut self,
         vigil_rx: &mut mpsc::Receiver<Summons>,
@@ -447,7 +448,7 @@ impl Atlas {
 
         // ── Recursion Safety ──
         if let Some(p) = context.variables.get("file_path") {
-            let component_count = p.split(|c| c == '/' || c == '\\').count();
+            let component_count = p.split(['/', '\\']).count();
             if component_count > 20 {
                 error!(%p, "Atlas: MAX_RECURSION_DEPTH exceeded, aborting sequence to prevent path explosion");
                 self.state = EngineState::Idle;

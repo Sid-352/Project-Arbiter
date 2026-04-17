@@ -98,21 +98,12 @@ pub struct Action {
 // ── Presence Configuration ────────────────────────────────────────────────────
 
 /// Configuration for human presence detection during sequence execution.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PresenceConfig {
     /// If true, mouse movement/clicks will not trigger a yield.
     pub ignore_mouse: bool,
     /// If true, keyboard input will not trigger a yield.
     pub ignore_keyboard: bool,
-}
-
-impl Default for PresenceConfig {
-    fn default() -> Self {
-        Self {
-            ignore_mouse: false,
-            ignore_keyboard: false,
-        }
-    }
 }
 
 // ── Ward Configuration (Signet Authority Model) ───────────────────────────────
@@ -293,6 +284,7 @@ impl EnvKey {
         }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "file_dir" => Some(Self::FileDir),
@@ -443,7 +435,7 @@ impl EnvContext {
                     .get_or_init(|| {
                         self.source_path
                             .as_ref()
-                            .and_then(|p| compute_sha256(p))
+                            .and_then(compute_sha256)
                     })
                     .as_deref()
             }
@@ -452,7 +444,7 @@ impl EnvContext {
                     .get_or_init(|| {
                         self.source_path
                             .as_ref()
-                            .and_then(|p| compute_mime(p))
+                            .and_then(compute_mime)
                     })
                     .as_deref()
             }
@@ -461,7 +453,7 @@ impl EnvContext {
                     .get_or_init(|| {
                         self.source_path
                             .as_ref()
-                            .and_then(|p| compute_md5(p))
+                            .and_then(compute_md5)
                     })
                     .as_deref()
             }
@@ -470,7 +462,7 @@ impl EnvContext {
                     .get_or_init(|| {
                         self.source_path
                             .as_ref()
-                            .and_then(|p| compute_entropy(p))
+                            .and_then(compute_entropy)
                     })
                     .as_deref()
             }
@@ -479,7 +471,7 @@ impl EnvContext {
                     .get_or_init(|| {
                         self.source_path
                             .as_ref()
-                            .and_then(|p| compute_text_lines(p))
+                            .and_then(compute_text_lines)
                     })
                     .as_deref()
             }

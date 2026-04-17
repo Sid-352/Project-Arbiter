@@ -735,7 +735,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for i in 0..m.row_count() {
                 if let Some(mut entry) = m.row_data(i) {
                     if entry.id == id {
-                        entry.label = new_label.clone().into();
+                        entry.label = new_label.clone();
                         m.set_row_data(i, entry);
                         break;
                     }

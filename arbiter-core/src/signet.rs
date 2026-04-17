@@ -114,7 +114,7 @@ fn path_matches_rules(path: &Path, rules: &HashSet<String>) -> bool {
     for rule in rules {
         // 1. Try exact/prefix match (canonicalized)
         let canon_rule = std::fs::canonicalize(rule).unwrap_or_else(|_| Path::new(rule).to_path_buf());
-        if path_str.starts_with(&canon_rule.to_string_lossy().as_ref()) {
+        if path_str.starts_with(canon_rule.to_string_lossy().as_ref()) {
             return true;
         }
 

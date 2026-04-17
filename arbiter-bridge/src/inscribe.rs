@@ -72,7 +72,7 @@ fn assert_trusted(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<()
         .any(|root| {
             // Also canonicalize the trusted root for a fair comparison
             if let Ok(canon_root) = std::fs::canonicalize(root) {
-                path_str.starts_with(&canon_root.to_string_lossy().as_ref())
+                path_str.starts_with(canon_root.to_string_lossy().as_ref())
             } else {
                 path_str.starts_with(root.as_str())
             }
