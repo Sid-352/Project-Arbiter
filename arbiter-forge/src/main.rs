@@ -13,6 +13,9 @@ thread_local! {
     static LOG_MODEL:    Rc<VecModel<LogEntry>>    = Rc::new(VecModel::default());
     static DECREE_MODEL: Rc<VecModel<DecreeEntry>> = Rc::new(VecModel::default());
     static STEP_MODEL:   Rc<VecModel<DecreeStep>>  = Rc::new(VecModel::default());
+    static WARD_MODEL:   Rc<VecModel<WardEntry>>   = Rc::new(VecModel::default());
+    static TS_PATH_MODEL: Rc<VecModel<SharedString>> = Rc::new(VecModel::default());
+    static BATON_MODEL:  Rc<VecModel<SharedString>> = Rc::new(VecModel::default());
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -194,6 +197,60 @@ fn sync_ledger_to_ui() {
             }
         }
     });
+
+    WARD_MODEL.with(|m| {
+        let mut model_indices = std::collections::HashMap::new();
+        for i in 0..m.row_count() {
+            if let Some(row) = m.row_data(i) {
+                model_indices.insert(row.id.to_string(), i);
+            }
+        }
+        let mut seen_ids = std::collections::HashSet::new();
+        for ward in &ledger.wards {
+            let id_str = ward.id.clone();
+            seen_ids.insert(id_str.clone());
+            let entry = WardEntry {
+                id: SharedString::from(&id_str),
+                path: SharedString::from(ward.path.to_string_lossy().as_ref()),
+                pattern: SharedString::from(&ward.pattern),
+                recursive: ward.recursive,
+                layer: match ward.layer {
+                    arbiter_core::ordinance::WardLayer::Surface => 0,
+                    arbiter_core::ordinance::WardLayer::Analytical => 1,
+                },
+            };
+            if let Some(&idx) = model_indices.get(&id_str) {
+                m.set_row_data(idx, entry);
+            } else {
+                m.push(entry);
+            }
+        }
+        for i in (0..m.row_count()).rev() {
+            if let Some(row) = m.row_data(i) {
+                if !seen_ids.contains(&row.id.to_string()) {
+                    m.remove(i);
+                }
+            }
+        }
+    });
+}
+
+fn sync_signet_to_ui() {
+    let signet = arbiter_core::signet::load().unwrap_or_default();
+    
+    TS_PATH_MODEL.with(|m| {
+        while m.row_count() > 0 { m.remove(0); }
+        for p in &signet.trusted_paths {
+            m.push(SharedString::from(p));
+        }
+    });
+    
+    BATON_MODEL.with(|m| {
+        while m.row_count() > 0 { m.remove(0); }
+        for b in &signet.baton_allowed {
+            m.push(SharedString::from(b));
+        }
+    });
 }
 
 #[tokio::main]
@@ -209,13 +266,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let log_model     = LOG_MODEL.with(|m| m.clone());
     let decree_model  = DECREE_MODEL.with(|m| m.clone());
     let step_model    = STEP_MODEL.with(|m| m.clone());
+    let ward_model    = WARD_MODEL.with(|m| m.clone());
+    let ts_path_model = TS_PATH_MODEL.with(|m| m.clone());
+    let baton_model   = BATON_MODEL.with(|m| m.clone());
 
     ui.set_telemetry_logs(ModelRc::from(log_model.clone()));
     ui.set_decree_list(ModelRc::from(decree_model.clone()));
     ui.set_decree_steps(ModelRc::from(step_model.clone()));
+    ui.set_ward_list(ModelRc::from(ward_model.clone()));
+    ui.set_trusted_paths(ModelRc::from(ts_path_model.clone()));
+    ui.set_baton_allowed(ModelRc::from(baton_model.clone()));
 
     // Sync with data from disk
     sync_ledger_to_ui();
+    sync_signet_to_ui();
 
     // Seed a startup log
     log_model.push(LogEntry {
@@ -289,6 +353,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     core_entry.time.clone()
                                 };
 
+                                // Determine engine running state from RUNNER tags
+                                let is_runner = core_entry.tag == "RUNNER" || core_entry.tag == "Runner";
+                                let is_done = is_runner && (
+                                    core_entry.message.contains("complete")
+                                    || core_entry.message.contains("finished")
+                                    || core_entry.message.contains("error")
+                                    || core_entry.message.contains("aborted")
+                                );
+
                                 let entry = LogEntry {
                                     time:      time_str.into(),
                                     tag:       core_entry.tag.into(),
@@ -304,6 +377,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             m.remove(0);
                                         }
                                     });
+                                    // Reflect engine execution state in the UI tracer
+                                    if is_runner {
+                                        ui.set_engine_running(!is_done);
+                                    }
                                     ui.invoke_scroll_logs_to_bottom();
                                 });
                             }
@@ -479,6 +556,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         subtext: subtext.into(),
                                         step_type,
                                         is_active: false,
+                                        is_running: false,
                                         baton_required: step_type == 1,
                                         arg_a: arg_a.into(),
                                         arg_b: arg_b.into(),
@@ -552,6 +630,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 subtext:        subtext.into(),
                 step_type,
                 is_active:      false,
+                is_running:     false,
                 baton_required: step_type == 1,
                 arg_a:          arg_a.into(),
                 arg_b:          arg_b.into(),
@@ -637,6 +716,219 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(ord) = ledger.ordinances.iter_mut().find(|o| o.id.0 == id.as_str()) {
             ord.label = new_label.to_string();
             let _ = arbiter_core::ledger::save(&ledger);
+        }
+    });
+
+    // ── Ward Callbacks ────────────────────────────────────────────────────────
+    let ward_model_cb = WARD_MODEL.with(|m| m.clone());
+    ui.on_add_ward({
+        let ward_model_cb = ward_model_cb.clone();
+        move || {
+            let id = next_id();
+            ward_model_cb.push(WardEntry {
+                id: id.into(),
+                path: "".into(),
+                pattern: "".into(),
+                recursive: true,
+                layer: 0,
+            });
+        }
+    });
+
+    ui.on_remove_ward({
+        let ward_model_cb = ward_model_cb.clone();
+        move |id| {
+            for i in 0..ward_model_cb.row_count() {
+                if let Some(w) = ward_model_cb.row_data(i) {
+                    if w.id == id {
+                        ward_model_cb.remove(i);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    ui.on_set_ward_layer({
+        let ward_model_cb = ward_model_cb.clone();
+        move |id, layer| {
+            for i in 0..ward_model_cb.row_count() {
+                if let Some(mut w) = ward_model_cb.row_data(i) {
+                    if w.id == id {
+                        w.layer = layer;
+                        ward_model_cb.set_row_data(i, w);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    ui.on_update_ward_path({
+        let ward_model_cb = ward_model_cb.clone();
+        move |id, path| {
+            for i in 0..ward_model_cb.row_count() {
+                if let Some(mut w) = ward_model_cb.row_data(i) {
+                    if w.id == id {
+                        w.path = path;
+                        ward_model_cb.set_row_data(i, w);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    ui.on_update_ward_pattern({
+        let ward_model_cb = ward_model_cb.clone();
+        move |id, pattern| {
+            for i in 0..ward_model_cb.row_count() {
+                if let Some(mut w) = ward_model_cb.row_data(i) {
+                    if w.id == id {
+                        w.pattern = pattern;
+                        ward_model_cb.set_row_data(i, w);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    ui.on_toggle_ward_recursive({
+        let ward_model_cb = ward_model_cb.clone();
+        move |id| {
+            for i in 0..ward_model_cb.row_count() {
+                if let Some(mut w) = ward_model_cb.row_data(i) {
+                    if w.id == id {
+                        w.recursive = !w.recursive;
+                        ward_model_cb.set_row_data(i, w);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    // ── Signet Callbacks ──────────────────────────────────────────────────────
+    let ts_path_model_cb = TS_PATH_MODEL.with(|m| m.clone());
+    ui.on_add_trusted_path({
+        let ts_path_model_cb = ts_path_model_cb.clone();
+        move || {
+            ts_path_model_cb.push(SharedString::from(""));
+        }
+    });
+    
+    ui.on_update_trusted_path({
+        let ts_path_model_cb = ts_path_model_cb.clone();
+        move |idx, val| {
+            if idx >= 0 && (idx as usize) < ts_path_model_cb.row_count() {
+                ts_path_model_cb.set_row_data(idx as usize, val);
+            }
+        }
+    });
+    
+    ui.on_remove_trusted_path({
+        let ts_path_model_cb = ts_path_model_cb.clone();
+        move |idx| {
+            if idx >= 0 && (idx as usize) < ts_path_model_cb.row_count() {
+                ts_path_model_cb.remove(idx as usize);
+            }
+        }
+    });
+
+    let baton_model_cb = BATON_MODEL.with(|m| m.clone());
+    ui.on_add_baton({
+        let baton_model_cb = baton_model_cb.clone();
+        move || {
+            baton_model_cb.push("".into());
+        }
+    });
+    
+    ui.on_update_baton({
+        let baton_model_cb = baton_model_cb.clone();
+        move |idx, val| {
+            if idx >= 0 && (idx as usize) < baton_model_cb.row_count() {
+                baton_model_cb.set_row_data(idx as usize, val);
+            }
+        }
+    });
+    
+    ui.on_remove_baton({
+        let baton_model_cb = baton_model_cb.clone();
+        move |idx| {
+            if idx >= 0 && (idx as usize) < baton_model_cb.row_count() {
+                baton_model_cb.remove(idx as usize);
+            }
+        }
+    });
+
+    ui.on_pick_folder(move || {
+        if let Some(path) = rfd::FileDialog::new().pick_folder() {
+            SharedString::from(path.to_string_lossy().as_ref())
+        } else {
+            "".into()
+        }
+    });
+
+    // ── IPC Save Callbacks ────────────────────────────────────────────────────
+    ui.on_save_wards({
+        let ward_model_cb = ward_model_cb.clone();
+        move || {
+            let mut wards = Vec::new();
+            for i in 0..ward_model_cb.row_count() {
+                if let Some(w) = ward_model_cb.row_data(i) {
+                    // Quick validation - do not save if path is empty
+                    if !w.path.is_empty() {
+                        wards.push(arbiter_core::ordinance::WardConfig {
+                            id: w.id.to_string(),
+                            path: w.path.to_string().into(),
+                            pattern: w.pattern.to_string(),
+                            layer: match w.layer {
+                                1 => arbiter_core::ordinance::WardLayer::Analytical,
+                                _ => arbiter_core::ordinance::WardLayer::Surface,
+                            },
+                            recursive: w.recursive,
+                        });
+                    }
+                }
+            }
+            let cmd = ForgeCommand::SaveWards(wards);
+            tokio::spawn(async move {
+                send_command(&cmd).await;
+            });
+            info!("Forge: Sent SaveWards command");
+        }
+    });
+
+    ui.on_save_signet({
+        let ts_path_model_cb = ts_path_model_cb.clone();
+        let baton_model_cb = baton_model_cb.clone();
+        move || {
+            let mut trusted_paths = std::collections::HashSet::new();
+            for i in 0..ts_path_model_cb.row_count() {
+                if let Some(p) = ts_path_model_cb.row_data(i) {
+                    if !p.is_empty() { trusted_paths.insert(p.to_string()); }
+                }
+            }
+            
+            let mut baton_allowed = std::collections::HashSet::new();
+            for i in 0..baton_model_cb.row_count() {
+                if let Some(b) = baton_model_cb.row_data(i) {
+                    if !b.is_empty() { baton_allowed.insert(b.to_string()); }
+                }
+            }
+
+            let cfg = arbiter_core::signet::ArbiterConfig {
+                trusted_paths,
+                restricted_paths: std::collections::HashSet::new(),
+                baton_allowed,
+            };
+
+            let cmd = ForgeCommand::SaveSignet(cfg);
+            tokio::spawn(async move {
+                send_command(&cmd).await;
+            });
+            info!("Forge: Sent SaveSignet command");
         }
     });
 

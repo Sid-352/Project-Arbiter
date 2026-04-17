@@ -249,6 +249,49 @@ impl Atlas {
                                 ordinance_id: Some(def.id.0.clone()),
                             });
                         }
+                        ForgeCommand::SaveWards(wards) => {
+                            info!("Atlas: received SaveWards IPC command");
+                            let mut ledger = crate::ledger::load().unwrap_or_default();
+                            ledger.wards = wards;
+                            let _ = crate::ledger::save(&ledger);
+                            
+                            // Hot-reload File Watchers
+                            info!("Atlas: terminating active ward monitors");
+                            for (_, stop_tx) in self.active_watchers.drain() {
+                                let _ = stop_tx.send(());
+                            }
+                            
+                            info!("Atlas: booting new ward monitors");
+                            for ward in &ledger.wards {
+                                let stop_tx = crate::vigil::fs::spawn_watcher(ward.clone(), filter.clone(), vigil_tx.clone());
+                                self.active_watchers.insert(ward.path.to_string_lossy().to_string(), stop_tx);
+                            }
+                            
+                            let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
+                                tag: "VIGIL".into(),
+                                message: format!("Conservatory Wards updated ({} active).", ledger.wards.len()),
+                                is_error: false,
+                                ordinance_id: None,
+                            });
+                        }
+                        ForgeCommand::SaveSignet(cfg) => {
+                            info!("Atlas: received SaveSignet IPC command");
+                            let _ = crate::signet::save(&cfg);
+                            crate::signet::reload_cache();
+                            
+                            // Re-apply environment to ensure mapping limits are updated.
+                            // The runner reads mapped environment at execution, so live updates
+                            // take effect immediately on next ordinance run.
+                            
+                            let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
+                                tag: "SIGNT".into(),
+                                message: "Signet vault constraints redefined and live.".into(),
+                                is_error: false,
+                                ordinance_id: None,
+                            });
+                        }
                         ForgeCommand::ReloadWards => {
                             info!("Atlas: reloading Signet configuration (Live)");
                             crate::signet::reload_cache();

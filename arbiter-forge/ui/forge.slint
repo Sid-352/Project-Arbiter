@@ -1,710 +1,23 @@
-// ============================================================
-//  ARBITER FORGE — Slint UI (Rebuilt)
-// ============================================================
+//  ARBITER FORGE 
 
 import { ScrollView, Button } from "std-widgets.slint";
-
-// ── Theme global ──────────────────────────────────────────────────────────────
-export global Theme {
-    in-out property <bool> is-dark:         true;
-    in-out property <color> bg-app:         is-dark ? #18181b : #fafafa;
-    in-out property <color> bg-sidebar:     is-dark ? #0f0f12 : #f4f4f5;
-    in-out property <color> bg-card:        is-dark ? #222226 : #fffffff6;
-    in-out property <color> bg-input:       is-dark ? #0c0c0e : #fdfdfd;
-    in-out property <color> accent:         #8b5cf6;
-    in-out property <color> accent-subtle:  is-dark ? #8b5cf625 : #8b5cf615;
-    in-out property <color> success:        #10b981;
-    in-out property <color> warning:        #f59e0b;
-    in-out property <color> critical:       #f43f5e;
-    in-out property <color> border:         is-dark ? #2d2d32 : #e4e4e7;
-    in-out property <color> border-focus:   #8b5cf6;
-    in-out property <color> text-main:      is-dark ? #fafafa : #09090b;
-    in-out property <color> text-secondary: is-dark ? #a1a1aa : #52525b;
-    in-out property <color> text-muted:     is-dark ? #52525b : #a1a1aa;
-    in-out property <length> radius:        8px;
-    in-out property <length> spacing:       12px;
-    in-out property <length> padding:       16px;
-
-    // Unified Font Sizes
-    in-out property <length> font-tiny:     9px;
-    in-out property <length> font-small:    11px;
-    in-out property <length> font-norm:     13px;
-    in-out property <length> font-large:    16px;
-    in-out property <length> font-title:    20px;
-
-    // Unified Durations
-    in-out property <duration> dur-fast:    150ms;
-    in-out property <duration> dur-norm:    200ms;
-    in-out property <duration> dur-slow:    250ms;
-
-    // Component Sizes
-    in-out property <length> sidebar-width: 260px;
-    in-out property <length> header-height:  64px;
-    in-out property <length> item-height:    38px;
-    in-out property <length> btn-height:     32px;
-    in-out property <length> log-height:     140px;
-    in-out property <length> modal-width:    400px;
-    in-out property <length> input-height:   36px;
-}
-
-export struct LogEntry {
-    time: string,
-    tag: string,
-    tag-color: color,
-    msg: string,
-    ordinance-id: string,
-}
-
-export struct DecreeEntry {
-    id: string,
-    label: string,
-    status: int,
-}
-
-export struct DecreeStep {
-    id: string,
-    title: string,
-    subtext: string,
-    step-type: int,
-    baton-required: bool,
-    is-active: bool,
-    arg-a: string,
-    arg-b: string,
-}
-
-// ── Components ────────────────────────────────────────────────────────────────
-
-component EnvChip inherits Rectangle {
-    in property <string> token;
-    callback clicked(string);
-    height: 20px;
-    border-radius: 4px;
-    background: ta.has-hover ? #f59e0b25 : transparent;
-    border-width: 1px;
-    border-color: ta.has-hover ? Theme.warning : #f59e0b20;
-    ta := TouchArea {
-        mouse-cursor: pointer;
-        clicked => {
-            root.clicked(root.token);
-        }
-    }
-
-    HorizontalLayout {
-        padding-left: 6px;
-        padding-right: 6px;
-        Text {
-            text: root.token;
-            color: ta.has-hover ? Theme.text-main : Theme.warning;
-            font-size: Theme.font-tiny;
-            font-family: "Geist Mono";
-            vertical-alignment: center;
-            animate color { duration: Theme.dur-fast; }
-        }
-    }
-}
-
-component SunIcon inherits Path {
-    in property <color> icon-color: Theme.text-secondary;
-    width: 16px;
-    height: 16px;
-    viewbox-width: 24;
-    viewbox-height: 24;
-    stroke: root.icon-color;
-    stroke-width: 2px;
-    fill: transparent;
-    commands: "M 12 8 a 4 4 0 1 0 0.001 0 z M 12 2 v 2 M 12 20 v 2 M 4.93 4.93 l 1.41 1.41 M 17.66 17.66 l 1.41 1.41 M 2 12 h 2 M 20 12 h 2 M 6.34 17.66 l -1.41 1.41 M 19.07 4.93 l -1.41 1.41";
-}
-
-component MoonIcon inherits Path {
-    in property <color> icon-color: Theme.text-secondary;
-    width: 16px;
-    height: 16px;
-    viewbox-width: 24;
-    viewbox-height: 24;
-    stroke: transparent;
-    stroke-width: 0px;
-    fill: root.icon-color;
-    commands: "M 21 12.79 A 9 9 0 1 1 11.21 3 A 7 7 0 0 0 21 12.79 z";
-}
-
-component SidebarItem inherits Rectangle {
-    in property <bool> active: false;
-    in property <string> label;
-    in property <int> decree-status: 0;
-    in property <string> icon-commands;
-    in property <bool> icon-filled: false;
-    in property <bool> deletable: false;
-    callback clicked;
-    callback remove;
-    height: Theme.item-height;
-    border-radius: 6px;
-    background: root.active ? Theme.accent-subtle : (root.is-hovered ? (Theme.is-dark ? #ffffff08 : #00000008) : transparent);
-    animate background { duration: Theme.dur-fast; }
-    property <bool> is-hovered: ta.has-hover || ta-del.has-hover;
-    ta := TouchArea {
-        mouse-cursor: pointer;
-        clicked => {
-            root.clicked();
-        }
-    }
-
-    HorizontalLayout {
-        padding-left: 12px;
-        padding-right: 8px;
-        spacing: 12px;
-        if root.icon-commands != "": VerticalLayout {
-            alignment: center;
-            Path {
-                width: 16px;
-                height: 16px;
-                viewbox-width: 24;
-                viewbox-height: 24;
-                stroke: root.icon-filled ? transparent : (root.active ? Theme.accent : Theme.text-secondary);
-                stroke-width: root.icon-filled ? 0px : 2px;
-                fill: root.icon-filled ? (root.active ? Theme.accent : Theme.text-secondary) : transparent;
-                commands: root.icon-commands;
-            }
-        }
-        Text {
-            text: root.label;
-            color: root.active ? Theme.text-main : (root.is-hovered ? Theme.text-main : Theme.text-secondary);
-            font-size: Theme.font-norm;
-            font-weight: root.active ? 600 : 400;
-            vertical-alignment: center;
-            horizontal-stretch: 1;
-            overflow: elide;
-        }
-
-        if root.decree-status != 0: VerticalLayout {
-            alignment: center;
-            Rectangle {
-                width: 6px;
-                height: 6px;
-                border-radius: 3px;
-                background: root.decree-status == 1 ? Theme.success : root.decree-status == 2 ? Theme.warning : Theme.critical;
-            }
-        }
-        
-        VerticalLayout {
-            width: root.deletable ? 22px : 0px;
-            visible: root.deletable;
-            alignment: center;
-            ta-del := TouchArea {
-                width: 22px;
-                height: 22px;
-                opacity: root.is-hovered ? 1.0 : 0.0;
-                animate opacity { duration: Theme.dur-fast; }
-                clicked => {
-                    root.remove();
-                }
-                Rectangle {
-                    border-radius: 4px;
-                    background: ta-del.has-hover ? #ef444420 : transparent;
-                    Path {
-                        width: 10px;
-                        height: 10px;
-                        x: 6px;
-                        y: 6px;
-                        stroke: ta-del.has-hover ? Theme.critical : Theme.text-muted;
-                        stroke-width: 1.5px;
-                        commands: "M 0 0 L 10 10 M 10 0 L 0 10";
-                    }
-                }
-            }
-        }
-    }
-}
-
-component InputPill inherits Rectangle {
-    in-out property <string> value;
-    in property <string> placeholder: "";
-    in property <bool> monospaced: false;
-    callback committed(string);
-    background: Theme.bg-input;
-    border-radius: Theme.radius / 2;
-    border-width: 1px;
-    border-color: input.has-focus ? Theme.border-focus : Theme.border;
-    height: Theme.input-height;
-    
-    ta := TouchArea {
-        width: 100%;
-        height: 100%;
-        clicked => { input.focus(); }
-    }
-
-    HorizontalLayout {
-        padding-left: Theme.spacing;
-        padding-right: Theme.spacing;
-        input := TextInput {
-            text <=> root.value;
-            color: Theme.text-main;
-            font-size: Theme.font-norm;
-            font-family: root.monospaced ? "Geist Mono" : "Inter";
-            vertical-alignment: center;
-            single-line: true;
-            accepted => {
-                root.committed(self.text);
-            }
-        }
-
-        if input.text == "" && !input.has-focus: Text {
-            text: root.placeholder;
-            color: Theme.text-muted;
-            font-size: Theme.font-norm;
-            vertical-alignment: center;
-        }
-    }
-
-    FocusScope {
-        focus-lost(reason) => {
-            root.committed(root.value);
-        }
-    }
-}
-
-component TextEdit inherits Rectangle {
-    in-out property <string> value;
-    in property <string> placeholder: "";
-    in property <bool> monospaced: false;
-    callback edited(string);
-    background: Theme.bg-input;
-    border-radius: Theme.radius / 2;
-    border-width: 1px;
-    border-color: input.has-focus ? Theme.border-focus : Theme.border;
-    min-height: 120px;
-
-    ta := TouchArea {
-        width: 100%;
-        height: 100%;
-        clicked => { input.focus(); }
-    }
-
-    VerticalLayout {
-        padding: Theme.spacing;
-        ScrollView {
-            vertical-stretch: 1;
-            viewport-height: input.preferred-height;
-            input := TextInput {
-                text <=> root.value;
-                color: Theme.text-main;
-                font-size: Theme.font-norm;
-                font-family: root.monospaced ? "Geist Mono" : "Inter";
-                wrap: word-wrap;
-                single-line: false;
-            }
-        }
-
-        if input.text == "" && !input.has-focus: Text {
-            text: root.placeholder;
-            color: Theme.text-muted;
-            font-size: Theme.font-norm;
-        }
-    }
-
-    FocusScope {
-        focus-lost(reason) => {
-            root.edited(root.value);
-        }
-    }
-}
-
-component ActionButton inherits Rectangle {
-    in property <string> label;
-    in property <color> btn-color: Theme.accent;
-    in property <bool> primary: false;
-    callback clicked;
-    height: Theme.btn-height;
-    border-radius: 6px;
-    background: root.primary ? (ta.has-hover ? root.btn-color.darker(10%) : root.btn-color) : (ta.has-hover ? Theme.accent-subtle : transparent);
-    border-width: root.primary ? 0px : 1px;
-    border-color: Theme.border;
-    ta := TouchArea {
-        mouse-cursor: pointer;
-        clicked => {
-            root.clicked();
-        }
-    }
-
-    Text {
-        text: root.label;
-        color: root.primary ? #ffffff : (ta.has-hover ? Theme.accent : Theme.text-main);
-        font-size: Theme.font-small;
-        font-weight: 700;
-        horizontal-alignment: center;
-        vertical-alignment: center;
-    }
-}
-
-component OrdinanceStepItem inherits Rectangle {
-    in property <string> step-id;
-    in property <string> title;
-    in property <string> subtext;
-    in property <int> step-type;
-    in property <int> trigger-type;
-    in property <bool> baton-required;
-    in property <bool> is-active;
-    in property <bool> is-editing;
-    in property <bool> is-last;
-    in-out property <string> arg-a;
-    in-out property <string> arg-b;
-    callback edited(string, string, string, string);
-    callback remove();
-    callback selected();
-    background: Theme.bg-card;
-    border-radius: Theme.radius;
-    border-width: 1px;
-    border-color: root.is-editing ? Theme.accent : Theme.border;
-    
-    // Smooth transition for editing state
-    animate border-color { duration: Theme.dur-fast; }
-
-    property <color> type-color: 
-        root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
-    property <string> type-label: 
-        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
-
-    property <float> pulse: 0.5 + 0.5 * Math.sin((animation-tick() / 250ms) * 1deg);
-
-    ta-select := TouchArea {
-        width: 100%;
-        height: 100%;
-        mouse-cursor: root.is-editing ? default : pointer;
-        enabled: !root.is-editing;
-        clicked => {
-            root.selected();
-        }
-    }
-
-    if !root.is-last: Rectangle {
-        x: Theme.padding + 10px - 1px;
-        y: Theme.padding + 20px;
-        width: 2px;
-        height: root.height - Theme.spacing;
-        background: Theme.border;
-    }
-    VerticalLayout {
-        padding: Theme.padding;
-        spacing: Theme.spacing;
-        HorizontalLayout {
-            spacing: Theme.padding;
-            VerticalLayout {
-                width: 20px;
-                alignment: start;
-                Rectangle {
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 10px;
-                    background: (root.is-active || root.is-editing) ? Theme.accent : Theme.bg-app;
-                    border-width: 1.5px;
-                    border-color: (root.is-active || root.is-editing) ? Theme.accent : Theme.border;
-                    z: 1;
-
-                    // Pulsing Glow
-                    drop-shadow-blur: root.is-active ? 6px + 6px * root.pulse : 0px;
-                    drop-shadow-color: Theme.accent;
-
-                    animate background, border-color { duration: Theme.dur-norm; }
-                }
-            }
-
-            VerticalLayout {
-                spacing: 4px;
-                horizontal-stretch: 1;
-                HorizontalLayout {
-                    height: 20px;
-                    spacing: 8px;
-                    alignment: start;
-                    Text {
-                        text: root.title;
-                        color: Theme.text-main;
-                        font-size: Theme.font-norm + 1px;
-                        font-weight: 600;
-                        vertical-alignment: center;
-                    }
-
-                    VerticalLayout {
-                        alignment: center;
-                        Rectangle {
-                            height: 18px;
-                            border-radius: 3px;
-                            background: root.step-type == 0 ? #10b98118 : root.step-type == 1 && root.baton-required ? #f43f5e18 : root.step-type == 1 ? #f59e0b18 : root.step-type == 2 ? Theme.accent-subtle : (Theme.is-dark ? #ffffff0a : #0000000a);
-                            border-width: 1px;
-                            border-color: root.type-color;
-                            HorizontalLayout {
-                                padding-left: 6px;
-                                padding-right: 6px;
-                                Text {
-                                    text: root.type-label;
-                                    color: root.type-color;
-                                    font-size: Theme.font-tiny;
-                                    font-weight: 800;
-                                    font-family: "Geist Mono";
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
-                    }
-
-                    if root.baton-required: VerticalLayout {
-                        alignment: center;
-                        Rectangle {
-                            height: 18px;
-                            border-radius: 3px;
-                            background: #f43f5e18;
-                            border-width: 1px;
-                            border-color: Theme.critical;
-                            HorizontalLayout {
-                                padding-left: 6px;
-                                padding-right: 6px;
-                                Text {
-                                    text: "BATON";
-                                    color: Theme.critical;
-                                    font-size: Theme.font-tiny;
-                                    font-weight: 800;
-                                    font-family: "Geist Mono";
-                                    vertical-alignment: center;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if !root.is-editing: Text {
-                    text: root.subtext;
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-small + 1px;
-                }
-            }
-
-            if !root.is-editing: VerticalLayout {
-                alignment: center;
-                Path {
-                    width: 12px;
-                    height: 12px;
-                    viewbox-width: 24;
-                    viewbox-height: 24;
-                    stroke: Theme.text-muted;
-                    stroke-width: 2px;
-                    commands: "M 9 18 l 6 -6 l -6 -6";
-                }
-            }
-        }
-
-        if root.is-editing: VerticalLayout {
-            padding-left: 36px;
-            spacing: Theme.spacing;
-
-            VerticalLayout {
-                spacing: 8px;
-                Text {
-                    text: "Step Name";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                InputPill {
-                    value: root.title;
-                    placeholder: "e.g. Move File";
-                    committed(v) => {
-                        root.edited(root.step-id, v, root.arg-a, root.arg-b);
-                    }
-                }
-            }
-
-            if root.step-type == 0: VerticalLayout {
-                spacing: 8px;
-                HorizontalLayout {
-                    spacing: 8px;
-                    Text {
-                        text: "Inscribe Mode";
-                        color: Theme.text-secondary;
-                        font-size: Theme.font-tiny + 1px;
-                        font-weight: 700;
-                        vertical-alignment: center;
-                    }
-
-                    Rectangle {
-                        width: 80px;
-                        height: 24px;
-                        background: Theme.bg-input;
-                        border-radius: 4px;
-                        ta-inc := TouchArea {
-                            clicked => {
-                                root.edited(root.step-id, root.title, root.arg-a, root.arg-b);
-                            }
-                        }
-
-                        Text {
-                            text: root.subtext == "Inscribe: Copy Mode" ? "COPY" : "MOVE";
-                            color: Theme.accent;
-                            font-size: Theme.font-tiny;
-                            font-weight: 800;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
-                        }
-                    }
-                }
-
-                Text {
-                    text: "Source Path";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                InputPill {
-                    value <=> root.arg-a;
-                    placeholder: "e.g. C:/Source/data.bin";
-                    monospaced: true;
-                    committed(v) => {
-                        root.edited(root.step-id, root.title, v, root.arg-b);
-                    }
-                }
-
-                Text {
-                    text: "Target Destination";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                InputPill {
-                    value <=> root.arg-b;
-                    placeholder: "e.g. D:/Output/";
-                    monospaced: true;
-                    committed(v) => {
-                        root.edited(root.step-id, root.title, root.arg-a, v);
-                    }
-                }
-            }
-            if root.step-type == 1: VerticalLayout {
-                spacing: 8px;
-                Text {
-                    text: "Executable";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                InputPill {
-                    value <=> root.arg-a;
-                    placeholder: "e.g. ffmpeg.exe";
-                    monospaced: true;
-                    committed(v) => {
-                        root.edited(root.step-id, root.title, v, root.arg-b);
-                    }
-                }
-
-                Text {
-                    text: "Arguments";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                InputPill {
-                    value <=> root.arg-b;
-                    placeholder: "e.g. -i ${env.file_path} -o output.mp4";
-                    monospaced: true;
-                    committed(v) => {
-                        root.edited(root.step-id, root.title, root.arg-a, v);
-                    }
-                }
-            }
-            if root.step-type == 2: VerticalLayout {
-                spacing: 8px;
-                Text {
-                    text: "Text to Emit";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                TextEdit {
-                    value <=> root.arg-a;
-                    placeholder: "Enter characters...";
-                    edited(v) => {
-                        root.edited(root.step-id, root.title, v, root.arg-b);
-                    }
-                }
-            }
-            if root.step-type == 3: VerticalLayout {
-                spacing: 8px;
-                Text {
-                    text: "Internal state stabilization delay (ms).";
-                    color: Theme.text-muted;
-                    font-size: Theme.font-small;
-                    font-italic: true;
-                }
-
-                InputPill {
-                    value <=> root.arg-a;
-                    placeholder: "1000";
-                    monospaced: true;
-                    committed(v) => {
-                        root.edited(root.step-id, root.title, v, root.arg-b);
-                    }
-                }
-            }
-            if root.step-type == 4: VerticalLayout {
-                spacing: 8px;
-                Text {
-                    text: "Navigation Key Sequence";
-                    color: Theme.text-secondary;
-                    font-size: Theme.font-tiny + 1px;
-                    font-weight: 700;
-                }
-
-                InputPill {
-                    value <=> root.arg-a;
-                    placeholder: "e.g. ctrl+alt+delete or win+s";
-                    monospaced: true;
-                    committed(v) => {
-                        root.edited(root.step-id, root.title, v, root.arg-b);
-                    }
-                }
-
-                Text {
-                    text: "Use '+' for combinations. Example: win+r to open Run dialog. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
-                    color: Theme.text-muted;
-                    font-size: Theme.font-small;
-                    font-italic: true;
-                    wrap: word-wrap;
-                }
-            }
-
-            HorizontalLayout {
-                alignment: end;
-                Rectangle {
-                    width: 110px;
-                    height: Theme.btn-height;
-                    border-radius: 6px;
-                    background: ta-rem.has-hover ? Theme.critical : transparent;
-                    border-width: 1px;
-                    border-color: Theme.border;
-                    ta-rem := TouchArea {
-                        mouse-cursor: pointer;
-                        clicked => {
-                            root.remove();
-                        }
-                    }
-
-                    Text {
-                        text: "REMOVE STEP";
-                        color: ta-rem.has-hover ? #ffffff : Theme.critical;
-                        font-size: Theme.font-tiny + 1px;
-                        font-weight: 700;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
-                }
-            }
-        }
-    }
-}
+import { Theme } from "theme.slint";
+import { LogEntry, DecreeEntry, WardEntry, DecreeStep } from "models.slint";
+import {
+    EnvChip,
+    SunIcon,
+    MoonIcon,
+    SidebarItem,
+    InputPill,
+    TextEdit,
+    ActionButton,
+} from "widgets.slint";
+import { OrdinanceStepItem } from "ordinance_step.slint";
+import { ConservatoryPage } from "pages/conservatory.slint";
+import { SignetPage } from "pages/signet.slint";
 
 // ── Main Layout ───────────────────────────────────────────────────────────────
+
 
 export component ArbiterForge inherits Window {
     title: "Arbiter Forge";
@@ -712,13 +25,14 @@ export component ArbiterForge inherits Window {
     preferred-width: 1120px;
     preferred-height: 800px;
     background: Theme.bg-app;
-    default-font-family: "Inter";
+    default-font-family: "Segoe UI";
 
     in-out property <int> active-page: 0;
     in-out property <string> active-decree-id: "";
     in-out property <string> active-decree-label: "Untitled Decree";
     in-out property <int> active-decree-status: 0;
     in-out property <bool> context-expanded: false;
+    in-out property <bool> engine-running: false;
     in-out property <string> selected-step-id: "";
     in property <[DecreeEntry]> decree-list: [];
     in property <[DecreeStep]> decree-steps: [];
@@ -734,6 +48,31 @@ export component ArbiterForge inherits Window {
     property <string> modal-title: "";
     property <string> modal-message: "";
     property <int> modal-action-type: 0;
+
+    in-out property <[WardEntry]> ward-list: [];
+    in-out property <[string]> trusted-paths: [];
+    in-out property <[string]> baton-allowed: [];
+
+    callback add-ward;
+    callback remove-ward(string);
+    callback set-ward-layer(string, int);
+    callback update-ward-path(string, string);
+    callback update-ward-pattern(string, string);
+    callback toggle-ward-recursive(string);
+
+    callback pick-folder() -> string;
+
+    callback add-trusted-path;
+    callback remove-trusted-path(int);
+    callback update-trusted-path(int, string);
+
+    callback add-baton;
+    callback update-baton(int, string);
+    callback remove-baton(int);
+
+    // Explicit manual save callbacks
+    callback save-wards;
+    callback save-signet;
 
     callback save-decree;
     callback new-decree;
@@ -1022,7 +361,46 @@ export component ArbiterForge inherits Window {
                 clip: true;
                 background: Theme.bg-app;
                 animate background { duration: Theme.dur-slow; }
-                if root.active-page == 0: ScrollView {
+
+                // ── Empty State: no decree selected
+                if root.active-page == 0 && root.active-decree-id == "": VerticalLayout {
+                    alignment: center;
+                    spacing: Theme.space-lg;
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: Theme.space-md;
+                        HorizontalLayout {
+                            alignment: center;
+                            Path {
+                                width: 48px;
+                                height: 48px;
+                                viewbox-width: 24;
+                                viewbox-height: 24;
+                                stroke: Theme.border;
+                                stroke-width: 1.5px;
+                                fill: transparent;
+                                commands: "M 14 2 H 6 a 2 2 0 0 0 -2 2 v 16 a 2 2 0 0 0 2 2 h 12 a 2 2 0 0 0 2 -2 V 8 z M 14 2 v 6 h 6 M 12 18 v -6 M 9 15 h 6";
+                            }
+                        }
+                        Text {
+                            text: "No Decree Selected";
+                            color: Theme.text-secondary;
+                            font-size: Theme.font-large;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: "Select an existing decree from the sidebar,\nor create a new one with the + button.";
+                            color: Theme.text-muted;
+                            font-size: Theme.font-norm;
+                            horizontal-alignment: center;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                // ── Editor: decree is active
+                if root.active-page == 0 && root.active-decree-id != "": ScrollView {
                     VerticalLayout {
                         padding: 40px;
                         spacing: 40px;
@@ -1057,6 +435,9 @@ export component ArbiterForge inherits Window {
                                                 horizontal-stretch: 1;
                                                 border-radius: 4px;
                                                 background: root.summons-trigger-type == i ? Theme.bg-card : transparent;
+                                    border-width: 1.5px;
+                                    border-color: root.summons-trigger-type == i ? Theme.accent : transparent;
+                                    animate border-color { duration: Theme.dur-fast; }
                                                 Text {
                                                     text: t;
                                                     color: root.summons-trigger-type == i ? Theme.text-main : Theme.text-muted;
@@ -1076,7 +457,7 @@ export component ArbiterForge inherits Window {
                                     }
 
                                     if root.summons-trigger-type == 0: HorizontalLayout {
-                                        spacing: Theme.spacing;
+                                        spacing: Theme.space-md;
                                         VerticalLayout {
                                             spacing: 6px;
                                             horizontal-stretch: 2;
@@ -1206,6 +587,7 @@ export component ArbiterForge inherits Window {
                                     trigger-type: root.summons-trigger-type;
                                     baton-required: step.baton-required;
                                     is-active: step.is-active;
+                                    is-running: root.engine-running && step.is-active;
                                     is-editing: step.id == root.selected-step-id;
                                     is-last: idx == root.decree-steps.length - 1;
                                     arg-a: step.arg-a;
@@ -1293,25 +675,65 @@ export component ArbiterForge inherits Window {
                         }
                     }
                 }
-                if root.active-page != 0: VerticalLayout {
-                    alignment: center;
-                    spacing: 16px;
-                    Text {
-                        text: "MODULE OFFLINE";
-                        color: Theme.text-main;
-                        font-size: Theme.font-large;
-                        font-weight: 700;
-                        horizontal-alignment: center;
-                    }
 
-                    Text {
-                        text: "Arbiter Conservatory and Signet modules are under development.";
-                        color: Theme.text-muted;
-                        font-size: Theme.font-norm;
-                        horizontal-alignment: center;
+                if root.active-page == 1: ConservatoryPage {
+                    wards <=> root.ward-list;
+                    add-ward => {
+                        root.add-ward()
+                    }
+                    remove-ward(id) => {
+                        root.remove-ward(id)
+                    }
+                    set-layer(id, l) => {
+                        root.set-ward-layer(id, l)
+                    }
+                    update-path(id, p) => {
+                        root.update-ward-path(id, p)
+                    }
+                    update-pattern(id, p) => {
+                        root.update-ward-pattern(id, p)
+                    }
+                    toggle-recursive(id) => {
+                        root.toggle-ward-recursive(id)
+                    }
+                    pick-folder => {
+                        root.pick-folder()
+                    }
+                    save => {
+                        root.save-wards()
+                    }
+                }
+
+                if root.active-page == 2: SignetPage {
+                    trusted-paths <=> root.trusted-paths;
+                    baton-allowed <=> root.baton-allowed;
+                    add-trusted-path => {
+                        root.add-trusted-path()
+                    }
+                    remove-trusted-path(idx) => {
+                        root.remove-trusted-path(idx)
+                    }
+                    update-trusted-path(idx, p) => {
+                        root.update-trusted-path(idx, p)
+                    }
+                    add-baton => {
+                        root.add-baton()
+                    }
+                    update-baton(idx, b) => {
+                        root.update-baton(idx, b)
+                    }
+                    remove-baton(idx) => {
+                        root.remove-baton(idx)
+                    }
+                    pick-folder => {
+                        root.pick-folder()
+                    }
+                    save => {
+                        root.save-signet()
                     }
                 }
             }
+
 
             // ── Context Ribbon Header (Toggle) ────────────────────────────────
             if root.active-page == 0: Rectangle {
@@ -1360,6 +782,10 @@ export component ArbiterForge inherits Window {
             if root.active-page == 0: Rectangle {
                 height: root.context-expanded ? 200px : 0px;
                 background: Theme.bg-sidebar;
+                opacity: 0.95;
+                drop-shadow-blur: root.context-expanded ? 24px : 0px;
+                drop-shadow-offset-y: 12px;
+                drop-shadow-color: Theme.is-dark ? #00000080 : #00000020;
                 border-width: root.context-expanded ? 1px : 0px;
                 border-color: Theme.border;
                 clip: true;
@@ -1548,7 +974,7 @@ export component ArbiterForge inherits Window {
                                     text: entry.time;
                                     color: Theme.text-muted;
                                     font-size: Theme.font-tiny;
-                                    font-family: "Geist Mono";
+                                    font-family: "Consolas";
                                     vertical-alignment: center;
                                 }
 
@@ -1557,7 +983,7 @@ export component ArbiterForge inherits Window {
                                     color: entry.tag-color;
                                     font-size: Theme.font-tiny;
                                     font-weight: 700;
-                                    font-family: "Geist Mono";
+                                    font-family: "Consolas";
                                     vertical-alignment: center;
                                     width: 60px;
                                 }
@@ -1569,7 +995,7 @@ export component ArbiterForge inherits Window {
                                     vertical-alignment: center;
                                     height: 16px;
                                     horizontal-stretch: 1;
-                                    font-family: "Geist Mono";
+                                    font-family: "Consolas";
                                 }
                             }
                         }

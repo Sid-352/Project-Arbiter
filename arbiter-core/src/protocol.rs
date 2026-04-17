@@ -22,6 +22,10 @@ pub const PIPE_COMMAND: &str = r"\\.\pipe\arbiter_command";
 pub enum ForgeCommand {
     /// Save a new or updated ordinance definition.
     SaveDecree(crate::ledger::OrdinanceDef),
+    /// Save updated Ward configurations.
+    SaveWards(Vec<crate::ordinance::WardConfig>),
+    /// Save updated Signet configuration.
+    SaveSignet(crate::signet::ArbiterConfig),
     /// Request a reload of all ward configurations.
     ReloadWards,
     /// Manually trigger a specific ordinance.

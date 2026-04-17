@@ -1,0 +1,283 @@
+import { Theme } from "theme.slint";
+import { ScrollView } from "std-widgets.slint";
+
+export component EnvChip inherits Rectangle {
+    in property <string> token;
+    callback clicked(string);
+    height: 20px;
+    border-radius: 4px;
+    background: ta.has-hover ? #f59e0b25 : transparent;
+    border-width: 1px;
+    border-color: ta.has-hover ? Theme.warning : #f59e0b20;
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked(root.token);
+        }
+    }
+
+    HorizontalLayout {
+        padding-left: 6px;
+        padding-right: 6px;
+        Text {
+            text: root.token;
+            color: ta.has-hover ? Theme.text-main : Theme.warning;
+            font-size: Theme.font-tiny;
+            font-family: "Consolas";
+            vertical-alignment: center;
+            animate color { duration: Theme.dur-fast; }
+        }
+    }
+}
+
+export component SunIcon inherits Path {
+    in property <color> icon-color: Theme.text-secondary;
+    width: 16px;
+    height: 16px;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    stroke: root.icon-color;
+    stroke-width: 2px;
+    fill: transparent;
+    commands: "M 12 8 a 4 4 0 1 0 0.001 0 z M 12 2 v 2 M 12 20 v 2 M 4.93 4.93 l 1.41 1.41 M 17.66 17.66 l 1.41 1.41 M 2 12 h 2 M 20 12 h 2 M 6.34 17.66 l -1.41 1.41 M 19.07 4.93 l -1.41 1.41";
+}
+
+export component MoonIcon inherits Path {
+    in property <color> icon-color: Theme.text-secondary;
+    width: 16px;
+    height: 16px;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    stroke: transparent;
+    stroke-width: 0px;
+    fill: root.icon-color;
+    commands: "M 21 12.79 A 9 9 0 1 1 11.21 3 A 7 7 0 0 0 21 12.79 z";
+}
+
+export component SidebarItem inherits Rectangle {
+    in property <bool> active: false;
+    in property <string> label;
+    in property <int> decree-status: 0;
+    in property <string> icon-commands;
+    in property <bool> icon-filled: false;
+    in property <bool> deletable: false;
+    callback clicked;
+    callback remove;
+    height: Theme.item-height;
+    border-radius: 6px;
+    background: root.active ? Theme.accent-subtle : (root.is-hovered ? (Theme.is-dark ? #ffffff08 : #00000008) : transparent);
+    animate background { duration: Theme.dur-fast; }
+    property <bool> is-hovered: ta.has-hover || ta-del.has-hover;
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    // Left accent bar for active state
+    if root.active: Rectangle {
+        x: 0;
+        y: (parent.height - 18px) / 2;
+        width: 3px;
+        height: 18px;
+        border-radius: 1.5px;
+        background: Theme.accent;
+        z: 10;
+    }
+
+    HorizontalLayout {
+        padding-left: Theme.space-md;
+        padding-right: Theme.space-sm;
+        spacing: Theme.space-md;
+        if root.icon-commands != "": VerticalLayout {
+            alignment: center;
+            Path {
+                width: 16px;
+                height: 16px;
+                viewbox-width: 24;
+                viewbox-height: 24;
+                stroke: root.icon-filled ? transparent : (root.active ? Theme.accent : Theme.text-secondary);
+                stroke-width: root.icon-filled ? 0px : 2px;
+                fill: root.icon-filled ? (root.active ? Theme.accent : Theme.text-secondary) : transparent;
+                commands: root.icon-commands;
+            }
+        }
+        Text {
+            text: root.label;
+            color: root.active ? Theme.text-main : (root.is-hovered ? Theme.text-main : Theme.text-secondary);
+            font-size: Theme.font-norm;
+            font-weight: root.active ? 600 : 400;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+            overflow: elide;
+        }
+
+        if root.decree-status != 0: VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 6px;
+                height: 6px;
+                border-radius: 3px;
+                background: root.decree-status == 1 ? Theme.success : root.decree-status == 2 ? Theme.warning : Theme.critical;
+            }
+        }
+
+        VerticalLayout {
+            width: root.deletable ? 22px : 0px;
+            visible: root.deletable;
+            alignment: center;
+            ta-del := TouchArea {
+                width: 22px;
+                height: 22px;
+                opacity: root.is-hovered ? 1.0 : 0.0;
+                animate opacity { duration: Theme.dur-fast; }
+                clicked => {
+                    root.remove();
+                }
+                Rectangle {
+                    border-radius: 4px;
+                    background: ta-del.has-hover ? #ef444420 : transparent;
+                    Path {
+                        width: 10px;
+                        height: 10px;
+                        x: 6px;
+                        y: 6px;
+                        stroke: ta-del.has-hover ? Theme.critical : Theme.text-muted;
+                        stroke-width: 1.5px;
+                        commands: "M 0 0 L 10 10 M 10 0 L 0 10";
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component InputPill inherits Rectangle {
+    in-out property <string> value;
+    in property <string> placeholder: "";
+    in property <bool> monospaced: false;
+    callback committed(string);
+    background: Theme.bg-input;
+    border-radius: Theme.radius / 2;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.border-focus : Theme.border;
+    height: Theme.input-height;
+
+    ta := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => {
+            input.focus();
+        }
+    }
+
+    HorizontalLayout {
+        padding-left: Theme.space-md;
+        padding-right: Theme.space-md;
+        input := TextInput {
+            text <=> root.value;
+            color: Theme.text-main;
+            font-size: Theme.font-norm;
+            font-family: root.monospaced ? "Consolas" : "Segoe UI";
+            vertical-alignment: center;
+            single-line: true;
+            accepted => {
+                root.committed(self.text);
+            }
+        }
+
+        if input.text == "" && !input.has-focus: Text {
+            text: root.placeholder;
+            color: Theme.text-muted;
+            font-size: Theme.font-norm;
+            vertical-alignment: center;
+        }
+    }
+
+    FocusScope {
+        focus-lost(reason) => {
+            root.committed(root.value);
+        }
+    }
+}
+
+export component TextEdit inherits Rectangle {
+    in-out property <string> value;
+    in property <string> placeholder: "";
+    in property <bool> monospaced: false;
+    callback edited(string);
+    background: Theme.bg-input;
+    border-radius: Theme.radius / 2;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.border-focus : Theme.border;
+    min-height: 120px;
+
+    ta := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => {
+            input.focus();
+        }
+    }
+
+    VerticalLayout {
+        padding: Theme.space-md;
+        ScrollView {
+            vertical-stretch: 1;
+            viewport-height: input.preferred-height;
+            input := TextInput {
+                text <=> root.value;
+                color: Theme.text-main;
+                font-size: Theme.font-norm;
+                font-family: root.monospaced ? "Consolas" : "Segoe UI";
+                wrap: word-wrap;
+                single-line: false;
+            }
+        }
+
+        if input.text == "" && !input.has-focus: Text {
+            text: root.placeholder;
+            color: Theme.text-muted;
+            font-size: Theme.font-norm;
+        }
+    }
+
+    FocusScope {
+        focus-lost(reason) => {
+            root.edited(root.value);
+        }
+    }
+}
+
+export component ActionButton inherits Rectangle {
+    in property <string> label;
+    in property <color> btn-color: Theme.accent;
+    in property <bool> primary: false;
+    callback clicked;
+    height: Theme.btn-height;
+    border-radius: 6px;
+    background: root.primary ? (ta.has-hover ? root.btn-color.darker(10%) : root.btn-color) : (ta.has-hover ? Theme.accent-subtle : transparent);
+    border-width: root.primary ? 0px : 1px;
+    border-color: Theme.border;
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    HorizontalLayout {
+        padding-left: Theme.space-lg;
+        padding-right: Theme.space-lg;
+        alignment: center;
+        Text {
+            text: root.label;
+            color: root.primary ? #ffffff : (ta.has-hover ? Theme.accent : Theme.text-main);
+            font-size: Theme.font-small;
+            font-weight: 700;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}

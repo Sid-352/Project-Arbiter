@@ -1,0 +1,103 @@
+import { ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { WardEntry } from "../models.slint";
+import { ActionButton, InputPill } from "../widgets.slint";
+
+export component ConservatoryPage inherits Rectangle {
+    in-out property <[WardEntry]> wards: [];
+    callback add-ward;
+    callback remove-ward(string);
+    callback set-layer(string, int);
+    callback update-path(string, string);
+    callback update-pattern(string, string);
+    callback toggle-recursive(string);
+    callback pick-folder() -> string;
+    callback save;
+
+    ScrollView {
+        VerticalLayout {
+            padding: Theme.space-xxxl;
+            spacing: Theme.space-xl;
+            alignment: start;
+
+            HorizontalLayout {
+                Text { text: "CONSERVATORY (WARDS)"; color: Theme.accent; font-weight: 800; font-size: Theme.font-small; vertical-alignment: center; }
+                Rectangle { horizontal-stretch: 1; }
+                ActionButton { label: "COMMIT CHANGES"; primary: true; clicked => { root.save(); } }
+            }
+
+            Text { 
+                text: "Wards are specific directories that Arbiter monitors for spontaneous file system events. Specify a pattern (e.g. *.pdf) to isolate triggers, and assign an analytical layer when content inspection is needed.";
+                color: Theme.text-secondary; font-size: Theme.font-norm; wrap: word-wrap;
+            }
+
+            Rectangle { height: 1px; background: Theme.border; }
+
+            for ward[idx] in root.wards: Rectangle {
+                background: Theme.bg-card; border-radius: Theme.radius-lg; border-width: 1px; border-color: Theme.border;
+                VerticalLayout {
+                    padding: Theme.space-lg;
+                    spacing: Theme.space-md;
+                    HorizontalLayout {
+                        spacing: Theme.space-md;
+                        Text { text: "PATH"; color: Theme.text-muted; font-size: Theme.font-tiny; vertical-alignment: center; font-weight: 800; width: 60px; }
+                        InputPill { horizontal-stretch: 1; value: ward.path; placeholder: "Directory Path..."; monospaced: true; 
+                                    committed(v) => { root.update-path(ward.id, v); } }
+                        ActionButton { label: "BROWSE"; clicked => { 
+                            let picked = root.pick-folder();
+                            if (picked != "") {
+                                root.update-path(ward.id, picked);
+                            }
+                        } }
+                    }
+                    HorizontalLayout {
+                        spacing: Theme.space-md;
+                        Text { text: "PATTERN"; color: Theme.text-muted; font-size: Theme.font-tiny; vertical-alignment: center; font-weight: 800; width: 60px; }
+                        InputPill { width: 140px; value: ward.pattern; placeholder: "*"; monospaced: true; 
+                                    committed(v) => { root.update-pattern(ward.id, v); } }
+                        
+                        HorizontalLayout { width: 17px; padding-left: Theme.space-sm; padding-right: Theme.space-sm; Rectangle { width: 1px; background: Theme.border; } }
+
+                        Text { text: "LAYER"; color: Theme.text-muted; font-size: Theme.font-tiny; vertical-alignment: center; font-weight: 800; }
+                        Rectangle { 
+                            height: Theme.btn-height; border-radius: Theme.radius/2; background: Theme.bg-input; border-width: 1px; border-color: Theme.border;
+                            HorizontalLayout {
+                                padding: 2px;
+                                for l[i] in ["SURFACE", "ANALYTICAL"]: Rectangle {
+                                    border-radius: 4px; background: ward.layer == i ? Theme.bg-card : transparent;
+                                    HorizontalLayout {
+                                        padding-left: Theme.space-md; padding-right: Theme.space-md;
+                                        Text { text: l; color: ward.layer == i ? Theme.text-main : Theme.text-muted; font-size: Theme.font-tiny; font-weight: 800; vertical-alignment: center; }
+                                    }
+                                    TouchArea { clicked => { root.set-layer(ward.id, i); } }
+                                }
+                            }
+                        }
+
+                        Rectangle { horizontal-stretch: 1; }
+
+                        ActionButton { label: ward.recursive ? "Subfolders: YES" : "Subfolders: NO"; clicked => { root.toggle-recursive(ward.id); } }
+                        
+                        HorizontalLayout { width: 17px; padding-left: Theme.space-sm; padding-right: Theme.space-sm; Rectangle { width: 1px; background: Theme.border; } }
+
+                        ta-remove := TouchArea {
+                            width: Theme.btn-height; height: Theme.btn-height;
+                            clicked => { root.remove-ward(ward.id); }
+                            Rectangle {
+                                border-radius: Theme.radius/2; background: ta-remove.has-hover ? #ef444420 : transparent;
+                                Path { width: 12px; height: 12px; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; stroke: ta-remove.has-hover ? Theme.critical : Theme.text-secondary; stroke-width: 2px; commands: "M 0 0 L 12 12 M 12 0 L 0 12"; }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 48px; border-width: 1px; border-color: Theme.border; border-radius: Theme.radius-lg; background: ta-add.has-hover ? Theme.bg-card : transparent;
+                animate background { duration: Theme.dur-fast; }
+                Text { text: "+ Add Ward Configuration"; color: ta-add.has-hover ? Theme.text-main : Theme.text-muted; font-weight: 700; font-size: Theme.font-norm; horizontal-alignment: center; vertical-alignment: center; }
+                ta-add := TouchArea { clicked => { root.add-ward(); } }
+            }
+        }
+    }
+}

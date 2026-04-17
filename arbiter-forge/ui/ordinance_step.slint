@@ -1,0 +1,398 @@
+import { ScrollView } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { InputPill, TextEdit } from "widgets.slint";
+
+export component OrdinanceStepItem inherits Rectangle {
+    in property <string> step-id;
+    in property <string> title;
+    in property <string> subtext;
+    in property <int> step-type;
+    in property <int> trigger-type;
+    in property <bool> baton-required;
+    in property <bool> is-active;
+    in property <bool> is-editing;
+    in property <bool> is-running;
+    in property <bool> is-last;
+    in-out property <string> arg-a;
+    in-out property <string> arg-b;
+    callback edited(string, string, string, string);
+    callback remove();
+    callback selected();
+    background: Theme.bg-card;
+    border-radius: Theme.radius-lg;
+    border-width: 1px;
+    border-color: root.is-editing ? Theme.accent : Theme.border;
+
+    // Smooth transition for editing state
+    animate border-color { duration: Theme.dur-fast; }
+
+    property <color> type-color: 
+        root.step-type == 0 ? Theme.success : root.step-type == 1 ? (root.baton-required ? Theme.critical : Theme.warning) : root.step-type == 2 ? Theme.accent : root.step-type == 3 ? Theme.text-muted : Theme.accent;
+    property <string> type-label: 
+        root.step-type == 0 ? "INSCRIBE" : root.step-type == 1 ? "SHELL" : root.step-type == 2 ? "SOMATIC" : root.step-type == 3 ? "STEADY" : "NAVIGATE";
+
+    property <float> pulse: 0.5 + 0.5 * Math.sin((animation-tick() / 250ms) * 1deg);
+
+    ta-select := TouchArea {
+        width: 100%;
+        height: 100%;
+        mouse-cursor: root.is-editing ? default : pointer;
+        enabled: !root.is-editing;
+        clicked => {
+            root.selected();
+        }
+    }
+
+    if !root.is-last: Rectangle {
+        x: Theme.space-xl + 10px - 1px;
+        y: Theme.space-xl + 20px;
+        width: 2px;
+        height: root.height - Theme.space-md;
+        background: Theme.border;
+
+        if root.is-running: Rectangle {
+            width: 2px;
+            height: 24px;
+            background: Theme.accent;
+            drop-shadow-color: Theme.accent;
+            drop-shadow-blur: 4px;
+            y: (parent.height - 24px) * (0.5 + 0.5 * Math.sin((animation-tick() / 800ms) * 360deg));
+        }
+    }
+    VerticalLayout {
+        padding: Theme.space-xl;
+        spacing: Theme.space-md;
+        HorizontalLayout {
+            spacing: Theme.space-xl;
+
+            VerticalLayout {
+                alignment: center;
+                Rectangle {
+                    width: 12px;
+                    height: 24px;
+                    Text {
+                        text: "⣿";
+                        color: Theme.border;
+                        font-size: 10px;
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+
+            VerticalLayout {
+                width: 20px;
+                alignment: start;
+                Rectangle {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 10px;
+                    background: (root.is-active || root.is-editing) ? Theme.accent : Theme.bg-app;
+                    border-width: 1.5px;
+                    border-color: (root.is-active || root.is-editing) ? Theme.accent : Theme.border;
+                    z: 1;
+
+                    // Pulsing Glow
+                    drop-shadow-blur: (root.is-active || root.is-running) ? 6px + 6px * root.pulse : 0px;
+                    drop-shadow-color: Theme.accent;
+
+                    animate background, border-color { duration: Theme.dur-norm; }
+                }
+            }
+
+            VerticalLayout {
+                spacing: Theme.space-xs;
+                horizontal-stretch: 1;
+                HorizontalLayout {
+                    height: 20px;
+                    spacing: Theme.space-sm;
+                    alignment: start;
+                    Text {
+                        text: root.title;
+                        color: Theme.text-main;
+                        font-size: Theme.font-norm + 1px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            height: 18px;
+                            border-radius: 3px;
+                            background: root.step-type == 0 ? #10b98118 : root.step-type == 1 && root.baton-required ? #f43f5e18 : root.step-type == 1 ? #f59e0b18 : root.step-type == 2 ? Theme.accent-subtle : (Theme.is-dark ? #ffffff0a : #0000000a);
+                            border-width: 1px;
+                            border-color: root.type-color;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                Text {
+                                    text: root.type-label;
+                                    color: root.type-color;
+                                    font-size: Theme.font-tiny;
+                                    font-weight: 800;
+                                    font-family: "Consolas";
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+
+                    if root.baton-required: VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            height: 18px;
+                            border-radius: 3px;
+                            background: #f43f5e18;
+                            border-width: 1px;
+                            border-color: Theme.critical;
+                            HorizontalLayout {
+                                padding-left: 6px;
+                                padding-right: 6px;
+                                Text {
+                                    text: "BATON";
+                                    color: Theme.critical;
+                                    font-size: Theme.font-tiny;
+                                    font-weight: 800;
+                                    font-family: "Consolas";
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !root.is-editing: Text {
+                    text: root.subtext;
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-small + 1px;
+                }
+            }
+
+            if !root.is-editing: VerticalLayout {
+                alignment: center;
+                Path {
+                    width: 12px;
+                    height: 12px;
+                    viewbox-width: 24;
+                    viewbox-height: 24;
+                    stroke: Theme.text-muted;
+                    stroke-width: 2px;
+                    commands: "M 9 18 l 6 -6 l -6 -6";
+                }
+            }
+        }
+
+        if root.is-editing: VerticalLayout {
+            padding-left: 36px;
+            spacing: Theme.space-md;
+
+            VerticalLayout {
+                spacing: Theme.space-sm;
+                Text {
+                    text: "Step Name";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value: root.title;
+                    placeholder: "e.g. Move File";
+                    committed(v) => {
+                        root.edited(root.step-id, v, root.arg-a, root.arg-b);
+                    }
+                }
+            }
+
+            if root.step-type == 0: VerticalLayout {
+                spacing: Theme.space-sm;
+                HorizontalLayout {
+                    spacing: Theme.space-sm;
+                    Text {
+                        text: "Inscribe Mode";
+                        color: Theme.text-secondary;
+                        font-size: Theme.font-tiny + 1px;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+
+                    Rectangle {
+                        width: 80px;
+                        height: 24px;
+                        background: Theme.bg-input;
+                        border-radius: 4px;
+                        ta-inc := TouchArea {
+                            clicked => {
+                                root.edited(root.step-id, root.title, root.arg-a, root.arg-b);
+                            }
+                        }
+
+                        Text {
+                            text: root.subtext == "Inscribe: Copy Mode" ? "COPY" : "MOVE";
+                            color: Theme.accent;
+                            font-size: Theme.font-tiny;
+                            font-weight: 800;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                Text {
+                    text: "Source Path";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-a;
+                    placeholder: "e.g. C:/Source/data.bin";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+
+                Text {
+                    text: "Target Destination";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-b;
+                    placeholder: "e.g. D:/Output/";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, root.arg-a, v);
+                    }
+                }
+            }
+            if root.step-type == 1: VerticalLayout {
+                spacing: Theme.space-sm;
+                Text {
+                    text: "Executable";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-a;
+                    placeholder: "e.g. ffmpeg.exe";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+
+                Text {
+                    text: "Arguments";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-b;
+                    placeholder: "e.g. -i ${env.file_path} -o output.mp4";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, root.arg-a, v);
+                    }
+                }
+            }
+            if root.step-type == 2: VerticalLayout {
+                spacing: Theme.space-sm;
+                Text {
+                    text: "Text to Emit";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                TextEdit {
+                    value <=> root.arg-a;
+                    placeholder: "Enter characters...";
+                    edited(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+            }
+            if root.step-type == 3: VerticalLayout {
+                spacing: Theme.space-sm;
+                Text {
+                    text: "Internal state stabilization delay (ms).";
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    font-italic: true;
+                }
+
+                InputPill {
+                    value <=> root.arg-a;
+                    placeholder: "1000";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+            }
+            if root.step-type == 4: VerticalLayout {
+                spacing: Theme.space-sm;
+                Text {
+                    text: "Navigation Key Sequence";
+                    color: Theme.text-secondary;
+                    font-size: Theme.font-tiny + 1px;
+                    font-weight: 700;
+                }
+
+                InputPill {
+                    value <=> root.arg-a;
+                    placeholder: "e.g. ctrl+alt+delete or win+s";
+                    monospaced: true;
+                    committed(v) => {
+                        root.edited(root.step-id, root.title, v, root.arg-b);
+                    }
+                }
+
+                Text {
+                    text: "Use '+' for combinations. Example: win+r to open Run dialog. Supported: ctrl, alt, shift, win, enter, esc, tab, space, up, down, left, right.";
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    font-italic: true;
+                    wrap: word-wrap;
+                }
+            }
+
+            HorizontalLayout {
+                alignment: end;
+                Rectangle {
+                    width: 110px;
+                    height: Theme.btn-height;
+                    border-radius: 6px;
+                    background: ta-rem.has-hover ? Theme.critical : transparent;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    ta-rem := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.remove();
+                        }
+                    }
+
+                    Text {
+                        text: "REMOVE STEP";
+                        color: ta-rem.has-hover ? #ffffff : Theme.critical;
+                        font-size: Theme.font-tiny + 1px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

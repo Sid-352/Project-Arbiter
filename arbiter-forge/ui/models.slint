@@ -1,0 +1,33 @@
+export struct LogEntry {
+    time: string,
+    tag: string,
+    tag-color: color,
+    msg: string,
+    ordinance-id: string,
+}
+
+export struct DecreeEntry {
+    id: string,
+    label: string,
+    status: int,
+}
+
+export struct WardEntry {
+    id: string,
+    path: string,
+    pattern: string,
+    recursive: bool,
+    layer: int,
+}
+
+export struct DecreeStep {
+    id: string,
+    title: string,
+    subtext: string,
+    step-type: int,
+    baton-required: bool,
+    is-active: bool,
+    is-running: bool,
+    arg-a: string,
+    arg-b: string,
+}
