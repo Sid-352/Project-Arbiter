@@ -316,26 +316,6 @@ export component ArbiterForge inherits Window {
                                     root.active-decree-renamed(root.active-decree-id, input-label.text);
                                 }
                             }
-
-                            VerticalLayout {
-                                alignment: center;
-                                Rectangle {
-                                    width: 1px;
-                                    height: 16px;
-                                    background: Theme.border;
-                                }
-                            }
-
-                            VerticalLayout {
-                                alignment: center;
-                                Text {
-                                    text: root.active-decree-status == 0 ? "DRAFT" : "STABLE";
-                                    color: Theme.accent;
-                                    font-size: Theme.font-tiny + 1px;
-                                    font-weight: 800;
-                                    vertical-alignment: center;
-                                }
-                            }
                         }
                     }
 
@@ -386,6 +366,7 @@ export component ArbiterForge inherits Window {
                                 commands: "M 14 2 H 6 a 2 2 0 0 0 -2 2 v 16 a 2 2 0 0 0 2 2 h 12 a 2 2 0 0 0 2 -2 V 8 z M 14 2 v 6 h 6 M 12 18 v -6 M 9 15 h 6";
                             }
                         }
+
                         Text {
                             text: "No Decree Selected";
                             color: Theme.text-secondary;
@@ -393,6 +374,7 @@ export component ArbiterForge inherits Window {
                             font-weight: 700;
                             horizontal-alignment: center;
                         }
+
                         Text {
                             text: "Select an existing decree from the sidebar,\nor create a new one with the + button.";
                             color: Theme.text-muted;
@@ -405,6 +387,14 @@ export component ArbiterForge inherits Window {
 
                 // ── Editor: decree is active
                 if root.active-page == 0 && root.active-decree-id != "": ScrollView {
+                    // Background deselect — clicking anywhere outside a step clears selection
+                    TouchArea {
+                        width: 100%;
+                        height: 100%;
+                        clicked => {
+                            root.selected-step-id = "";
+                        }
+                    }
                     VerticalLayout {
                         padding: 40px;
                         spacing: 40px;
@@ -413,11 +403,10 @@ export component ArbiterForge inherits Window {
                         VerticalLayout {
                             spacing: 16px;
                             Text {
-                                text: "SUMMONS CONDITION";
-                                color: Theme.accent;
+                                text: "Trigger";
+                                color: Theme.text-secondary;
                                 font-size: Theme.font-small;
-                                font-weight: 800;
-                                letter-spacing: 0.5px;
+                                font-weight: 600;
                             }
 
                             Rectangle {
@@ -439,9 +428,9 @@ export component ArbiterForge inherits Window {
                                                 horizontal-stretch: 1;
                                                 border-radius: 4px;
                                                 background: root.summons-trigger-type == i ? Theme.bg-card : transparent;
-                                    border-width: 1.5px;
-                                    border-color: root.summons-trigger-type == i ? Theme.accent : transparent;
-                                    animate border-color { duration: Theme.dur-fast; }
+                                                border-width: 1.5px;
+                                                border-color: root.summons-trigger-type == i ? Theme.accent : transparent;
+                                                animate border-color { duration: Theme.dur-fast; }
                                                 Text {
                                                     text: t;
                                                     color: root.summons-trigger-type == i ? Theme.text-main : Theme.text-muted;
@@ -515,10 +504,10 @@ export component ArbiterForge inherits Window {
                                                 }
 
                                                 Text {
-                                                    text: root.summons-ward-recursive ? "RECURSIVE" : "SHALLOW";
+                                                    text: root.summons-ward-recursive ? "Recursive" : "Shallow";
                                                     color: root.summons-ward-recursive ? Theme.accent : Theme.text-muted;
-                                                    font-size: Theme.font-tiny;
-                                                    font-weight: 800;
+                                                    font-size: Theme.font-tiny + 1px;
+                                                    font-weight: 600;
                                                     horizontal-alignment: center;
                                                     vertical-alignment: center;
                                                 }
@@ -531,7 +520,7 @@ export component ArbiterForge inherits Window {
                                             spacing: 6px;
                                             horizontal-stretch: 1;
                                             Text {
-                                                text: "Combo";
+                                                text: "Key Combination";
                                                 color: Theme.text-muted;
                                                 font-size: Theme.font-tiny + 1px;
                                             }
@@ -561,82 +550,85 @@ export component ArbiterForge inherits Window {
                                             }
                                         }
                                     }
-                                }
-                            }
-                        }
 
-                        VerticalLayout {
-                            spacing: 16px;
-                            Text {
-                                text: "PRESENCE CONFIGURATION";
-                                color: Theme.accent;
-                                font-size: Theme.font-small;
-                                font-weight: 800;
-                                letter-spacing: 0.5px;
-                            }
-
-                            Rectangle {
-                                background: Theme.bg-card;
-                                border-radius: Theme.radius;
-                                border-width: 1px;
-                                border-color: Theme.border;
-                                HorizontalLayout {
-                                    padding: 20px;
-                                    spacing: 20px;
-                                    
-                                    VerticalLayout {
-                                        spacing: 6px;
-                                        horizontal-stretch: 1;
-                                        Text {
-                                            text: "Ignore Mouse";
-                                            color: Theme.text-muted;
-                                            font-size: Theme.font-tiny + 1px;
+                                    HorizontalLayout {
+                                        spacing: 20px;
+                                        VerticalLayout {
+                                            alignment: center;
+                                            Text {
+                                                text: "Yield on mouse";
+                                                color: Theme.text-muted;
+                                                font-size: Theme.font-tiny + 1px;
+                                            }
                                         }
+
                                         Rectangle {
-                                            height: Theme.input-height;
-                                            background: Theme.bg-input;
-                                            border-radius: 6px;
+                                            width: 56px;
+                                            height: 24px;
+                                            border-radius: 12px;
+                                            background: root.presence-ignore-mouse ? Theme.accent : Theme.bg-input;
+                                            animate background { duration: Theme.dur-fast; }
                                             TouchArea {
                                                 clicked => {
                                                     root.presence-ignore-mouse = !root.presence-ignore-mouse;
                                                 }
                                             }
-                                            Text {
-                                                text: root.presence-ignore-mouse ? "IGNORE" : "ABORT ON MOVE";
-                                                color: root.presence-ignore-mouse ? Theme.accent : Theme.text-muted;
-                                                font-size: Theme.font-tiny;
-                                                font-weight: 800;
-                                                horizontal-alignment: center;
-                                                vertical-alignment: center;
+
+                                            Rectangle {
+                                                x: root.presence-ignore-mouse ? parent.width - self.width - 3px : 3px;
+                                                y: 3px;
+                                                width: 18px;
+                                                height: 18px;
+                                                border-radius: 9px;
+                                                background: Theme.text-main;
+                                                animate x {
+                                                    duration: Theme.dur-fast;
+                                                    easing: ease-in-out;
+                                                }
                                             }
                                         }
-                                    }
 
-                                    VerticalLayout {
-                                        spacing: 6px;
-                                        horizontal-stretch: 1;
-                                        Text {
-                                            text: "Ignore Keyboard";
-                                            color: Theme.text-muted;
-                                            font-size: Theme.font-tiny + 1px;
+                                        VerticalLayout {
+                                            width: 20px;
                                         }
+
+                                        VerticalLayout {
+                                            alignment: center;
+                                            Text {
+                                                text: "Yield on key";
+                                                color: Theme.text-muted;
+                                                font-size: Theme.font-tiny + 1px;
+                                            }
+                                        }
+
                                         Rectangle {
-                                            height: Theme.input-height;
-                                            background: Theme.bg-input;
-                                            border-radius: 6px;
+                                            width: 56px;
+                                            height: 24px;
+                                            border-radius: 12px;
+                                            background: root.presence-ignore-keyboard ? Theme.accent : Theme.bg-input;
+                                            animate background { duration: Theme.dur-fast; }
                                             TouchArea {
                                                 clicked => {
                                                     root.presence-ignore-keyboard = !root.presence-ignore-keyboard;
                                                 }
                                             }
-                                            Text {
-                                                text: root.presence-ignore-keyboard ? "IGNORE" : "ABORT ON TYPE";
-                                                color: root.presence-ignore-keyboard ? Theme.accent : Theme.text-muted;
-                                                font-size: Theme.font-tiny;
-                                                font-weight: 800;
-                                                horizontal-alignment: center;
-                                                vertical-alignment: center;
+
+                                            Rectangle {
+                                                x: root.presence-ignore-keyboard ? parent.width - self.width - 3px : 3px;
+                                                y: 3px;
+                                                width: 18px;
+                                                height: 18px;
+                                                border-radius: 9px;
+                                                background: Theme.text-main;
+                                                animate x {
+                                                    duration: Theme.dur-fast;
+                                                    easing: ease-in-out;
+                                                }
                                             }
+                                        }
+
+                                        Rectangle {
+                                            horizontal-stretch: 1;
                                         }
                                     }
                                 }
@@ -647,11 +639,10 @@ export component ArbiterForge inherits Window {
                             spacing: 16px;
                             HorizontalLayout {
                                 Text {
-                                    text: "DECREE SEQUENCE";
-                                    color: Theme.accent;
+                                    text: "Sequence";
+                                    color: Theme.text-secondary;
                                     font-size: Theme.font-small;
-                                    font-weight: 800;
-                                    letter-spacing: 0.5px;
+                                    font-weight: 600;
                                 }
 
                                 Rectangle {
@@ -700,22 +691,15 @@ export component ArbiterForge inherits Window {
                             }
 
                             VerticalLayout {
-                                spacing: 12px;
+                                spacing: 8px;
                                 padding-top: 12px;
-                                Text {
-                                    text: "APPEND ACTION";
-                                    color: Theme.text-muted;
-                                    font-size: Theme.font-tiny + 1px;
-                                    font-weight: 800;
-                                    horizontal-alignment: center;
-                                }
 
                                 HorizontalLayout {
-                                    spacing: 12px;
+                                    spacing: 8px;
                                     height: Theme.input-height;
                                     ActionButton {
                                         horizontal-stretch: 1;
-                                        label: "INSCRIBE";
+                                        label: "Move / Copy";
                                         clicked => {
                                             root.append-step(0);
                                         }
@@ -723,7 +707,7 @@ export component ArbiterForge inherits Window {
 
                                     ActionButton {
                                         horizontal-stretch: 1;
-                                        label: "SHELL";
+                                        label: "Script";
                                         clicked => {
                                             root.append-step(1);
                                         }
@@ -731,7 +715,7 @@ export component ArbiterForge inherits Window {
 
                                     ActionButton {
                                         horizontal-stretch: 1;
-                                        label: "SYNTHETIC";
+                                        label: "Type text";
                                         clicked => {
                                             root.append-step(2);
                                         }
@@ -739,7 +723,7 @@ export component ArbiterForge inherits Window {
 
                                     ActionButton {
                                         horizontal-stretch: 1;
-                                        label: "STEADY";
+                                        label: "Wait";
                                         clicked => {
                                             root.append-step(3);
                                         }
@@ -747,7 +731,7 @@ export component ArbiterForge inherits Window {
 
                                     ActionButton {
                                         horizontal-stretch: 1;
-                                        label: "NAVIGATE";
+                                        label: "Keypress";
                                         clicked => {
                                             root.append-step(4);
                                         }
@@ -816,7 +800,6 @@ export component ArbiterForge inherits Window {
                 }
             }
 
-
             // ── Context Ribbon Header (Toggle) ────────────────────────────────
             if root.active-page == 0: Rectangle {
                 height: Theme.input-height;
@@ -836,9 +819,11 @@ export component ArbiterForge inherits Window {
                     padding-right: 20px;
                     spacing: 12px;
                     alignment: start;
+                    vertical-stretch: 1;
 
                     VerticalLayout {
                         alignment: center;
+                        height: Theme.input-height;
                         Path {
                             width: 12px;
                             height: 12px;
@@ -851,10 +836,10 @@ export component ArbiterForge inherits Window {
                     }
 
                     Text {
-                        text: "CONTEXT VARIABLES (CLICK TO COPY)";
-                        color: Theme.accent;
-                        font-size: Theme.font-tiny;
-                        font-weight: 800;
+                        text: "Context variables [Click to copy]";
+                        color: Theme.text-secondary;
+                        font-size: Theme.font-tiny + 1px;
+                        font-weight: 600;
                         vertical-alignment: center;
                     }
                 }
@@ -889,10 +874,10 @@ export component ArbiterForge inherits Window {
                         spacing: 8px;
                         alignment: start;
                         Text {
-                            text: "ARTIFACT";
+                            text: "Artifact";
                             color: Theme.text-muted;
-                            font-size: 8px;
-                            font-weight: 800;
+                            font-size: Theme.font-tiny;
+                            font-weight: 700;
                         }
 
                         for t in [
@@ -920,10 +905,10 @@ export component ArbiterForge inherits Window {
                         spacing: 8px;
                         alignment: start;
                         Text {
-                            text: "TEMPORAL";
+                            text: "Temporal";
                             color: Theme.text-muted;
-                            font-size: 8px;
-                            font-weight: 800;
+                            font-size: Theme.font-tiny;
+                            font-weight: 700;
                         }
 
                         for t in [
@@ -951,10 +936,10 @@ export component ArbiterForge inherits Window {
                         spacing: 8px;
                         alignment: start;
                         Text {
-                            text: "CONTENT";
+                            text: "Content";
                             color: Theme.text-muted;
-                            font-size: 8px;
-                            font-weight: 800;
+                            font-size: Theme.font-tiny;
+                            font-weight: 700;
                         }
 
                         for t in [
@@ -981,10 +966,10 @@ export component ArbiterForge inherits Window {
                         spacing: 8px;
                         alignment: start;
                         Text {
-                            text: "SIGNALS";
+                            text: "Signals";
                             color: Theme.text-muted;
-                            font-size: 8px;
-                            font-weight: 800;
+                            font-size: Theme.font-tiny;
+                            font-weight: 700;
                         }
 
                         for t in ["${env.process_name}", "${env.process_pid}", "${env.hotkey_combo}"]: EnvChip {
@@ -1022,23 +1007,15 @@ export component ArbiterForge inherits Window {
                         }
 
                         Text {
-                            text: "DATA STREAM ACTIVE";
+                            text: "Live telemetry";
                             color: Theme.text-secondary;
                             font-size: Theme.font-tiny + 1px;
-                            font-weight: 800;
+                            font-weight: 600;
                             vertical-alignment: center;
                         }
 
                         Rectangle {
                             horizontal-stretch: 1;
-                        }
-
-                        Text {
-                            text: "ENGINE v0.1.0";
-                            color: Theme.text-muted;
-                            font-size: Theme.font-tiny + 1px;
-                            font-weight: 800;
-                            vertical-alignment: center;
                         }
                     }
 
