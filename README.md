@@ -1,6 +1,6 @@
 # Project Arbiter
 
-Arbiter is an industrial-grade, deterministic system orchestration and automation engine. It acts as a silent background service designed to perform complex physical and system-level workflows reliably. It prioritizes absolute security, structural stability, and protection against unbounded behavior.
+Arbiter is a deterministic system orchestration and automation engine. It acts as a silent background service designed to perform complex physical and system-level workflows reliably. It prioritizes security, structural stability, and protection against unbounded behavior. I made it to more or less execute scripts that I don't wish to open the terminal for, to arrange my downloads and to perform other repetitive tasks. It's not made for production use, but it can still perform on there, tho its moreso geared towards personal use.
 
 ## Core Philosophy
 
@@ -52,3 +52,53 @@ Arbiter is mechanically prevented from operating beyond user-defined constraints
 
 * **Scope-bound Presence Sensitivity**: Granular control over human input detection, allowing specific sequences to ignore mouse movement while remaining reactive to keyboard safety yields.
 * **Custom Daily Rolling Logs**: Automated log management using a custom writer that organizes history by date in the `arbiter-data` directory.
+
+## Getting Started
+
+### Prerequisites
+
+* Windows 10 or later
+* Rust 1.70 or later
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Sid-352/Project-Arbiter.git
+cd Project-Arbiter
+```
+
+2. Build both binaries:
+```bash
+cargo build --release --package arbiter-app
+cargo build --release --package arbiter-forge
+```
+
+3. Run the background service (as Administrator):
+```bash
+.\target\release\arbiter.exe
+```
+
+## Usage
+
+### Running as a Background Service
+
+```bash
+cargo run --release --package arbiter-app
+```
+
+### Running the UI
+
+```bash
+cargo run --release --package arbiter-forge
+```
+
+## License
+
+This project is licensed under the MIT License.
+
+## Future Plans
+
+- Conditional logic in the Decree sequence editor (branching steps based on analytical ward data).
+- Signet vault encryption (AES-GCM key derivation is stubbed; full passphrase protection is pending because of startup issues).
+- Boot startup registration via Windows Registry and a UAC elevation manifest for the service binary.

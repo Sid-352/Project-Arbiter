@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    name: Build (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "windows-release"
+
+      - name: Build arbiter-app (background service)
+        run: cargo build --release --package arbiter-app
+
+      - name: Build arbiter-forge (UI)
+        run: cargo build --release --package arbiter-forge
+
+      - name: Create release archive
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          $outDir = "dist\arbiter-$version"
+          New-Item -ItemType Directory -Force -Path $outDir
+
+          Copy-Item "target\release\arbiter.exe"       "$outDir\arbiter.exe"
+          Copy-Item "target\release\arbiter-forge.exe" "$outDir\arbiter-forge.exe"
+          Copy-Item "arbiter-data"                     "$outDir\arbiter-data" -Recurse
+          Copy-Item "README.md"                        "$outDir\README.md"
+
+          Compress-Archive -Path "$outDir\*" -DestinationPath "arbiter-$version-windows-x64.zip"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arbiter-windows-x64
+          path: arbiter-*.zip
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-windows
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: arbiter-windows-x64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Arbiter ${{ github.ref_name }}"
+          body: |
+            Release ${{ github.ref_name }}
+
+            ### Installation
+            1. Download and extract the zip archive.
+            2. Run `arbiter.exe` as Administrator to start the background service.
+            3. Run `arbiter-forge.exe` to open the control interface.
+
+            The background service must be running for the Forge UI to receive telemetry.
+          files: arbiter-*.zip
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
