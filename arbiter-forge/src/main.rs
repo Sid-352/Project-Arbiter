@@ -238,9 +238,11 @@ fn sync_ledger_to_ui() {
     });
 }
 
-fn sync_signet_to_ui() {
+fn sync_signet_to_ui(ui: &ArbiterForge) {
     let signet = arbiter_core::signet::load().unwrap_or_default();
     
+    ui.set_launch_on_startup(signet.launch_on_startup);
+
     TS_PATH_MODEL.with(|m| {
         while m.row_count() > 0 { m.remove(0); }
         for p in &signet.trusted_paths {
@@ -282,7 +284,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Sync with data from disk
     sync_ledger_to_ui();
-    sync_signet_to_ui();
+    sync_signet_to_ui(&ui);
 
     // Seed a startup log
     log_model.push(LogEntry {
@@ -910,32 +912,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ui.on_save_signet({
         let ts_path_model_cb = ts_path_model_cb.clone();
         let baton_model_cb = baton_model_cb.clone();
+        let ui_handle = ui_handle.clone();
         move || {
-            let mut trusted_paths = std::collections::HashSet::new();
-            for i in 0..ts_path_model_cb.row_count() {
-                if let Some(p) = ts_path_model_cb.row_data(i) {
-                    if !p.is_empty() { trusted_paths.insert(p.to_string()); }
+            if let Some(ui) = ui_handle.upgrade() {
+                let mut trusted_paths = std::collections::HashSet::new();
+                for i in 0..ts_path_model_cb.row_count() {
+                    if let Some(p) = ts_path_model_cb.row_data(i) {
+                        if !p.is_empty() { trusted_paths.insert(p.to_string()); }
+                    }
                 }
-            }
-            
-            let mut baton_allowed = std::collections::HashSet::new();
-            for i in 0..baton_model_cb.row_count() {
-                if let Some(b) = baton_model_cb.row_data(i) {
-                    if !b.is_empty() { baton_allowed.insert(b.to_string()); }
+                
+                let mut baton_allowed = std::collections::HashSet::new();
+                for i in 0..baton_model_cb.row_count() {
+                    if let Some(b) = baton_model_cb.row_data(i) {
+                        if !b.is_empty() { baton_allowed.insert(b.to_string()); }
+                    }
                 }
+
+                let cfg = arbiter_core::signet::ArbiterConfig {
+                    trusted_paths,
+                    restricted_paths: std::collections::HashSet::new(),
+                    baton_allowed,
+                    launch_on_startup: ui.get_launch_on_startup(),
+                };
+
+                let cmd = ForgeCommand::SaveSignet(cfg);
+                tokio::spawn(async move {
+                    send_command(&cmd).await;
+                });
+                info!("Forge: Sent SaveSignet command");
             }
-
-            let cfg = arbiter_core::signet::ArbiterConfig {
-                trusted_paths,
-                restricted_paths: std::collections::HashSet::new(),
-                baton_allowed,
-            };
-
-            let cmd = ForgeCommand::SaveSignet(cfg);
-            tokio::spawn(async move {
-                send_command(&cmd).await;
-            });
-            info!("Forge: Sent SaveSignet command");
         }
     });
 

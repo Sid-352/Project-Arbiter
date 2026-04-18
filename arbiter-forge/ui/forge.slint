@@ -55,6 +55,7 @@ export component ArbiterForge inherits Window {
     in-out property <[WardEntry]> ward-list: [];
     in-out property <[string]> trusted-paths: [];
     in-out property <[string]> baton-allowed: [];
+    in-out property <bool> launch-on-startup: false;
 
     callback add-ward;
     callback remove-ward(string);
@@ -773,6 +774,7 @@ export component ArbiterForge inherits Window {
                 if root.active-page == 2: SignetPage {
                     trusted-paths <=> root.trusted-paths;
                     baton-allowed <=> root.baton-allowed;
+                    launch-on-startup <=> root.launch-on-startup;
                     add-trusted-path => {
                         root.add-trusted-path()
                     }

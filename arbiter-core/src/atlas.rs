@@ -284,6 +284,11 @@ impl Atlas {
                             // Re-apply environment to ensure mapping limits are updated.
                             // The runner reads mapped environment at execution, so live updates
                             // take effect immediately on next decree run.
+
+                            // Sync Windows Startup Registry
+                            if let Err(e) = crate::signet::sync_startup_registry(cfg.launch_on_startup) {
+                                error!(%e, "Atlas: failed to sync startup registry");
+                            }
                             
                             let _ = log_broadcast.send(LogEntry {
                                 time: chrono::Utc::now().to_rfc3339(),

@@ -53,7 +53,7 @@ Arbiter is mechanically prevented from operating beyond user-defined constraints
 > [!TIP]
 > **Real-time Telemetry:** View sub-millisecond log streaming from the background service to the UI using Windows Named Pipes.
 
-* **Scope-bound Presence Sensitivity**: Granular control over human input detection, allowing specific sequences to ignore mouse movement while remaining reactive to keyboard safety yields.
+* **Scope-bound Presence Sensitivity**: Fine-grained control over human input detection, allowing specific sequences to ignore mouse movement while remaining reactive to keyboard safety yields.
 * **Custom Daily Rolling Logs**: Automated log management using a custom writer that organizes history by date in the `arbiter-data` directory.
 
 ## Getting Started
@@ -104,4 +104,3 @@ This project is licensed under the MIT License.
 
 - Conditional logic in the Decree sequence editor (branching steps based on analytical ward data).
 - Signet vault encryption (AES-GCM key derivation is stubbed; full passphrase protection is pending because of startup issues).
-- Boot startup registration via Windows Registry and a UAC elevation manifest for the service binary.

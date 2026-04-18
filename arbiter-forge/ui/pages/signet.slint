@@ -5,6 +5,7 @@ import { ActionButton, InputPill } from "../widgets.slint";
 export component SignetPage inherits Rectangle {
     in-out property <[string]> trusted-paths: [];
     in-out property <[string]> baton-allowed: [];
+    in-out property <bool> launch-on-startup: false;
     callback add-trusted-path;
     callback remove-trusted-path(int);
     callback update-trusted-path(int, string);
@@ -21,101 +22,282 @@ export component SignetPage inherits Rectangle {
             alignment: start;
 
             HorizontalLayout {
-                Text { text: "THE SIGNET (AUTHORITY)"; color: Theme.accent; font-weight: 800; font-size: Theme.font-small; vertical-alignment: center; }
-                Rectangle { horizontal-stretch: 1; }
-                ActionButton { label: "COMMIT CHANGES"; primary: true; clicked => { root.save(); } }
+                Text {
+                    text: "THE SIGNET (AUTHORITY)";
+                    color: Theme.accent;
+                    font-weight: 800;
+                    font-size: Theme.font-small;
+                    vertical-alignment: center;
+                }
+
+                Rectangle {
+                    horizontal-stretch: 1;
+                }
+
+                ActionButton {
+                    label: "COMMIT CHANGES";
+                    primary: true;
+                    clicked => {
+                        root.save();
+                    }
+                }
             }
 
-            Text { 
+            Text {
                 text: "The Signet establishes hard boundaries for the engine's operational capabilities. Actions mapped within decrees will instantly fail if they contravene these security parameters.";
-                color: Theme.text-secondary; font-size: Theme.font-norm; wrap: word-wrap;
+                color: Theme.text-secondary;
+                font-size: Theme.font-norm;
+                wrap: word-wrap;
+            }
+
+            // --- System Settings ---
+            VerticalLayout {
+                spacing: Theme.space-lg;
+                Text {
+                    text: "SYSTEM SETTINGS";
+                    color: Theme.text-main;
+                    font-weight: 700;
+                    font-size: Theme.font-small;
+                }
+
+                Rectangle {
+                    height: Theme.btn-height * 1.5;
+                    background: Theme.bg-card;
+                    border-radius: Theme.radius / 2;
+                    border-width: 1px;
+                    border-color: Theme.border;
+
+                    HorizontalLayout {
+                        padding-left: Theme.space-xl;
+                        padding-right: Theme.space-xl;
+                        spacing: Theme.space-lg;
+
+                        Text {
+                            text: "Launch Arbiter on System Startup";
+                            color: Theme.text-main;
+                            vertical-alignment: center;
+                            font-size: Theme.font-norm;
+                        }
+
+                        Rectangle {
+                            horizontal-stretch: 1;
+                        }
+
+                        VerticalLayout {
+                            alignment: center;
+                            // startup toggle
+                            ta-startup := TouchArea {
+                                width: 50px;
+                                height: 24px;
+                                clicked => {
+                                    root.launch-on-startup = !root.launch-on-startup;
+                                }
+
+                                Rectangle {
+                                    width: parent.width;
+                                    height: parent.height;
+                                    border-radius: self.height / 2;
+                                    background: root.launch-on-startup ? Theme.accent : Theme.bg-input;
+                                    border-width: 1px;
+                                    border-color: root.launch-on-startup ? Theme.accent : Theme.border;
+                                    animate background { duration: Theme.dur-fast; }
+
+                                    Rectangle {
+                                        x: root.launch-on-startup ? parent.width - self.width - 4px : 4px;
+                                        y: (parent.height - self.height) / 2;
+                                        width: 16px;
+                                        height: 16px;
+                                        border-radius: self.width / 2;
+                                        background: Theme.text-main;
+                                        animate x { duration: Theme.dur-fast; }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    text: "When enabled, Arbiter will automatically start in the system tray when you log into Windows.";
+                    color: Theme.text-muted;
+                    font-size: Theme.font-tiny;
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
             }
 
             HorizontalLayout {
                 spacing: Theme.space-xxl;
-                
+
                 // Left Column: Trusted Paths
                 VerticalLayout {
                     horizontal-stretch: 1;
                     spacing: Theme.space-lg;
-                    
-                    Text { text: "TRUSTED ROOTS (READ/WRITE)"; color: Theme.text-main; font-weight: 700; font-size: Theme.font-small; }
-                    Text { text: "Directories Arbiter is permitted to perform Inscribe Move/Copy actions to or from."; color: Theme.text-muted; font-size: Theme.font-tiny+1px; wrap: word-wrap; }
-                    
+
+                    Text {
+                        text: "TRUSTED ROOTS (READ/WRITE)";
+                        color: Theme.text-main;
+                        font-weight: 700;
+                        font-size: Theme.font-small;
+                    }
+
+                    Text {
+                        text: "Directories Arbiter is permitted to perform Inscribe Move/Copy actions to or from.";
+                        color: Theme.text-muted;
+                        font-size: Theme.font-tiny + 1px;
+                        wrap: word-wrap;
+                    }
+
                     for p[idx] in root.trusted-paths: HorizontalLayout {
                         spacing: Theme.space-md;
-                        InputPill { 
-                            value: p; 
-                            placeholder: "Directory Path..."; 
-                            monospaced: true; 
-                            horizontal-stretch: 1; 
-                            committed(v) => { root.update-trusted-path(idx, v); } 
+                        InputPill {
+                            value: p;
+                            placeholder: "Directory Path...";
+                            monospaced: true;
+                            horizontal-stretch: 1;
+                            committed(v) => {
+                                root.update-trusted-path(idx, v);
+                            }
                         }
-                        ActionButton { 
-                            label: "BROWSE"; 
-                            clicked => { 
+
+                        ActionButton {
+                            label: "BROWSE";
+                            clicked => {
                                 let picked = root.pick-folder();
                                 if (picked != "") {
                                     root.update-trusted-path(idx, picked);
                                 }
-                            } 
+                            }
                         }
+
                         ta-remove-tp := TouchArea {
-                            width: Theme.btn-height; height: Theme.btn-height;
-                            clicked => { root.remove-trusted-path(idx); }
+                            width: Theme.btn-height;
+                            height: Theme.btn-height;
+                            clicked => {
+                                root.remove-trusted-path(idx);
+                            }
                             Rectangle {
-                                border-radius: Theme.radius/2; background: ta-remove-tp.has-hover ? #ef444420 : transparent;
-                                Path { width: 12px; height: 12px; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; stroke: ta-remove-tp.has-hover ? Theme.critical : Theme.text-secondary; stroke-width: 2px; commands: "M 0 0 L 12 12 M 12 0 L 0 12"; }
+                                border-radius: Theme.radius / 2;
+                                background: ta-remove-tp.has-hover ? #ef444420 : transparent;
+                                Path {
+                                    width: 12px;
+                                    height: 12px;
+                                    x: (parent.width - self.width) / 2;
+                                    y: (parent.height - self.height) / 2;
+                                    stroke: ta-remove-tp.has-hover ? Theme.critical : Theme.text-secondary;
+                                    stroke-width: 2px;
+                                    commands: "M 0 0 L 12 12 M 12 0 L 0 12";
+                                }
                             }
                         }
                     }
 
                     Rectangle {
-                        height: Theme.btn-height; border-width: 1px; border-color: Theme.border; border-radius: Theme.radius/2; background: ta-add-tp.has-hover ? Theme.bg-card : transparent;
+                        height: Theme.btn-height;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        border-radius: Theme.radius / 2;
+                        background: ta-add-tp.has-hover ? Theme.bg-card : transparent;
                         animate background { duration: Theme.dur-fast; }
-                        Text { text: "+ Add Trusted Path"; color: ta-add-tp.has-hover ? Theme.text-main : Theme.text-muted; font-weight: 700; font-size: Theme.font-small; horizontal-alignment: center; vertical-alignment: center; }
-                        ta-add-tp := TouchArea { 
-                            clicked => { 
+                        Text {
+                            text: "+ Add Trusted Path";
+                            color: ta-add-tp.has-hover ? Theme.text-main : Theme.text-muted;
+                            font-weight: 700;
+                            font-size: Theme.font-small;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+
+                        ta-add-tp := TouchArea {
+                            clicked => {
                                 root.add-trusted-path();
-                            } 
+                            }
                         }
                     }
                 }
 
-                Rectangle { width: 1px; background: Theme.border; }
+                Rectangle {
+                    width: 1px;
+                    background: Theme.border;
+                }
 
                 // Right Column: Baton (Shell) Allowlist
                 VerticalLayout {
                     horizontal-stretch: 1;
                     spacing: Theme.space-lg;
-                    
-                    Text { text: "BATON WHITELIST (EXECUTION)"; color: Theme.text-main; font-weight: 700; font-size: Theme.font-small; }
-                    Text { text: "Explicit binaries The Runner is allowed to invoke (e.g. '7z.exe', 'ffmpeg'). Shell nodes attempting unlisted binaries will abort."; color: Theme.text-muted; font-size: Theme.font-tiny+1px; wrap: word-wrap; }
-                    
+
+                    Text {
+                        text: "BATON WHITELIST (EXECUTION)";
+                        color: Theme.text-main;
+                        font-weight: 700;
+                        font-size: Theme.font-small;
+                    }
+
+                    Text {
+                        text: "Explicit binaries The Runner is allowed to invoke (e.g. '7z.exe', 'ffmpeg'). Shell nodes attempting unlisted binaries will abort.";
+                        color: Theme.text-muted;
+                        font-size: Theme.font-tiny + 1px;
+                        wrap: word-wrap;
+                    }
+
                     for b[idx] in root.baton-allowed: HorizontalLayout {
                         spacing: Theme.space-md;
-                        InputPill { 
-                            value: b; 
-                            placeholder: "Program name..."; 
-                            monospaced: true; 
-                            horizontal-stretch: 1; 
-                            committed(v) => { root.update-baton(idx, v); } 
+                        InputPill {
+                            value: b;
+                            placeholder: "Program name...";
+                            monospaced: true;
+                            horizontal-stretch: 1;
+                            committed(v) => {
+                                root.update-baton(idx, v);
+                            }
                         }
+
                         ta-remove-bt := TouchArea {
-                            width: Theme.btn-height; height: Theme.btn-height;
-                            clicked => { root.remove-baton(idx); }
+                            width: Theme.btn-height;
+                            height: Theme.btn-height;
+                            clicked => {
+                                root.remove-baton(idx);
+                            }
                             Rectangle {
-                                border-radius: Theme.radius/2; background: ta-remove-bt.has-hover ? #ef444420 : transparent;
-                                Path { width: 12px; height: 12px; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; stroke: ta-remove-bt.has-hover ? Theme.critical : Theme.text-secondary; stroke-width: 2px; commands: "M 0 0 L 12 12 M 12 0 L 0 12"; }
+                                border-radius: Theme.radius / 2;
+                                background: ta-remove-bt.has-hover ? #ef444420 : transparent;
+                                Path {
+                                    width: 12px;
+                                    height: 12px;
+                                    x: (parent.width - self.width) / 2;
+                                    y: (parent.height - self.height) / 2;
+                                    stroke: ta-remove-bt.has-hover ? Theme.critical : Theme.text-secondary;
+                                    stroke-width: 2px;
+                                    commands: "M 0 0 L 12 12 M 12 0 L 0 12";
+                                }
                             }
                         }
                     }
 
                     Rectangle {
-                        height: Theme.btn-height; border-width: 1px; border-color: Theme.border; border-radius: Theme.radius/2; background: ta-add-bt.has-hover ? Theme.bg-card : transparent;
+                        height: Theme.btn-height;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        border-radius: Theme.radius / 2;
+                        background: ta-add-bt.has-hover ? Theme.bg-card : transparent;
                         animate background { duration: Theme.dur-fast; }
-                        Text { text: "+ Add Allowed Binary"; color: ta-add-bt.has-hover ? Theme.text-main : Theme.text-muted; font-weight: 700; font-size: Theme.font-small; horizontal-alignment: center; vertical-alignment: center; }
-                        ta-add-bt := TouchArea { clicked => { root.add-baton(); } }
+                        Text {
+                            text: "+ Add Allowed Binary";
+                            color: ta-add-bt.has-hover ? Theme.text-main : Theme.text-muted;
+                            font-weight: 700;
+                            font-size: Theme.font-small;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+
+                        ta-add-bt := TouchArea {
+                            clicked => {
+                                root.add-baton();
+                            }
+                        }
                     }
                 }
             }

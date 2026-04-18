@@ -30,6 +30,9 @@ pub struct ArbiterConfig {
     pub restricted_paths: HashSet<String>,
     /// A list of shell commands (binary names) Arbiter is allowed to spawn.
     pub baton_allowed: HashSet<String>,
+    /// Whether the Arbiter service should launch on Windows startup.
+    #[serde(default)]
+    pub launch_on_startup: bool,
 }
 
 lazy_static! {
@@ -155,4 +158,89 @@ pub fn is_path_restricted(config: &ArbiterConfig, path: impl AsRef<Path>) -> boo
         return true;
     }
     false
+}
+
+// ── Windows Startup Registry ────────────────────────────────────────────────
+
+/// Synchronizes the "Launch on Startup" state with the Windows Registry.
+///
+/// Uses `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`.
+pub fn sync_startup_registry(enabled: bool) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use windows::core::HSTRING;
+        use windows::Win32::System::Registry::{
+            RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegSetValueExW, HKEY_CURRENT_USER,
+            REG_SZ, KEY_WRITE, REG_OPTION_NON_VOLATILE,
+        };
+
+        let sub_key = HSTRING::from("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+        let value_name = HSTRING::from("Arbiter");
+
+        let mut hkey = windows::Win32::System::Registry::HKEY::default();
+        let status = unsafe {
+            RegCreateKeyExW(
+                HKEY_CURRENT_USER,
+                &sub_key,
+                0,
+                None,
+                REG_OPTION_NON_VOLATILE,
+                KEY_WRITE,
+                None,
+                &mut hkey,
+                None,
+            )
+        };
+
+        if status.is_err() {
+            return Err(format!("Signet: failed to open registry key: {:?}", status));
+        }
+
+        let result = if enabled {
+            let exe_path = std::env::current_exe()
+                .map_err(|e| format!("Signet: failed to get current exe path: {e}"))?;
+            
+            // On Windows, current_exe might be arbiter-forge.exe if we're in the UI,
+            // but we want arbiter.exe (the background service) to start.
+            // If the current exe is arbiter-forge.exe, we look for arbiter.exe in the same dir.
+            let mut startup_path = exe_path.clone();
+            if let Some(name) = exe_path.file_name() {
+                if name == "arbiter-forge.exe" {
+                    startup_path = exe_path.parent().unwrap().join("arbiter.exe");
+                }
+            }
+
+            let path_str = startup_path.to_string_lossy();
+            let path_hstring = HSTRING::from(path_str.as_ref());
+            
+            info!(path = %path_str, "Signet: registering Arbiter for startup");
+            unsafe {
+                RegSetValueExW(
+                    hkey,
+                    &value_name,
+                    0,
+                    REG_SZ,
+                    Some(std::slice::from_raw_parts(
+                        path_hstring.as_ptr() as *const u8,
+                        (path_hstring.len() * 2) + 2,
+                    )),
+                )
+            }
+        } else {
+            info!("Signet: removing Arbiter from startup registry");
+            unsafe { RegDeleteValueW(hkey, &value_name) }
+        };
+
+        unsafe { let _ = RegCloseKey(hkey); }
+
+        if result.is_err() && result.0 != 2 { // 2 = ERROR_FILE_NOT_FOUND, which is fine when deleting
+            return Err(format!("Signet: registry operation failed: {:?}", result));
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = enabled;
+        Ok(())
+    }
 }
