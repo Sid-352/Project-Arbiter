@@ -12,6 +12,8 @@ Arbiter is a deterministic system orchestration and automation engine. It acts a
 
 ## Architecture
 
+Check out the [Detailed Documentation (Wiki)](https://github.com/Sid-352/Project-Arbiter/wiki) for more information.
+
 Arbiter is split into four strictly walled component crates to isolate scope and enforce native restrictions.
 
 ### 1. arbiter-core

@@ -213,7 +213,7 @@ pub fn spawn(
                         }
 
                         let exec_result = match &action.action_type {
-                            // Somatic actions
+                            // Presence actions
                             ActionType::Click
                             | ActionType::DoubleClick
                             | ActionType::RightClick
