@@ -58,7 +58,7 @@ pub fn spawn_watcher(
                         debug!(%pid, %p_name, "Vigil: Target process discovered");
 
                         let mut context = EnvContext::new();
-                        context.insert("process_name", &process.name().to_string());
+                        context.insert("process_name", process.name());
                         context.insert("process_pid", &pid.to_string());
                         context.insert("trigger_mode", "ProcessAppeared");
                         context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));

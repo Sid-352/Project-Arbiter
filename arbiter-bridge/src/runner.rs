@@ -146,7 +146,7 @@ pub fn spawn(
             let ExecCmd::Run {
                 nodes,
                 context,
-                mut abort_rx,
+                abort_rx,
                 event_tx,
                 trusted_roots,
                 baton_allowed,

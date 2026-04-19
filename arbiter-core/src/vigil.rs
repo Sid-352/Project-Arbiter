@@ -358,15 +358,10 @@ pub mod fs {
             );
 
             // Step 3: release the security descriptor regardless of lookup outcome.
-            // LocalFree was removed in windows 0.58; SECURITY_DESCRIPTORs from
-            // GetNamedSecurityInfoW are allocated on the process heap, so we free
-            // via HeapFree(GetProcessHeap()) which is the correct replacement.
+            // SECURITY_DESCRIPTORs from GetNamedSecurityInfoW must be freed with LocalFree.
             if !sd.0.is_null() {
-                use windows::Win32::System::Memory::{HeapFree, GetProcessHeap, HEAP_NONE};
-                let heap = GetProcessHeap().unwrap_or_default();
-                if !heap.is_invalid() {
-                    let _ = HeapFree(heap, HEAP_NONE, Some(sd.0 as *mut core::ffi::c_void));
-                }
+                use windows::Win32::Foundation::LocalFree;
+                let _ = LocalFree(windows::Win32::Foundation::HLOCAL(sd.0 as _));
             }
 
             if looked_up.is_err() {

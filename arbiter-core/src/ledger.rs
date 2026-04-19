@@ -185,13 +185,12 @@ pub fn apply(
                 }
             }
             SummonsDef::ProcessAppeared { name } => {
-                if !atlas.active_watchers.contains_key(&format!("proc:{name}")) {
+                atlas.active_watchers.entry(format!("proc:{name}")).or_insert_with(|| {
                     info!(%name, "Ledger: spawning new process watcher");
-                    let shutdown_tx = crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
                     // Store the shutdown sender alongside fs watchers using a
                     // "proc:" prefix to avoid key collisions with Ward paths.
-                    atlas.active_watchers.insert(format!("proc:{name}"), shutdown_tx);
-                }
+                    crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone())
+                });
                 Summons::ProcessAppeared {
                     name: name.clone(),
                     context: EnvContext::new(),
