@@ -175,7 +175,11 @@ pub fn spawn(
                 decree_id: decree_id.as_ref().map(|id| id.0.clone()),
             })).await;
 
+            let mut current_idx = 0;
+            let total = nodes.len();
+
             for (idx, node) in nodes.iter().enumerate() {
+                current_idx = idx;
                 // Check for abort signal before every node
                 if abort_rx.try_recv().is_ok() {
                     warn!("Runner: sequence aborted by yield");
@@ -323,11 +327,9 @@ pub fn spawn(
                 let _ = event_tx.send(RunEvent::Progress(idx)).await;
             }
 
-            // Always signal completion regardless of whether the loop ran to
-            // its natural end or was cut short by an abort/yield. Without this,
-            // the Atlas would remain stuck in the Yielded state with no
-            // recovery path until the user manually triggers a Reset.
-            let _ = event_tx.send(RunEvent::Done).await;
+            if current_idx == total - 1 || total == 0 {
+                let _ = event_tx.send(RunEvent::Done).await;
+            }
         }
     });
 }

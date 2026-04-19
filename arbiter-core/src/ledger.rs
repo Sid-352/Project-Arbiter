@@ -4,6 +4,7 @@
 //! to `arbiter-data/ledger.json`.
 
 use std::fs;
+use std::path::Path;
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 use tokio::sync::mpsc;
@@ -94,27 +95,18 @@ fn default_recursive() -> bool {
 
 // ── I/O Operations ───────────────────────────────────────────────────────────
 
+const LEDGER_PATH: &str = "arbiter-data/ledger.json";
+
 /// Load the Arbiter ledger from disk.
 pub fn load() -> Result<ArbiterLedger, String> {
-    let path = crate::signet::data_dir().join("ledger.json");
+    let path = Path::new(LEDGER_PATH);
     if !path.exists() {
         info!("Ledger: file not found, using default");
         return Ok(ArbiterLedger::default());
     }
 
-    let content = fs::read_to_string(&path).map_err(|e| format!("Ledger: read failed: {e}"))?;
+    let content = fs::read_to_string(path).map_err(|e| format!("Ledger: read failed: {e}"))?;
     let ledger: ArbiterLedger = serde_json::from_str(&content).map_err(|e| format!("Ledger: parse failed: {e}"))?;
-
-    // Warn if the on-disk format version doesn't match what this build expects.
-    // This catches silent schema corruption after an upgrade.
-    const CURRENT_VERSION: u32 = 1;
-    if ledger.version != 0 && ledger.version != CURRENT_VERSION {
-        warn!(
-            on_disk = ledger.version,
-            expected = CURRENT_VERSION,
-            "Ledger: schema version mismatch — some fields may be missing or ignored"
-        );
-    }
 
     info!("Ledger: loaded version {}", ledger.version);
     Ok(ledger)
@@ -122,7 +114,7 @@ pub fn load() -> Result<ArbiterLedger, String> {
 
 /// Save the Arbiter ledger to disk atomically.
 pub fn save(ledger: &ArbiterLedger) -> Result<(), String> {
-    let path = crate::signet::data_dir().join("ledger.json");
+    let path = Path::new(LEDGER_PATH);
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Ledger: failed to create data directory: {e}"))?;
     }
@@ -185,12 +177,10 @@ pub fn apply(
                 }
             }
             SummonsDef::ProcessAppeared { name } => {
-                if !atlas.active_watchers.contains_key(&format!("proc:{name}")) {
+                if !atlas.watched_processes.contains(name) {
                     info!(%name, "Ledger: spawning new process watcher");
-                    let shutdown_tx = crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
-                    // Store the shutdown sender alongside fs watchers using a
-                    // "proc:" prefix to avoid key collisions with Ward paths.
-                    atlas.active_watchers.insert(format!("proc:{name}"), shutdown_tx);
+                    crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
+                    atlas.watched_processes.insert(name.clone());
                 }
                 Summons::ProcessAppeared {
                     name: name.clone(),
