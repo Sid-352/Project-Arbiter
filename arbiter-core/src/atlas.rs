@@ -7,7 +7,7 @@
 //!   - Emits `RunEvent`s to connected consumers and handles UI log pushes.
 
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     sync::{Arc, Mutex},
     time::Instant,
 };
@@ -46,9 +46,6 @@ pub struct Atlas {
     pub active_presence_config: PresenceConfig,
     pub active_decree_id: Option<DecreeId>,
     
-    /// Tracks process names that already have an active watcher task.
-    pub watched_processes: HashSet<String>,
-
     /// Tracks active Ward watchers by their Ward ID to allow stopping/restarting them.
     pub active_watchers: HashMap<String, tokio::sync::broadcast::Sender<()>>,
 
@@ -78,7 +75,6 @@ impl Atlas {
             registry: HashMap::new(),
             active_presence_config: PresenceConfig::default(),
             active_decree_id: None,
-            watched_processes: HashSet::new(),
             active_watchers: HashMap::new(),
             compiled_patterns: HashMap::new(),
             active_abort: None,
@@ -141,6 +137,21 @@ impl Atlas {
                 // ── Process Manual Reset ──
                 Some(_) = reset_rx.recv() => {
                     match self.state {
+                        EngineState::Executing => {
+                            info!("Atlas: reset signal received, aborting active sequence");
+                            if let Some(tx) = self.active_abort.take() {
+                                let _ = tx.send(());
+                            }
+                            self.state = EngineState::Idle;
+                            self.active_decree_id = None;
+                            let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
+                                tag: "ATLAS".into(),
+                                message: "Active sequence aborted by manual reset.".into(),
+                                is_error: false,
+                                decree_id: None,
+                            });
+                        }
                         EngineState::Faulted => {
                             info!("Atlas: reset signal received, clearing Faulted state");
                             self.state = EngineState::Idle;
@@ -253,12 +264,16 @@ impl Atlas {
                                     }
                                 }
                                 crate::ledger::SummonsDef::ProcessAppeared { name } => {
-                                    if !self.watched_processes.contains(name) {
-                                        info!(%name, "Atlas: spawning new process watcher");
-                                        crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
-                                        self.watched_processes.insert(name.clone());
-                                    } else {
-                                        debug!(%name, "Atlas: process watcher already active, skipping spawn");
+                                    let proc_key = format!("proc:{}", name);
+                                    match self.active_watchers.entry(proc_key) {
+                                        std::collections::hash_map::Entry::Vacant(e) => {
+                                            info!(%name, "Atlas: spawning new process watcher");
+                                            let stop_tx = crate::vigil::sys::spawn_watcher(name.clone(), vigil_tx.clone());
+                                            e.insert(stop_tx);
+                                        }
+                                        std::collections::hash_map::Entry::Occupied(_) => {
+                                            debug!(%name, "Atlas: process watcher already active, skipping spawn");
+                                        }
                                     }
                                     Summons::ProcessAppeared {
                                         name: name.clone(),
@@ -492,9 +507,18 @@ impl Atlas {
         if let Some(p) = context.variables.get("file_path") {
             let component_count = p.split(['/', '\\']).count();
             if component_count > 20 {
-                error!(%p, "Atlas: MAX_RECURSION_DEPTH exceeded, aborting sequence to prevent path explosion");
+                let msg = format!("MAX_RECURSION_DEPTH exceeded ({} > 20) for path '{}'. Aborting to prevent path explosion.", component_count, p);
+                error!(%p, "Atlas: {}", msg);
+                let _ = log_broadcast.send(LogEntry {
+                    time: chrono::Utc::now().to_rfc3339(),
+                    tag: "ATLAS".into(),
+                    message: msg,
+                    is_error: true,
+                    decree_id: self.active_decree_id.as_ref().map(|id| id.0.clone()),
+                });
                 self.state = EngineState::Idle;
                 self.active_decree_id = None;
+                self.active_abort = None;
                 return;
             }
         }
@@ -510,7 +534,16 @@ impl Atlas {
 
         if let Err(e) = run_tx.send(exec_data).await {
             error!(%e, "Atlas: failed to dispatch to Runner");
+            let _ = log_broadcast.send(LogEntry {
+                time: chrono::Utc::now().to_rfc3339(),
+                tag: "ATLAS".into(),
+                message: format!("Failed to dispatch sequence to Runner: {}", e),
+                is_error: true,
+                decree_id: self.active_decree_id.as_ref().map(|id| id.0.clone()),
+            });
             self.state = EngineState::Faulted;
+            self.active_decree_id = None;
+            self.active_abort = None;
         }
     }
 
