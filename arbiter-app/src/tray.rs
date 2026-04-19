@@ -39,26 +39,21 @@ pub enum TrayAppEvent {
 ///
 /// The returned `TrayIcon` must be kept alive for the icon to remain visible.
 pub fn build_tray() -> Result<(TrayIcon, MenuItem), Box<dyn std::error::Error>> {
-    // Attempt to load the real icon.ico from the data directory
-    let mut icon_path = std::path::Path::new("arbiter-data")
-        .join("icon.ico");
+    // Embed the icon.ico from the data directory into the executable binary.
+    // This ensures that the tray icon is *always* available, regardless of 
+    // the working directory (e.g. when launched via Windows Startup registry).
+    let icon_bytes = include_bytes!("../../arbiter-data/icon.ico");
 
-    // Fallback for dev environment running from inside arbiter-app/
-    if !icon_path.exists() {
-        icon_path = std::path::Path::new("..").join("arbiter-data").join("icon.ico");
-    }
-
-    let icon = if icon_path.exists() {
-        match image::open(icon_path) {
-            Ok(img) => {
-                let rgba = img.to_rgba8();
-                let (width, height) = rgba.dimensions();
-                tray_icon::Icon::from_rgba(rgba.into_raw(), width, height)?
-            }
-            Err(_) => build_fallback_icon()?,
+    let icon = match image::load_from_memory(icon_bytes) {
+        Ok(img) => {
+            let rgba = img.to_rgba8();
+            let (width, height) = rgba.dimensions();
+            tray_icon::Icon::from_rgba(rgba.into_raw(), width, height)?
         }
-    } else {
-        build_fallback_icon()?
+        Err(e) => {
+            tracing::error!(%e, "Failed to load embedded icon; using fallback");
+            build_fallback_icon()?
+        }
     };
 
     let menu = Menu::new();

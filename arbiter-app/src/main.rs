@@ -7,6 +7,8 @@
 //!   - Expose real-time IPC telemetry via Windows Named Pipes.
 //!   - Host the system tray lifecycle (blocking main thread).
 
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use std::{sync::Arc, time::Duration};
 use tokio::sync::{broadcast, mpsc};
 use tokio_util::codec::{FramedWrite, LinesCodec};
