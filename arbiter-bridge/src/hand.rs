@@ -46,7 +46,7 @@ impl HardwareBridge {
     ///
     /// Returns `Err` if the coordinate is out of bounds (Hardware Guard)
     /// or if the underlying `enigo` call fails.
-    pub fn execute(&mut self, action: &Action) -> Result<(), String> {
+    pub async fn execute(&mut self, action: &Action) -> Result<(), String> {
         // Move to target coordinate before acting (if provided)
         if let Some(ref pt) = action.point {
             self.validate_coordinate(pt.x, pt.y)?;
@@ -65,7 +65,7 @@ impl HardwareBridge {
                 self.enigo
                     .button(Button::Left, Direction::Click)
                     .map_err(|e| format!("Hand: double-click (1) failed: {e:?}"))?;
-                std::thread::sleep(std::time::Duration::from_millis(80)); // Fine-grained internal click-speed delay
+                tokio::time::sleep(std::time::Duration::from_millis(80)).await; // Fine-grained internal click-speed delay
                 self.enigo
                     .button(Button::Left, Direction::Click)
                     .map_err(|e| format!("Hand: double-click (2) failed: {e:?}"))?;
@@ -94,7 +94,7 @@ impl HardwareBridge {
                                     .map_err(|e| format!("Hand: char type failed ('{c}'): {e:?}"))?;
                             }
                         }
-                        std::thread::sleep(std::time::Duration::from_millis(2));
+                        tokio::time::sleep(std::time::Duration::from_millis(2)).await;
                     }
                 }
             }
@@ -209,8 +209,8 @@ mod tests {
     use super::*;
     use arbiter_core::decree::{Action, ActionType};
 
-    #[test]
-    fn coordinate_guard_rejects_out_of_bounds() {
+    #[tokio::test]
+    async fn coordinate_guard_rejects_out_of_bounds() {
         let bridge = HardwareBridge::new(1920, 1080);
         // Direct call to the guard — no enigo interaction
         assert!(bridge.validate_coordinate(2000, 500).is_err());
@@ -218,14 +218,14 @@ mod tests {
         assert!(bridge.validate_coordinate(960, 540).is_ok());
     }
 
-    #[test]
-    fn wait_action_does_not_need_coordinates() {
+    #[tokio::test]
+    async fn wait_action_does_not_need_coordinates() {
         let mut bridge = HardwareBridge::new(1920, 1080);
         let action = Action {
             action_type: ActionType::Wait(10),
             point: None,
             delay_ms: 0,
         };
-        assert!(bridge.execute(&action).is_ok());
+        assert!(bridge.execute(&action).await.is_ok());
     }
 }

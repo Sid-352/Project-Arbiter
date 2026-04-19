@@ -86,12 +86,11 @@ pub fn is_temp_file(path: &str) -> bool {
 /// (The Steady State guard).
 ///
 /// Polls the file size twice with a 400 ms delay. If both samples match and
-/// are non-zero the write is considered complete. Called from a one-shot
-/// background thread so the watcher loop is never blocked.
-pub fn is_write_complete(path: &str) -> bool {
-    let size_a = std::fs::metadata(path).map(|m| m.len()).ok();
-    std::thread::sleep(std::time::Duration::from_millis(400));
-    let size_b = std::fs::metadata(path).map(|m| m.len()).ok();
+/// are non-zero the write is considered complete.
+pub async fn is_write_complete(path: &str) -> bool {
+    let size_a = tokio::fs::metadata(path).await.map(|m| m.len()).ok();
+    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+    let size_b = tokio::fs::metadata(path).await.map(|m| m.len()).ok();
     match (size_a, size_b) {
         (Some(a), Some(b)) => {
             let stable = a == b && b > 0;
@@ -263,15 +262,15 @@ pub mod fs {
                             // the stability thread so we can check it after the sleep.
                             let debounce_sig = format!("{}|{}", summons.to_registry_key(), filename);
                             let path_str_check = path_str.clone();
-                            let tx_clone = tx.clone();
 
-                            // Offload the 400 ms write-stability poll to a one-shot thread
+                            // Offload the 400 ms write-stability poll to a one-shot task
                             // so this watcher loop is freed immediately to pick up the
                             // next filesystem event without sitting idle on every file.
-                            std::thread::spawn(move || {
-                                if !super::is_write_complete(&path_str_check) { return; }
+                            let tx_clone = tx.clone();
+                            tokio::spawn(async move {
+                                if !super::is_write_complete(&path_str_check).await { return; }
                                 if is_debounced(&debounce_sig) { return; }
-                                let _ = tx_clone.blocking_send(summons);
+                                let _ = tx_clone.send(summons).await;
                             });
                         }
                     }
@@ -426,11 +425,11 @@ pub mod keys {
             }
         });
 
-        // The GlobalHotKeyManager must be kept alive for the entire process
-        // lifetime — dropping it would unregister all hotkeys. There is no
-        // owned handle the async task can hold, so we intentionally leak the
-        // manager here. The OS reclaims all hotkey registrations on process
-        // exit, so this is a clean, bounded leak.
+        // `GlobalHotKeyManager` holds a raw `*mut c_void` internally, so it is
+        // neither `Send` nor `Sync`. A `static OnceLock<GlobalHotKeyManager>`
+        // is therefore a compile error. `mem::forget` is the only correct
+        // approach: the manager must live for the process lifetime, the OS
+        // reclaims all hotkey registrations on exit, so the leak is bounded.
         #[allow(clippy::mem_forget)]
         std::mem::forget(manager);
         Ok(())

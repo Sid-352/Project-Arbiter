@@ -11,37 +11,22 @@
 //!   - Never run as elevated — if a privileged target is needed, surface
 //!     a clear error rather than escalating silently.
 
-use std::process::{Command, Output};
 use tracing::{info, warn};
 
 // ── Baton Guard ───────────────────────────────────────────────────────────────
 
 /// Error type for shell operations.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum ShellError {
     /// The Baton toggle is not active for this target.
+    #[error("The Baton: '{0}' is not allowed — grant it in the Signet first")]
     BatonNotGranted(String),
     /// The process failed to spawn (missing binary, permissions, etc.).
+    #[error("Shell: spawn failed: {0}")]
     SpawnFailed(String),
     /// The process ran but exited with a non-zero status.
+    #[error("Shell: exit {status} — {stderr}")]
     NonZeroExit { status: i32, stderr: String },
-}
-
-impl std::fmt::Display for ShellError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::BatonNotGranted(t) => {
-                write!(
-                    f,
-                    "The Baton: '{t}' is not allowed — grant it in the Signet first"
-                )
-            }
-            Self::SpawnFailed(e) => write!(f, "Shell: spawn failed: {e}"),
-            Self::NonZeroExit { status, stderr } => {
-                write!(f, "Shell: exit {status} — {stderr}")
-            }
-        }
-    }
 }
 
 // ── Execution ─────────────────────────────────────────────────────────────────
@@ -60,7 +45,7 @@ pub struct ShellOutput {
 /// `baton_allowed` set (typically the script path or command name).
 ///
 /// `allowed_targets` — callers should pass `&config.baton_allowed`.
-pub fn run(
+pub async fn run(
     target_key: &str,
     command: &str,
     args: &[&str],
@@ -73,20 +58,17 @@ pub fn run(
 
     info!(%command, ?args, "The Baton: executing allowed command");
 
-    let Output {
-        status,
-        stdout,
-        stderr,
-    } = Command::new(command)
+    let output = tokio::process::Command::new(command)
         .args(args)
         .output()
+        .await
         .map_err(|e| ShellError::SpawnFailed(e.to_string()))?;
 
-    let stdout = String::from_utf8_lossy(&stdout).to_string();
-    let stderr = String::from_utf8_lossy(&stderr).to_string();
-    let exit_code = status.code().unwrap_or(-1);
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
 
-    if !status.success() {
+    if !output.status.success() {
         warn!(%exit_code, %stderr, "Shell: command exited with error");
         return Err(ShellError::NonZeroExit {
             status: exit_code,
@@ -106,7 +88,7 @@ pub fn run(
 ///
 /// Unlike `run`, this does not wait for the process to finish and does
 /// not capture output. Suitable for launching background applications.
-pub fn spawn_detached(
+pub async fn spawn_detached(
     target_key: &str,
     command: &str,
     args: &[&str],
@@ -117,7 +99,7 @@ pub fn spawn_detached(
         return Err(ShellError::BatonNotGranted(target_key.to_string()));
     }
 
-    Command::new(command)
+    tokio::process::Command::new(command)
         .args(args)
         .spawn()
         .map_err(|e| ShellError::SpawnFailed(e.to_string()))?;
@@ -131,8 +113,8 @@ mod tests {
     use super::*;
     use std::collections::HashSet;
 
-    #[test]
-    fn test_baton_granted() {
+    #[tokio::test]
+    async fn test_baton_granted() {
         let mut allowed = HashSet::new();
         allowed.insert("safe_echo".to_string());
 
@@ -147,15 +129,15 @@ mod tests {
             vec!["-c", "echo Hello"]
         };
 
-        let result = run("safe_echo", cmd, &args, &allowed);
+        let result = run("safe_echo", cmd, &args, &allowed).await;
         assert!(result.is_ok());
         let output = result.unwrap();
         assert!(output.stdout.contains("Hello"));
         assert_eq!(output.exit_code, 0);
     }
 
-    #[test]
-    fn test_baton_blocked() {
+    #[tokio::test]
+    async fn test_baton_blocked() {
         let mut allowed = HashSet::new();
         allowed.insert("safe_echo".to_string());
 
@@ -170,7 +152,7 @@ mod tests {
             vec!["-c", "echo Malicious"]
         };
 
-        let result = run("malicious_script", cmd, &args, &allowed);
+        let result = run("malicious_script", cmd, &args, &allowed).await;
 
         match result {
             Err(ShellError::BatonNotGranted(req)) => {

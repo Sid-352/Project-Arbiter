@@ -17,30 +17,17 @@ use globset::{Glob, GlobMatcher};
 // ── Directory Jail Guard ──────────────────────────────────────────────────────
 
 /// Error type for Inscribe operations.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum InscribeError {
     /// The target path is not within any trusted directory (Conservatory violation).
+    #[error("Inscribe: path '{0}' is not in a trusted directory")]
     NotTrusted(String),
     /// The source path does not exist.
+    #[error("Inscribe: source '{0}' does not exist")]
     SourceNotFound(String),
     /// A standard I/O error occurred.
-    Io(std::io::Error),
-}
-
-impl std::fmt::Display for InscribeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::NotTrusted(p) => write!(f, "Inscribe: path '{p}' is not in a trusted directory"),
-            Self::SourceNotFound(p) => write!(f, "Inscribe: source '{p}' does not exist"),
-            Self::Io(e) => write!(f, "Inscribe: I/O error: {e}"),
-        }
-    }
-}
-
-impl From<std::io::Error> for InscribeError {
-    fn from(e: std::io::Error) -> Self {
-        Self::Io(e)
-    }
+    #[error("Inscribe: I/O error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 /// Verify a path is under at least one trusted root before any write.
@@ -87,14 +74,15 @@ fn assert_trusted(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<()
 // ── File Operations ───────────────────────────────────────────────────────────
 
 /// Executes a closure with exponential backoff for Transient/Permission/Lock errors.
-fn retry_with_backoff<F, T>(mut action: F) -> std::io::Result<T>
+async fn retry_with_backoff<F, Fut, T>(mut action: F) -> std::io::Result<T>
 where
-    F: FnMut() -> std::io::Result<T>,
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = std::io::Result<T>>,
 {
     let mut delay = 100;
     let mut attempts = 0;
     loop {
-        match action() {
+        match action().await {
             Ok(result) => return Ok(result),
             Err(e) => {
                 attempts += 1;
@@ -102,7 +90,7 @@ where
                     return Err(e);
                 }
                 warn!(%e, "Inscribe: Operation failed, retrying in {}ms (Attempt {})", delay, attempts);
-                std::thread::sleep(std::time::Duration::from_millis(delay));
+                tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
                 delay *= 2;
             }
         }
@@ -127,7 +115,7 @@ fn ensure_file_path(src: &Path, dst: &Path) -> PathBuf {
 
 /// Move `src` to `dst`, verifying `dst` parent is in a trusted directory.
 /// Returns the final destination path used.
-pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<PathBuf, InscribeError> {
+pub async fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<PathBuf, InscribeError> {
     let src = src.as_ref();
     let dst_raw = dst.as_ref();
     
@@ -139,17 +127,17 @@ pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[
     assert_trusted(&dst, trusted_roots)?;
 
     if let Some(parent) = dst.parent() {
-        std::fs::create_dir_all(parent)?;
+        tokio::fs::create_dir_all(parent).await?;
     }
 
     // Attempt rename first (atomic on same volume), fall back to copy+delete
-    retry_with_backoff(|| {
-        if std::fs::rename(src, &dst).is_err() {
-            std::fs::copy(src, &dst)?;
-            std::fs::remove_file(src)?;
+    retry_with_backoff(|| async {
+        if tokio::fs::rename(src, &dst).await.is_err() {
+            tokio::fs::copy(src, &dst).await?;
+            tokio::fs::remove_file(src).await?;
         }
         Ok(())
-    })?;
+    }).await?;
 
     info!(src = %src.display(), dst = %dst.display(), "Inscribe: file moved");
     Ok(dst)
@@ -157,7 +145,7 @@ pub fn move_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[
 
 /// Copy `src` to `dst`, verifying `dst` parent is in a trusted directory.
 /// Returns the final destination path used and bytes copied.
-pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(PathBuf, u64), InscribeError> {
+pub async fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(PathBuf, u64), InscribeError> {
     let src = src.as_ref();
     let dst_raw = dst.as_ref();
 
@@ -169,16 +157,16 @@ pub fn copy_file(src: impl AsRef<Path>, dst: impl AsRef<Path>, trusted_roots: &[
     assert_trusted(&dst, trusted_roots)?;
 
     if let Some(parent) = dst.parent() {
-        std::fs::create_dir_all(parent)?;
+        tokio::fs::create_dir_all(parent).await?;
     }
 
-    let bytes = retry_with_backoff(|| std::fs::copy(src, &dst))?;
+    let bytes = retry_with_backoff(|| tokio::fs::copy(src, &dst)).await?;
     info!(src = %src.display(), dst = %dst.display(), bytes, "Inscribe: file copied");
     Ok((dst, bytes))
 }
 
 /// Delete a file, verifying it is in a trusted directory.
-pub fn delete_file(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
+pub async fn delete_file(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(), InscribeError> {
     let path = path.as_ref();
     assert_trusted(path, trusted_roots)?;
 
@@ -186,7 +174,7 @@ pub fn delete_file(path: impl AsRef<Path>, trusted_roots: &[String]) -> Result<(
         return Err(InscribeError::SourceNotFound(path.display().to_string()));
     }
 
-    retry_with_backoff(|| std::fs::remove_file(path))?;
+    retry_with_backoff(|| tokio::fs::remove_file(path)).await?;
     info!(path = %path.display(), "Inscribe: file deleted");
     Ok(())
 }
@@ -252,8 +240,8 @@ mod tests {
     use std::fs::File;
     use tempfile::tempdir;
 
-    #[test]
-    fn test_conservatory_allows_trusted() {
+    #[tokio::test]
+    async fn test_conservatory_allows_trusted() {
         let root = tempdir().unwrap();
         let root_str = root.path().to_string_lossy().to_string();
 
@@ -265,14 +253,14 @@ mod tests {
         File::create(&src).unwrap();
 
         // Should succeed because dst is within root
-        let res = move_file(&src, &dst, &trusted_roots);
+        let res = move_file(&src, &dst, &trusted_roots).await;
         assert!(res.is_ok());
         assert!(dst.exists());
         assert!(!src.exists());
     }
 
-    #[test]
-    fn test_conservatory_blocks_untrusted() {
+    #[tokio::test]
+    async fn test_conservatory_blocks_untrusted() {
         let allowed_root = tempdir().unwrap();
         let malicious_root = tempdir().unwrap();
 
@@ -284,7 +272,7 @@ mod tests {
         File::create(&src).unwrap();
 
         // Should return NotTrusted because dst is inside malicious_root
-        let res = copy_file(&src, &dst, &trusted_roots);
+        let res = copy_file(&src, &dst, &trusted_roots).await;
         match res {
             Err(InscribeError::NotTrusted(_)) => {}
             _ => panic!("Expected NotTrusted error, got {:?}", res),
@@ -292,8 +280,8 @@ mod tests {
         assert!(!dst.exists());
     }
 
-    #[test]
-    fn test_dry_run_warnings() {
+    #[tokio::test]
+    async fn test_dry_run_warnings() {
         // Just verify the regex warning triggers correctly without writing a real system file
         let sys_root = tempdir().unwrap();
 

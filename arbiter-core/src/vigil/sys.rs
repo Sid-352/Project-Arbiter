@@ -44,12 +44,12 @@ pub fn spawn_watcher(
             }
 
             // refresh_processes() without loading CPU/Memory data is incredibly fast.
-            sys.refresh_processes(sysinfo::ProcessesToUpdate::All, false);
+            sys.refresh_processes();
 
             let mut current_pids = HashSet::new();
 
             for (pid, process) in sys.processes() {
-                let p_name = process.name().to_string_lossy().to_lowercase();
+                let p_name = process.name().to_string().to_lowercase();
 
                 if p_name.contains(&target_lower) {
                     current_pids.insert(*pid);
@@ -58,7 +58,7 @@ pub fn spawn_watcher(
                         debug!(%pid, %p_name, "Vigil: Target process discovered");
 
                         let mut context = EnvContext::new();
-                        context.insert("process_name", &process.name().to_string_lossy());
+                        context.insert("process_name", &process.name().to_string());
                         context.insert("process_pid", &pid.to_string());
                         context.insert("trigger_mode", "ProcessAppeared");
                         context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));

@@ -140,16 +140,32 @@ impl Atlas {
 
                 // ── Process Manual Reset ──
                 Some(_) = reset_rx.recv() => {
-                    if self.state == EngineState::Faulted {
-                        info!("Atlas: reset signal received, clearing Faulted state");
-                        self.state = EngineState::Idle;
-                        let _ = log_broadcast.send(LogEntry {
-                            time: chrono::Utc::now().to_rfc3339(),
-                            tag: "ATLAS".into(),
-                            message: "Engine fault cleared manually.".into(),
-                            is_error: false,
-                            decree_id: None,
-                        });
+                    match self.state {
+                        EngineState::Faulted => {
+                            info!("Atlas: reset signal received, clearing Faulted state");
+                            self.state = EngineState::Idle;
+                            self.active_decree_id = None;
+                            let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
+                                tag: "ATLAS".into(),
+                                message: "Engine fault cleared manually.".into(),
+                                is_error: false,
+                                decree_id: None,
+                            });
+                        }
+                        EngineState::Yielded => {
+                            info!("Atlas: reset signal received, clearing Yielded state");
+                            self.state = EngineState::Idle;
+                            self.active_decree_id = None;
+                            let _ = log_broadcast.send(LogEntry {
+                                time: chrono::Utc::now().to_rfc3339(),
+                                tag: "ATLAS".into(),
+                                message: "Engine yield cleared manually — standing by.".into(),
+                                is_error: false,
+                                decree_id: None,
+                            });
+                        }
+                        _ => {}
                     }
                 }
 

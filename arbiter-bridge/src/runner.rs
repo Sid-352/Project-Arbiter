@@ -85,7 +85,11 @@ fn interpolate_action(action: &mut ActionType, ctx: &EnvContext) {
                 *arg = interpolate_str(arg, ctx);
             }
         }
-        _ => {}
+        ActionType::Click
+        | ActionType::DoubleClick
+        | ActionType::RightClick
+        | ActionType::Scroll(_)
+        | ActionType::Wait(_) => {}
     }
 }
 
@@ -175,6 +179,8 @@ pub fn spawn(
                 decree_id: decree_id.as_ref().map(|id| id.0.clone()),
             })).await;
 
+            let mut abort_rx = abort_rx; // make mutable to use in loop
+
             for (idx, node) in nodes.iter().enumerate() {
                 // Check for abort signal before every node
                 if abort_rx.try_recv().is_ok() {
@@ -218,7 +224,7 @@ pub fn spawn(
                             | ActionType::Navigate(_) => {
                                 if !dry_run {
                                     filter.inhibit_presence();
-                                    let res = hand.execute(&action);
+                                    let res = hand.execute(&action).await;
                                     filter.resume_presence();
                                     res
                                 } else {
@@ -237,7 +243,7 @@ pub fn spawn(
                                         source,
                                         destination,
                                         &trusted_roots,
-                                    );
+                                    ).await;
                                     if let Ok(ref final_dst) = r {
                                         filter.mark(final_dst);
                                     }
@@ -256,7 +262,7 @@ pub fn spawn(
                                         source,
                                         destination,
                                         &trusted_roots,
-                                    );
+                                    ).await;
                                     if let Ok((ref final_dst, _)) = r {
                                         filter.mark(final_dst);
                                     }
@@ -268,7 +274,7 @@ pub fn spawn(
                             }
                             ActionType::InscribeDelete { target } => {
                                 if !dry_run {
-                                    inscribe::delete_file(target, &trusted_roots)
+                                    inscribe::delete_file(target, &trusted_roots).await
                                         .map_err(|e| e.to_string())
                                 } else {
                                     info!(?target, "DRY RUN: Would delete file");
@@ -285,10 +291,10 @@ pub fn spawn(
                                 if !dry_run {
                                     let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
                                     if *detached {
-                                        shell::spawn_detached(command, command, &arg_refs, &baton_allowed)
+                                        shell::spawn_detached(command, command, &arg_refs, &baton_allowed).await
                                             .map_err(|e| e.to_string())
                                     } else {
-                                        shell::run(command, command, &arg_refs, &baton_allowed)
+                                        shell::run(command, command, &arg_refs, &baton_allowed).await
                                             .map(|_| ())
                                             .map_err(|e| e.to_string())
                                     }
