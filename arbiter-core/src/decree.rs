@@ -332,9 +332,6 @@ impl EnvKey {
                 | Self::ImgModel
                 | Self::ImgGps
                 | Self::TextLines
-                | Self::FileCreatedIso
-                | Self::FileCreatedLocal
-                | Self::FileModifiedLocal
         )
     }
 }
