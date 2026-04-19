@@ -33,7 +33,7 @@ struct ArbiterRollingWriter {
 }
 
 impl ArbiterRollingWriter {
-    fn new(dir: &str) -> Self {
+    fn new(dir: impl Into<std::path::PathBuf>) -> Self {
         Self { base_dir: dir.into() }
     }
 }
@@ -65,7 +65,8 @@ impl std::io::Write for ArbiterRollingWriter {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 0. Logging & Professional Banner
-    let file_appender = ArbiterRollingWriter::new("arbiter-data/logs");
+    let log_dir = arbiter_core::signet::data_dir().join("logs");
+    let file_appender = ArbiterRollingWriter::new(log_dir);
     let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);
     
     let file_layer = tracing_subscriber::fmt::layer()
@@ -96,8 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ── Infrastructure ────────────────────────────────────────────────────────
     let filter = ArbiterFilter::new();
-    let signet_config = arbiter_core::signet::load().unwrap_or_default();
-    
+
     let (vigil_tx, mut vigil_rx) = mpsc::channel(100);
     let (presence_tx, mut presence_rx) = mpsc::channel(100);
     let (run_event_tx, mut run_event_rx) = mpsc::channel(100);
@@ -207,18 +207,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     arbiter_bridge::runner::spawn(exec_cmd_rx, screen_width, screen_height, filter.clone());
 
     // 2. Spawn Mapping loop (Atlas -> Runner)
+    //
+    // Signet config is loaded fresh on every execution via signet::load().
+    // This call is cheap because load() checks the RwLock cache first and
+    // only hits disk when reload_cache() has been called (which happens
+    // automatically whenever the user saves new Signet settings via the Forge).
+    // The previous pattern — cloning `trusted_paths` and `baton_allowed` once
+    // at boot — meant new whitelists wouldn't take effect until restart.
     let map_run_event_tx = run_event_tx.clone();
-    let map_trusted = signet_config.trusted_paths.clone();
-    let map_baton = signet_config.baton_allowed.clone();
     tokio::spawn(async move {
         while let Some(exec_data) = atlas_exec_rx.recv().await {
+            let fresh_signet = arbiter_core::signet::load().unwrap_or_default();
             let cmd = arbiter_bridge::runner::ExecCmd::Run {
                 nodes: exec_data.nodes,
                 context: exec_data.context,
                 abort_rx: exec_data.abort_rx,
                 event_tx: map_run_event_tx.clone(),
-                trusted_roots: map_trusted.iter().cloned().collect(),
-                baton_allowed: map_baton.clone(),
+                trusted_roots: fresh_signet.trusted_paths.iter().cloned().collect(),
+                baton_allowed: fresh_signet.baton_allowed.clone(),
                 decree_id: exec_data.decree_id,
                 trigger_time: exec_data.trigger_time,
                 dry_run: false,

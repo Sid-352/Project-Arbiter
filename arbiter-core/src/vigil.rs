@@ -81,10 +81,13 @@ pub fn is_temp_file(path: &str) -> bool {
     )
 }
 
-/// Checks whether a file has finished writing using a successive size check.
+
+/// Checks whether a file has finished writing using a successive size check
+/// (The Steady State guard).
 ///
-/// Polls the file size twice with a short delay. If the sizes match, the
-/// write is considered complete (The Steady State guard).
+/// Polls the file size twice with a 400 ms delay. If both samples match and
+/// are non-zero the write is considered complete. Called from a one-shot
+/// background thread so the watcher loop is never blocked.
 pub fn is_write_complete(path: &str) -> bool {
     let size_a = std::fs::metadata(path).map(|m| m.len()).ok();
     std::thread::sleep(std::time::Duration::from_millis(400));
@@ -92,7 +95,7 @@ pub fn is_write_complete(path: &str) -> bool {
     match (size_a, size_b) {
         (Some(a), Some(b)) => {
             let stable = a == b && b > 0;
-            debug!(path, size = b, stable, "Successive size check");
+            debug!(path, size = b, stable, "Vigil-fs: successive size check");
             stable
         }
         _ => false,
@@ -100,6 +103,7 @@ pub fn is_write_complete(path: &str) -> bool {
 }
 
 // ── File-System Watcher (vigil-fs) ────────────────────────────────────────────
+
 
 #[cfg(feature = "vigil-fs")]
 pub mod fs {
@@ -191,8 +195,6 @@ pub mod fs {
                                 if !m.is_match(filename) { continue; }
                             }
 
-                            if !is_write_complete(&path_str) { continue; }
-
                             let mut context = super::EnvContext::new();
                             
                             // ── Level 0: Identity ─────────────────────────────────────
@@ -240,6 +242,13 @@ pub mod fs {
                             let is_link = std::fs::symlink_metadata(path).map(|m| m.file_type().is_symlink()).unwrap_or(false);
                             context.insert("file_is_link", &is_link.to_string());
 
+                            // File owner: resolved via Win32 security APIs on Windows.
+                            // Returns "DOMAIN\Account" (or just "Account" for local accounts).
+                            #[cfg(windows)]
+                            if let Some(owner) = get_file_owner_windows(&path_str) {
+                                context.insert("file_owner", &owner);
+                            }
+
                             // ── Level 2: Deep Vigil hook (Analytical) ──────────────────
                             context.source_path = Some(path.clone());
                             context.integrity_scan = analytical;
@@ -250,13 +259,20 @@ pub mod fs {
                                 context,
                             };
 
-                            // Debounce per-file to prevent rapid double-triggers for the same physical artifact
+                            // Build the debounce signature before moving `summons` into
+                            // the stability thread so we can check it after the sleep.
                             let debounce_sig = format!("{}|{}", summons.to_registry_key(), filename);
-                            if is_debounced(&debounce_sig) { continue; }
+                            let path_str_check = path_str.clone();
+                            let tx_clone = tx.clone();
 
-                            if tx.blocking_send(summons).is_err() {
-                                return;
-                            }
+                            // Offload the 400 ms write-stability poll to a one-shot thread
+                            // so this watcher loop is freed immediately to pick up the
+                            // next filesystem event without sitting idle on every file.
+                            std::thread::spawn(move || {
+                                if !super::is_write_complete(&path_str_check) { return; }
+                                if is_debounced(&debounce_sig) { return; }
+                                let _ = tx_clone.blocking_send(summons);
+                            });
                         }
                     }
                     Ok(Err(e)) => warn!(%e, "Vigil-fs: notify error"),
@@ -288,7 +304,90 @@ pub mod fs {
         }
     }
 
+    /// Resolve the owner of a file to a `"DOMAIN\\Account"` string using Win32
+    /// security APIs.
+    ///
+    /// Steps:
+    ///   1. `GetNamedSecurityInfoW` — fetch the owner SID from the DACL.
+    ///   2. `LookupAccountSidW`     — translate the SID to a human-readable name.
+    ///   3. `LocalFree`             — release the security descriptor immediately.
+    ///
+    /// Returns `None` on any Win32 error so callers can silently omit the key.
+    #[cfg(windows)]
+    fn get_file_owner_windows(path: &str) -> Option<String> {
+        use windows::Win32::Security::Authorization::{GetNamedSecurityInfoW, SE_FILE_OBJECT};
+        use windows::Win32::Security::{
+            LookupAccountSidW, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
+            SID_NAME_USE,
+        };
+        use windows::core::{HSTRING, PWSTR};
+
+        let path_w = HSTRING::from(path);
+        let mut owner_sid = PSID::default();
+        let mut sd = PSECURITY_DESCRIPTOR::default();
+
+        unsafe {
+            // Step 1: obtain the owner SID.
+            if GetNamedSecurityInfoW(
+                &path_w,
+                SE_FILE_OBJECT,
+                OWNER_SECURITY_INFORMATION,
+                Some(&mut owner_sid),
+                None,
+                None,
+                None,
+                &mut sd,
+            ).is_err() {
+                return None;
+            }
+
+            // Step 2: resolve SID → name + domain.
+            let mut name_len: u32 = 256;
+            let mut domain_len: u32 = 256;
+            let mut name_buf = vec![0u16; 256];
+            let mut domain_buf = vec![0u16; 256];
+            let mut sid_type = SID_NAME_USE::default();
+
+            let looked_up = LookupAccountSidW(
+                None,
+                owner_sid,
+                PWSTR(name_buf.as_mut_ptr()),
+                &mut name_len,
+                PWSTR(domain_buf.as_mut_ptr()),
+                &mut domain_len,
+                &mut sid_type,
+            );
+
+            // Step 3: release the security descriptor regardless of lookup outcome.
+            // LocalFree was removed in windows 0.58; SECURITY_DESCRIPTORs from
+            // GetNamedSecurityInfoW are allocated on the process heap, so we free
+            // via HeapFree(GetProcessHeap()) which is the correct replacement.
+            if !sd.0.is_null() {
+                use windows::Win32::System::Memory::{HeapFree, GetProcessHeap, HEAP_NONE};
+                let heap = GetProcessHeap().unwrap_or_default();
+                if !heap.is_invalid() {
+                    let _ = HeapFree(heap, HEAP_NONE, Some(sd.0 as *mut core::ffi::c_void));
+                }
+            }
+
+            if looked_up.is_err() {
+                return None;
+            }
+
+            let name   = String::from_utf16_lossy(&name_buf[..name_len as usize]);
+            let domain = String::from_utf16_lossy(&domain_buf[..domain_len as usize]);
+
+            // Format identically to how Windows Explorer displays ownership.
+            Some(if domain.is_empty() {
+                name
+            } else {
+                format!("{}\\{}", domain, name)
+            })
+        }
+    }
+
 } // end pub mod fs
+
 
 // ── Global Hotkey Watcher (vigil-keys) ───────────────────────────────────────
 
@@ -327,6 +426,12 @@ pub mod keys {
             }
         });
 
+        // The GlobalHotKeyManager must be kept alive for the entire process
+        // lifetime — dropping it would unregister all hotkeys. There is no
+        // owned handle the async task can hold, so we intentionally leak the
+        // manager here. The OS reclaims all hotkey registrations on process
+        // exit, so this is a clean, bounded leak.
+        #[allow(clippy::mem_forget)]
         std::mem::forget(manager);
         Ok(())
     }
