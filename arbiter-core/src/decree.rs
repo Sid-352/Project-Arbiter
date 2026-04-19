@@ -11,7 +11,7 @@ use std::{
 // ── Strong ID Types ──────────────────────────────────────────────────────────
 
 /// Unique identifier for an Decree (Decree).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct DecreeId(pub String);
 
 impl From<&str> for DecreeId {
@@ -27,7 +27,7 @@ impl std::fmt::Display for DecreeId {
 }
 
 /// Unique identifier for a Node within a sequence.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct NodeId(pub String);
 
 impl From<&str> for NodeId {

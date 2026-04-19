@@ -16,7 +16,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
-use globset::Glob;
+use globset::{Glob, GlobMatcher};
 use lazy_static::lazy_static;
 
 // ── Arbiter Configuration ───────────────────────────────────────────────────
@@ -38,6 +38,13 @@ pub struct ArbiterConfig {
 lazy_static! {
     /// Global cache of the Arbiter config to prevent excessive disk I/O in signal loops.
     static ref CONFIG_CACHE: Arc<RwLock<Option<ArbiterConfig>>> = Arc::new(RwLock::new(None));
+
+    /// Pre-compiled glob matchers built from `ArbiterConfig::restricted_paths`.
+    ///
+    /// Rebuilt once per `save()` / `reload_cache()` call. After that, every
+    /// Vigil event uses this cache and avoids the `Glob::new(...).compile_matcher()`
+    /// call that previously ran on every single filesystem notification.
+    static ref GLOB_CACHE: Arc<RwLock<Vec<GlobMatcher>>> = Arc::new(RwLock::new(Vec::new()));
 }
 
 // ── Data Directory ──────────────────────────────────────────────────────────
@@ -81,6 +88,7 @@ pub fn load() -> Result<ArbiterConfig, String> {
 
     // Update cache
     let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(config.clone()));
+    rebuild_glob_cache(&config);
 
     Ok(config)
 }
@@ -97,6 +105,7 @@ pub fn save(config: &ArbiterConfig) -> Result<(), String> {
 
     // Update cache
     let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(config.clone()));
+    rebuild_glob_cache(config);
 
     info!("Signet: configuration saved to vault");
     Ok(())
@@ -105,6 +114,21 @@ pub fn save(config: &ArbiterConfig) -> Result<(), String> {
 /// Force a reload of the configuration from disk on the next `load()` call.
 pub fn reload_cache() {
     let _ = CONFIG_CACHE.write().map(|mut c| *c = None);
+    // Also clear the glob cache so it is rebuilt on the next load() call.
+    let _ = GLOB_CACHE.write().map(|mut g| g.clear());
+}
+
+/// Rebuild `GLOB_CACHE` from the current config's restricted path rules.
+/// Called automatically by `load()` and `save()`.
+fn rebuild_glob_cache(config: &ArbiterConfig) {
+    let matchers: Vec<GlobMatcher> = config
+        .restricted_paths
+        .iter()
+        .filter(|r| r.contains('*') || r.contains('?'))
+        .filter_map(|r| Glob::new(r).ok())
+        .map(|g| g.compile_matcher())
+        .collect();
+    let _ = GLOB_CACHE.write().map(|mut g| *g = matchers);
 }
 
 // ── Permission Helpers ───────────────────────────────────────────────────────
@@ -122,6 +146,7 @@ fn secure_canonicalize(path: &Path) -> PathBuf {
 }
 
 /// Helper to check if a path matches a set of rules (supports globs and prefixes).
+/// Uses pre-compiled `GLOB_CACHE` for wildcard rules to avoid per-call recompilation.
 fn path_matches_rules(path: &Path, rules: &HashSet<String>) -> bool {
     let canon_path = secure_canonicalize(path);
     let path_str = canon_path.to_string_lossy();
@@ -133,15 +158,20 @@ fn path_matches_rules(path: &Path, rules: &HashSet<String>) -> bool {
             return true;
         }
 
-        // 2. Try glob match if rule contains wildcards
-        if rule.contains('*') || rule.contains('?') {
-            if let Ok(glob) = Glob::new(rule) {
-                if glob.compile_matcher().is_match(&*path_str) {
-                    return true;
-                }
+        // 2. Wildcard rules: use pre-compiled matchers from GLOB_CACHE.
+        //    We still iterate `rules` for the prefix check above, but for
+        //    glob matching we defer to the cache to avoid recompiling per call.
+    }
+
+    // 3. Check pre-compiled glob cache (built from restricted_paths at config load/save).
+    if let Ok(matchers) = GLOB_CACHE.read() {
+        for matcher in matchers.iter() {
+            if matcher.is_match(&*path_str) {
+                return true;
             }
         }
     }
+
     false
 }
 

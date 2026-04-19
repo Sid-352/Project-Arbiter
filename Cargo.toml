@@ -11,7 +11,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Chameleon Sid-352"]
 license = "MIT"
-description = "Industrial-grade deterministic system orchestration."
+description = "Deterministic system Orchestrator."
 
 [workspace.dependencies]
 # ── Core Framework ──
@@ -27,6 +27,7 @@ serde              = { version = "1", features = ["derive"] }
 serde_json         = "1"
 toml               = "0.8"
 regex              = "1"
+globset            = "0.4.18"
 lazy_static        = "1.4"
 
 # ── OS & UI ──
@@ -55,6 +56,7 @@ hostname           = "0.4"
 typenum            = "1.17"
 sysinfo            = "0.30"
 tempfile           = "3.10"
+thiserror          = "1.0"
 
 [profile.release]
 opt-level = "z"
