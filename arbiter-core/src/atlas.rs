@@ -7,7 +7,7 @@
 //!   - Emits `RunEvent`s to connected consumers and handles UI log pushes.
 
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex},
     time::Instant,
 };
@@ -40,7 +40,7 @@ pub enum EngineState {
 /// The Atlas: owns engine state, registry, and drives sequence execution.
 pub struct Atlas {
     pub state: EngineState,
-    pub engine_logs: Arc<Mutex<VecDeque<LogEntry>>>,
+    pub engine_logs: Arc<Mutex<Vec<LogEntry>>>,
     pub last_start: Option<Instant>,
     pub registry: HashMap<String, Decree>,
     pub active_presence_config: PresenceConfig,
@@ -52,55 +52,35 @@ pub struct Atlas {
     /// Tracks active Ward watchers by their Ward ID to allow stopping/restarting them.
     pub active_watchers: HashMap<String, tokio::sync::broadcast::Sender<()>>,
 
-    /// Pre-compiled glob matchers for `FileCreated` registry keys.
-    /// Keyed by the full registry key; the value matches the filename pattern portion.
-    /// Compiled once at registration to avoid re-parsing on every unmatched event.
-    compiled_patterns: HashMap<String, globset::GlobMatcher>,
-
     // Held during an active sequence to allow interruption.
     active_abort: Option<oneshot::Sender<()>>,
 }
 
 impl Atlas {
     pub fn new() -> Self {
-        let mut logs: VecDeque<LogEntry> = VecDeque::new();
-        logs.push_back(LogEntry {
+        let logs: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(vec![LogEntry {
             time: chrono::Utc::now().to_rfc3339(),
             tag: "ATLAS".into(),
             message: "Engine boot sequence initiated.".into(),
             is_error: false,
             decree_id: None,
-        });
+        }]));
         Self {
             state: EngineState::Idle,
-            engine_logs: Arc::new(Mutex::new(logs)),
+            engine_logs: logs,
             last_start: None,
             registry: HashMap::new(),
             active_presence_config: PresenceConfig::default(),
             active_decree_id: None,
             watched_processes: HashSet::new(),
             active_watchers: HashMap::new(),
-            compiled_patterns: HashMap::new(),
             active_abort: None,
         }
     }
 
-    /// Register a sequence to a trigger key, compiling its glob pattern if applicable.
+    /// Register a sequence to a trigger key.
     pub fn register_decree(&mut self, summons_key: String, decree: Decree) {
         info!(%summons_key, "Atlas: registering decree");
-
-        // Pre-compile glob matcher for FileCreated summons so the fuzzy-match
-        // loop can reuse it without re-parsing the pattern on every event.
-        if summons_key.starts_with("FileCreated|") {
-            let parts: Vec<&str> = summons_key.splitn(3, '|').collect();
-            if let Some(&pattern) = parts.get(2) {
-                match globset::GlobBuilder::new(pattern).case_insensitive(true).build() {
-                    Ok(g) => { self.compiled_patterns.insert(summons_key.clone(), g.compile_matcher()); }
-                    Err(e) => warn!(%e, %pattern, "Atlas: could not pre-compile glob, fuzzy match disabled for this decree"),
-                }
-            }
-        }
-
         self.registry.insert(summons_key, decree);
     }
 
@@ -381,10 +361,9 @@ impl Atlas {
                                     
                                     for (reg_key, reg_ord) in &self.registry {
                                         if reg_key.starts_with(&path_prefix) {
-                                            // Use the pre-compiled matcher stored at registration time.
-                                            // Falls back gracefully if the key had no compilable pattern.
-                                            if let Some(matcher) = self.compiled_patterns.get(reg_key) {
-                                                if matcher.is_match(&filename) {
+                                            let pattern = &reg_key[path_prefix.len()..];
+                                            if let Ok(matcher) = globset::GlobBuilder::new(pattern).case_insensitive(true).build() {
+                                                if matcher.compile_matcher().is_match(&filename) {
                                                     debug!(%reg_key, %filename, "Atlas: fuzzy summons match found");
                                                     key = reg_key.clone();
                                                     decree = Some(reg_ord.clone());
@@ -545,10 +524,7 @@ impl Atlas {
                 }
                 let _ = log_broadcast.send(entry.clone());
                 if let Ok(mut logs) = self.engine_logs.lock() {
-                    if logs.len() >= 1_000 {
-                        logs.pop_front();
-                    }
-                    logs.push_back(entry);
+                    logs.push(entry);
                 }
             }
             RunEvent::Progress(idx) => {
@@ -611,9 +587,7 @@ pub fn compile_sequence(nodes_map: &HashMap<NodeId, DecreeNode>) -> Option<Vec<D
             if node.kind != NodeKind::Entry {
                 sequence.push(node.clone());
             }
-            let mut next: Vec<_> = node.next_nodes.values().collect();
-            next.sort(); // deterministic BFS order across HashMap iterations
-            for next_id in next {
+            for next_id in node.next_nodes.values() {
                 if !visited.contains(next_id) {
                     queue.push_back(next_id.clone());
                 }
@@ -626,7 +600,7 @@ pub fn compile_sequence(nodes_map: &HashMap<NodeId, DecreeNode>) -> Option<Vec<D
 
 /// Helper: push a log entry into a shared log buffer, capping at 1 000 lines.
 pub fn push_log(
-    logs: &Arc<Mutex<VecDeque<LogEntry>>>,
+    logs: &Arc<Mutex<Vec<LogEntry>>>,
     tag: &str,
     msg: &str,
     is_error: bool,
@@ -634,9 +608,9 @@ pub fn push_log(
 ) {
     if let Ok(mut v) = logs.lock() {
         if v.len() >= 1_000 {
-            v.pop_front(); // O(1) — VecDeque optimises the ring-buffer eviction
+            v.remove(0);
         }
-        v.push_back(LogEntry {
+        v.push(LogEntry {
             time: chrono::Utc::now().to_rfc3339(),
             tag: tag.into(),
             message: msg.into(),

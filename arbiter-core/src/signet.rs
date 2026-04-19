@@ -47,22 +47,10 @@ lazy_static! {
     static ref GLOB_CACHE: Arc<RwLock<Vec<GlobMatcher>>> = Arc::new(RwLock::new(Vec::new()));
 }
 
-// ── Data Directory ──────────────────────────────────────────────────────────
+// ── Vault Management ─────────────────────────────────────────────────────────
 
-/// Returns the `arbiter-data` directory anchored to the directory that
-/// contains the running executable.
-///
-/// Using `current_exe()` instead of a CWD-relative path means the data
-/// directory is always found next to the binary, regardless of which working
-/// directory the user (or a service manager) launches Arbiter from.
-pub fn data_dir() -> PathBuf {
-    std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("arbiter-data")
-}
-
+/// The relative path to the encrypted configuration file.
+const VAULT_PATH: &str = "arbiter-data/signet.vault";
 
 /// Load the Arbiter configuration from disk.
 ///
@@ -75,7 +63,7 @@ pub fn load() -> Result<ArbiterConfig, String> {
         }
     }
 
-    let path = data_dir().join("signet.vault");
+    let path = Path::new(VAULT_PATH);
     if !path.exists() {
         info!("Signet: vault not found, using default configuration");
         let def = ArbiterConfig::default();
@@ -83,7 +71,7 @@ pub fn load() -> Result<ArbiterConfig, String> {
         return Ok(def);
     }
 
-    let bytes = std::fs::read(&path).map_err(|e| format!("Signet: failed to read vault: {e}"))?;
+    let bytes = std::fs::read(path).map_err(|e| format!("Signet: failed to read vault: {e}"))?;
     let config: ArbiterConfig = serde_json::from_slice(&bytes).map_err(|e| format!("Signet: failed to deserialize vault: {e}"))?;
 
     // Update cache
@@ -95,7 +83,7 @@ pub fn load() -> Result<ArbiterConfig, String> {
 
 /// Save the Arbiter configuration to disk and invalidate cache.
 pub fn save(config: &ArbiterConfig) -> Result<(), String> {
-    let path = data_dir().join("signet.vault");
+    let path = Path::new(VAULT_PATH);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("Signet: failed to create data directory: {e}"))?;
     }
