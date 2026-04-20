@@ -4,20 +4,27 @@
 //! The tray is the *only* UI surface active at runtime.
 //!
 //! Tray menu items:
-//!   • "Arbiter — Standing By"  (disabled status label)
-//!   • "Open Forge"         (future: show the Forge Terminal)
-//!   • separator
-//!   • "Quit Arbiter"           (graceful shutdown)
+//!   • "Pause Engine" / "Resume Engine"
+//!   • "Reset Engine"
+//!   • "Open Forge"
+//!   • "Quit Arbiter" (graceful shutdown)
 //!
 //! The engine continues running when the terminal window is closed.
 //! Quitting through the tray is the canonical shutdown path.
 
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
+use std::sync::{Arc, Mutex};
 use tracing::info;
 use tray_icon::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     TrayIcon, TrayIconBuilder,
 };
+
+#[derive(Clone)]
+struct TrayIcons {
+    idle: tray_icon::Icon,
+    executing: tray_icon::Icon,
+}
 
 // ── Tray App Events ───────────────────────────────────────────────────────────
 
@@ -31,53 +38,117 @@ pub enum TrayAppEvent {
     Shutdown,
     /// Reset requested via tray menu.
     Reset,
+    /// Pause or resume requested via tray menu.
+    SetPaused(bool),
+}
+
+fn resolve_forge_path() -> std::path::PathBuf {
+    let mut term_path = std::env::current_exe()
+        .unwrap_or_default()
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("arbiter-forge.exe");
+
+    if !term_path.exists() {
+        let dev_path = std::path::Path::new("target").join("debug").join("arbiter-forge.exe");
+        if dev_path.exists() {
+            term_path = dev_path;
+        }
+    }
+
+    term_path
+}
+
+fn spawn_forge(children: &Arc<Mutex<Vec<std::process::Child>>>) {
+    let term_path = resolve_forge_path();
+    match std::process::Command::new(term_path).spawn() {
+        Ok(child) => {
+            if let Ok(mut kids) = children.lock() {
+                kids.push(child);
+            }
+        }
+        Err(e) => tracing::error!(%e, "Failed to spawn Forge process"),
+    }
+}
+
+fn load_icon_from_bytes(icon_bytes: &[u8]) -> Result<tray_icon::Icon, Box<dyn std::error::Error>> {
+    let img = image::load_from_memory(icon_bytes)?;
+    let rgba = img.to_rgba8();
+    let (width, height) = rgba.dimensions();
+    Ok(tray_icon::Icon::from_rgba(rgba.into_raw(), width, height)?)
+}
+
+fn is_process_elevated() -> bool {
+    #[cfg(windows)]
+    {
+        unsafe { windows::Win32::UI::Shell::IsUserAnAdmin().as_bool() }
+    }
+    #[cfg(not(windows))]
+    {
+        false
+    }
 }
 
 // ── Icon Builder ──────────────────────────────────────────────────────────────
 
-/// Build and return the system tray icon and the status menu item handle.
+/// Build and return the system tray icon and menu item handles.
 ///
 /// The returned `TrayIcon` must be kept alive for the icon to remain visible.
-pub fn build_tray() -> Result<(TrayIcon, MenuItem), Box<dyn std::error::Error>> {
+fn build_tray() -> Result<(TrayIcon, MenuItem, TrayIcons), Box<dyn std::error::Error>> {
     // Embed the icon.ico from the data directory into the executable binary.
     // This ensures that the tray icon is *always* available, regardless of 
     // the working directory (e.g. when launched via Windows Startup registry).
-    let icon_bytes = include_bytes!("../../arbiter-data/icon.ico");
+    let icon_idle_bytes = include_bytes!("../../arbiter-data/icon.ico");
+    let icon_exec_bytes = include_bytes!("../../arbiter-data/icon_dot.ico");
 
-    let icon = match image::load_from_memory(icon_bytes) {
-        Ok(img) => {
-            let rgba = img.to_rgba8();
-            let (width, height) = rgba.dimensions();
-            tray_icon::Icon::from_rgba(rgba.into_raw(), width, height)?
-        }
+    let icon_idle = match load_icon_from_bytes(icon_idle_bytes) {
+        Ok(icon) => icon,
         Err(e) => {
             tracing::error!(%e, "Failed to load embedded icon; using fallback");
             build_fallback_icon()?
         }
     };
 
+    let icon_executing = match load_icon_from_bytes(icon_exec_bytes) {
+        Ok(icon) => icon,
+        Err(e) => {
+            tracing::error!(%e, "Failed to load embedded dot icon; using idle icon");
+            icon_idle.clone()
+        }
+    };
+
+    let icons = TrayIcons {
+        idle: icon_idle.clone(),
+        executing: icon_executing,
+    };
+
     let menu = Menu::new();
-    let status_item = MenuItem::with_id("status", "Arbiter — Standing By", false, None);
+    let elevated = is_process_elevated();
+    let status_text = if elevated { "Arbiter (Elevated)" } else { "Arbiter (Standard)" };
+    let status_item = MenuItem::with_id("status", status_text, false, None);
+    let pause_item = MenuItem::with_id("pause", "Pause Engine", true, None);
     let reset_item = MenuItem::with_id("reset", "Reset Engine", true, None);
     let open_item = MenuItem::with_id("forge", "Open Forge", true, None);
     let quit_item = MenuItem::with_id("quit", "Quit Arbiter", true, None);
 
     menu.append(&status_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
-    menu.append(&reset_item)?;
-    menu.append(&PredefinedMenuItem::separator())?;
     menu.append(&open_item)?;
+    menu.append(&PredefinedMenuItem::separator())?;
+    menu.append(&pause_item)?;
+    menu.append(&PredefinedMenuItem::separator())?;
+    menu.append(&reset_item)?;
     menu.append(&PredefinedMenuItem::separator())?;
     menu.append(&quit_item)?;
 
     let tray = TrayIconBuilder::new()
         .with_menu(Box::new(menu))
-        .with_tooltip("Arbiter — Standing By")
-        .with_icon(icon)
+        .with_tooltip(if elevated { "Arbiter — Standing By (Elevated)" } else { "Arbiter — Standing By" })
+        .with_icon(icon_idle)
         .build()?;
 
     info!("Tray icon built and visible");
-    Ok((tray, status_item))
+    Ok((tray, pause_item, icons))
 }
 
 fn build_fallback_icon() -> Result<tray_icon::Icon, Box<dyn std::error::Error>> {
@@ -98,7 +169,6 @@ fn build_fallback_icon() -> Result<tray_icon::Icon, Box<dyn std::error::Error>> 
 pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoopProxy<TrayAppEvent>) + 'static) {
     use tao::event::Event;
     use tray_icon::menu::MenuEvent;
-    use std::sync::{Arc, Mutex};
 
     let event_loop = EventLoopBuilder::<TrayAppEvent>::with_user_event().build();
     let proxy = event_loop.create_proxy();
@@ -107,7 +177,8 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
     let children = Arc::new(Mutex::new(Vec::<std::process::Child>::new()));
 
     // Build tray inside the event loop (Windows COM requirement).
-    let (tray, status_item) = build_tray().expect("Failed to build system tray");
+    let (tray, pause_item, icons) = build_tray().expect("Failed to build system tray");
+    let mut paused = false;
 
     info!("Arbiter tray event loop starting");
 
@@ -134,33 +205,31 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
             if id == "reset" {
                 info!("Tray: Reset requested");
                 on_event(TrayAppEvent::Reset, proxy.clone());
+
+                let mut was_open = false;
+                if let Ok(mut kids) = children.lock() {
+                    was_open = !kids.is_empty();
+                    for mut child in kids.drain(..) {
+                        let _ = child.kill();
+                    }
+                }
+                if was_open {
+                    info!("Tray: Reset restarting Forge instance");
+                    spawn_forge(&children);
+                }
+            }
+
+            if id == "pause" {
+                paused = !paused;
+                let label = if paused { "Resume Engine" } else { "Pause Engine" };
+                pause_item.set_text(label);
+                info!(paused, "Tray: Pause state toggled");
+                on_event(TrayAppEvent::SetPaused(paused), proxy.clone());
             }
 
             if id == "forge" {
                 info!("Tray: Spawning Forge user interface");
-                
-                let mut term_path = std::env::current_exe()
-                    .unwrap_or_default()
-                    .parent()
-                    .unwrap_or(std::path::Path::new("."))
-                    .join("arbiter-forge.exe");
-
-                // Fallback for dev environment if not in the same folder (e.g. running via cargo)
-                if !term_path.exists() {
-                    let dev_path = std::path::Path::new("target").join("debug").join("arbiter-forge.exe");
-                    if dev_path.exists() {
-                        term_path = dev_path;
-                    }
-                }
-
-                match std::process::Command::new(term_path).spawn() {
-                    Ok(child) => {
-                        if let Ok(mut kids) = children.lock() {
-                            kids.push(child);
-                        }
-                    }
-                    Err(e) => tracing::error!(%e, "Failed to spawn Forge process"),
-                }
+                spawn_forge(&children);
             }
         }
 
@@ -169,8 +238,14 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
             match app_event {
                 TrayAppEvent::StatusUpdate(msg) => {
                     info!(%msg, "Tray: status update");
+                    let is_executing = msg.starts_with("Executing:");
+                    let icon = if is_executing {
+                        icons.executing.clone()
+                    } else {
+                        icons.idle.clone()
+                    };
+                    let _ = tray.set_icon(Some(icon));
                     let _ = tray.set_tooltip(Some(format!("Arbiter — {}", msg)));
-                    status_item.set_text(format!("Arbiter — {}", msg));
                 }
                 TrayAppEvent::Shutdown => {
                     info!("Tray: engine-initiated shutdown — killing children");
@@ -184,6 +259,11 @@ pub fn run_event_loop(on_event: impl Fn(TrayAppEvent, tao::event_loop::EventLoop
                 }
                 TrayAppEvent::Reset => {
                     on_event(TrayAppEvent::Reset, proxy.clone());
+                }
+                TrayAppEvent::SetPaused(is_paused) => {
+                    paused = is_paused;
+                    let label = if paused { "Resume Engine" } else { "Pause Engine" };
+                    pause_item.set_text(label);
                 }
             }
         }

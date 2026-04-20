@@ -3,11 +3,18 @@
 [![CI](https://github.com/Sid-352/Project-Vassal/actions/workflows/ci.yml/badge.svg)](https://github.com/Sid-352/Project-Vassal/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Sid-352/Project-Vassal?label=release)](https://github.com/Sid-352/Project-Vassal/releases/latest)
 
-Arbiter is a deterministic system orchestration and automation engine. It acts as a silent background service designed to perform complex physical and system-level workflows reliably. It prioritizes security, structural stability, and protection against unbounded behavior. I made it to more or less execute scripts that I don't wish to open the terminal for, to arrange my downloads and to perform other repetitive tasks. It's not made for production use, but it can still perform on there, tho its moreso geared towards personal use.
+Arbiter is a deterministic system orchestration and automation engine. It acts as a silent background service designed to perform complex physical and system-level workflows reliably. It prioritizes security, structural stability, and protection against unbounded behavior. I made it to more or less execute scripts that I don't wish to open the terminal for, to arrange my downloads and to perform other repetitive tasks.
+
+## Why Arbiter?
+In my experience, simple Bash scripts and Task Scheduler sometimes fail to provide the necessary hardware context or stateful evaluation required for complex workflows. Thus, some examples of what can be done in Arbiter;
+
+1. **Clean Slate Context Switch:** A single global hotkey kills all distracting background processes, launches a specific project directory in your code editor, spins up a local dev server, and physically centers the mouse on your primary monitor.
+2. **Aggressive Asset Pipelines:** Arbiter monitors designated Dropzone folders. When raw media is detected, it instantly catches the file, pipes it through a CLI optimizer via the Shell Bridge, moves the optimized output to a target directory, and purges the original.
+3. **Anti Distraction Enforcement:** An execution loop monitors process launches. If a blacklisted application (like steam) is launched during focused hours, Arbiter intercepts it, kills the process immediately, and can log the violation.
 
 ## Core Philosophy
 
-* **Deterministic Execution**: Actions follow rigid and explicitly defined orchestration graphs instead of probabilistic models. Execution paths are strictly predictable and bounded.
+* **Deterministic Execution**: Actions follow rigid and explicitly defined orchestration graphs such that execution paths are strictly bounded.
 * **Headless Default**: Arbiter operates primarily as a silent background tray application. File system hooks, hotkey triggers, and hardware queues function independently of a visual interface.
 
 ## Architecture
@@ -58,14 +65,38 @@ Arbiter is mechanically prevented from operating beyond user-defined constraints
 * **Scope-bound Presence Sensitivity**: Fine-grained control over human input detection, allowing specific sequences to ignore mouse movement while remaining reactive to keyboard safety yields.
 * **Custom Daily Rolling Logs**: Automated log management using a custom writer that organizes history by date in the `arbiter-data` directory.
 
-## Getting Started
+## Getting Started and Installation
+
+> [!NOTE]
+> Arbiter uses a low-level Win32 API (WH_KEYBOARD_LL) to capture global hotkeys and spawn detached shell processes. Pre-compiled binaries in the zip file may be flagged by Windows Defender heuristics. For a frictionless experience, download the pre-compiled binaries via the powershell command below, compile locally using cargo install or add an explicit folder exclusion in Windows Security.
 
 ### Prerequisites
 
 * Windows 10 or later
-* Rust 1.70 or later
+* Rust 1.70 or later for building from source
 
-### Installation
+### Downloading Pre-built Binaries
+
+1. Download the latest release from the [releases page](https://github.com/Sid-352/Project-Arbiter/releases/latest).
+2. Extract the contents of the downloaded file.
+3. Run the background service (as Administrator):
+```bash
+.\arbiter.exe
+```
+
+### Downloading via Powershell
+Downloading directly can bypass some of the Windows Defender SmartScreen issues and reduces false-positive flags.
+```powershell
+Invoke-WebRequest -Uri "https://github.com/Sid-352/Project-Arbiter/releases/latest/download/arbiter-windows.zip" -OutFile "arbiter.zip"; Expand-Archive "arbiter.zip" -DestinationPath ".\arbiter"; Unblock-File -Path ".\arbiter\*.exe"
+```
+
+### Install via Cargo 
+Compiling locally guarantees that the application won't run into any SmartScreen issues.
+```bash
+cargo install --git [https://github.com/Sid-352/Project-Arbiter.git](https://github.com/Sid-352/Project-Arbiter.git) arbiter-app arbiter-forge
+```
+
+### Building from Source
 
 1. Clone the repository:
 ```bash
@@ -84,6 +115,14 @@ cargo build --release --package arbiter-forge
 .\target\release\arbiter.exe
 ```
 
+### Quick Start (Windows)
+
+1. Start `arbiter.exe` (Admin recommended).
+2. Wait for the tray icon, then click `Open Forge` from the tray menu.
+3. In Forge, create/save a decree and drop a matching file into your monitored folder to test.
+
+Forge is expected to be launched by Arbiter App from the tray.
+
 ## Usage
 
 ### Running as a Background Service
@@ -94,9 +133,13 @@ cargo run --release --package arbiter-app
 
 ### Running the UI
 
+Start the app first, then open Forge from the tray icon (`Open Forge`).
+
 ```bash
 cargo run --release --package arbiter-forge
 ```
+
+Direct Forge runs are only valid when Arbiter App is already running.
 
 ## License
 

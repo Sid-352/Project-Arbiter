@@ -7,7 +7,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.6"
 edition = "2021"
 authors = ["Chameleon Sid-352"]
 license = "MIT"
@@ -34,7 +34,7 @@ lazy_static        = "1.4"
 chrono             = "0.4"
 dirs               = "5.0"
 image              = "0.25"
-windows            = { version = "0.58", features = ["Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_SystemInformation", "Win32_Foundation"] }
+windows            = { version = "0.58", features = ["Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_SystemInformation", "Win32_Foundation", "Win32_UI_Shell"] }
 winres             = "0.1"
 slint              = { version = "1.15", features = ["renderer-winit-skia", "image-default-formats"] }
 slint-build        = "1.15"

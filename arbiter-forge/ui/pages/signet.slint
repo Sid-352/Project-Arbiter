@@ -1,6 +1,6 @@
 import { ScrollView } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
-import { ActionButton, InputPill } from "../widgets.slint";
+import { ActionButton, InputPill, IconButton } from "../widgets.slint";
 
 export component SignetPage inherits Rectangle {
     in-out property <[string]> trusted-paths: [];
@@ -158,13 +158,16 @@ export component SignetPage inherits Rectangle {
                             placeholder: "Directory Path...";
                             monospaced: true;
                             horizontal-stretch: 1;
+                            edited(v) => {
+                                root.update-trusted-path(idx, v);
+                            }
                             committed(v) => {
                                 root.update-trusted-path(idx, v);
                             }
                         }
 
-                        ActionButton {
-                            label: "BROWSE";
+                        IconButton {
+                            icon-commands: "M 11 19 A 8 8 0 1 1 19 11 M 22 22 L 17 17";
                             clicked => {
                                 let picked = root.pick-folder();
                                 if (picked != "") {
@@ -250,6 +253,9 @@ export component SignetPage inherits Rectangle {
                             placeholder: "Program name...";
                             monospaced: true;
                             horizontal-stretch: 1;
+                            edited(v) => {
+                                root.update-baton(idx, v);
+                            }
                             committed(v) => {
                                 root.update-baton(idx, v);
                             }

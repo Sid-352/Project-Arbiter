@@ -585,5 +585,6 @@ pub struct ExecData {
     pub presence_config: PresenceConfig,
     pub decree_id: Option<DecreeId>,
     pub trigger_time: Instant,
+    pub dry_run: bool,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
 }
