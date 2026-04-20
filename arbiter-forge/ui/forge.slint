@@ -11,6 +11,7 @@ import {
     InputPill,
     TextEdit,
     ActionButton,
+    IconButton,
 } from "widgets.slint";
 import { DecreeStepItem } from "decree_step.slint";
 import { ConservatoryPage } from "pages/conservatory.slint";
@@ -51,6 +52,7 @@ export component ArbiterForge inherits Window {
     property <string> modal-title: "";
     property <string> modal-message: "";
     property <int> modal-action-type: 0;
+    property <string> pending-remove-decree-id: "";
 
     in-out property <[WardEntry]> ward-list: [];
     in-out property <[string]> trusted-paths: [];
@@ -65,6 +67,7 @@ export component ArbiterForge inherits Window {
     callback toggle-ward-recursive(string);
 
     callback pick-folder() -> string;
+    callback browse-monitor-path;
 
     callback add-trusted-path;
     callback remove-trusted-path(int);
@@ -80,6 +83,7 @@ export component ArbiterForge inherits Window {
     callback save-signet;
 
     callback save-decree;
+    callback simulate-decree;
     callback new-decree;
     callback select-decree(string);
     callback append-step(int);
@@ -210,7 +214,11 @@ export component ArbiterForge inherits Window {
                                     root.select-decree(item.id);
                                 }
                                 remove => {
-                                    root.remove-decree(item.id);
+                                    root.modal-title = "Confirm Deletion";
+                                    root.modal-message = "Delete this decree from Arbiter? This cannot be undone.";
+                                    root.modal-action-type = 2;
+                                    root.pending-remove-decree-id = item.id;
+                                    root.show-modal = true;
                                 }
                             }
                             if root.decree-list.length == 0: VerticalLayout {
@@ -299,15 +307,32 @@ export component ArbiterForge inherits Window {
                         HorizontalLayout {
                             spacing: 12px;
                             FocusScope {
-                                width: max(120px, input-label.preferred-width + 20px);
-                                height: input-label.preferred-height;
+                                width: max(160px, input-label.preferred-width + 28px);
+                                height: input-label.preferred-height + 10px;
+                                Rectangle {
+                                    width: parent.width;
+                                    height: parent.height;
+                                    border-width: input-label.has-focus ? 1px : 0px;
+                                    border-color: input-label.has-focus ? Theme.accent : transparent;
+                                    border-radius: Theme.radius / 2;
+                                    background: input-label.has-focus ? Theme.bg-card : transparent;
+                                    animate border-color { duration: Theme.dur-fast; }
+                                    animate background { duration: Theme.dur-fast; }
+                                }
                                 input-label := TextInput {
+                                    x: 10px;
+                                    y: 5px;
+                                    width: parent.width - 20px;
+                                    height: parent.height - 10px;
                                     text <=> root.active-decree-label;
                                     color: Theme.text-main;
                                     font-size: Theme.font-large + 2px;
                                     font-weight: 700;
                                     vertical-alignment: center;
                                     single-line: true;
+                                    edited => {
+                                        root.active-decree-renamed(root.active-decree-id, self.text);
+                                    }
                                     accepted => {
                                         root.active-decree-renamed(root.active-decree-id, self.text);
                                     }
@@ -322,6 +347,17 @@ export component ArbiterForge inherits Window {
 
                     Rectangle {
                         horizontal-stretch: 1;
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        ActionButton {
+                            label: "SIMULATE DECREE";
+                            width: 160px;
+                            clicked => {
+                                root.simulate-decree();
+                            }
+                        }
                     }
 
                     VerticalLayout {
@@ -463,8 +499,25 @@ export component ArbiterForge inherits Window {
 
                                             InputPill {
                                                 value <=> root.summons-path;
-                                                placeholder: "C:/Inbound/";
+                                                placeholder: "C:\\Inbound\\";
                                                 monospaced: true;
+                                            }
+                                        }
+
+                                        VerticalLayout {
+                                            spacing: 6px;
+                                            width: Theme.btn-height;
+                                            Text {
+                                                text: "";
+                                                color: Theme.text-muted;
+                                                font-size: Theme.font-tiny + 1px;
+                                            }
+
+                                            IconButton {
+                                                icon-commands: "M 11 19 A 8 8 0 1 1 19 11 M 22 22 L 17 17";
+                                                clicked => {
+                                                    root.browse-monitor-path();
+                                                }
                                             }
                                         }
 
@@ -1109,6 +1162,7 @@ export component ArbiterForge inherits Window {
                         label: "CANCEL";
                         clicked => {
                             root.show-modal = false;
+                            root.pending-remove-decree-id = "";
                         }
                     }
 
@@ -1120,6 +1174,9 @@ export component ArbiterForge inherits Window {
                             root.show-modal = false;
                             if (root.modal-action-type == 1) {
                                 root.save-decree();
+                            } else if (root.modal-action-type == 2) {
+                                root.remove-decree(root.pending-remove-decree-id);
+                                root.pending-remove-decree-id = "";
                             }
                         }
                     }

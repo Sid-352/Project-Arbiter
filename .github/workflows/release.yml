@@ -33,6 +33,61 @@ jobs:
       - name: Build arbiter-forge (UI)
         run: cargo build --release --package arbiter-forge
 
+      - name: Build offline wiki HTML
+        shell: pwsh
+        run: |
+          $wikiSrc = "doc\wiki_pages"
+          $wikiOut = "dist\wiki-offline"
+          New-Item -ItemType Directory -Force -Path $wikiOut | Out-Null
+
+          # Copy all wiki source files so markdown/text is still available offline.
+          Copy-Item "$wikiSrc\*" $wikiOut -Recurse -Force
+
+          # Keeping this simple: ship a usable offline page with the quick manual
+          # rendered inline from README.txt, plus links to raw files.
+          $readmeText = Get-Content -Raw "$wikiOut\README.txt"
+          $readmeHtml = [System.Net.WebUtility]::HtmlEncode($readmeText)
+
+          $html = @"
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Project Arbiter Offline Wiki</title>
+            <style>
+              body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+              .wrap { max-width: 960px; margin: 0 auto; padding: 24px; }
+              .card { background: #111827; border: 1px solid #334155; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+              h1 { margin-top: 0; font-size: 28px; }
+              a { color: #38bdf8; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              ul { line-height: 1.7; }
+              pre { white-space: pre-wrap; line-height: 1.45; font-family: Consolas, "Courier New", monospace; }
+              code { background: #1f2937; padding: 2px 6px; border-radius: 6px; }
+            </style>
+          </head>
+          <body>
+            <div class="wrap">
+              <div class="card">
+                <h1>Project Arbiter Offline Wiki</h1>
+                <p>This release includes offline documentation files.</p>
+                <ul>
+                  <li><a href="README.txt">Open quick manual (TXT)</a></li>
+                  <li><a href="README.md">Open quick manual (Markdown)</a></li>
+                </ul>
+              </div>
+              <div class="card">
+                <h2>Quick Manual</h2>
+                <pre>$readmeHtml</pre>
+              </div>
+            </div>
+          </body>
+          </html>
+          "@
+
+          Set-Content -Path "$wikiOut\index.html" -Value $html -Encoding UTF8
+
       - name: Create release archive
         shell: pwsh
         run: |
@@ -43,7 +98,8 @@ jobs:
           Copy-Item "target\release\arbiter.exe"       "$outDir\arbiter.exe"
           Copy-Item "target\release\arbiter-forge.exe" "$outDir\arbiter-forge.exe"
           Copy-Item "arbiter-app\assets\icon.ico"      "$outDir\icon.ico" -ErrorAction SilentlyContinue
-          Copy-Item "README.md"                        "$outDir\README.md"
+          Copy-Item "doc\wiki_pages\README.txt"       "$outDir\README.txt"
+          Copy-Item "dist\wiki-offline"                "$outDir\wiki" -Recurse -Force
 
           Compress-Archive -Path "$outDir\*" -DestinationPath "arbiter-$version-windows-x64.zip"
 
@@ -76,8 +132,8 @@ jobs:
 
             ### Installation
             1. Download and extract the zip archive.
-            2. Run `arbiter.exe` as Administrator to start the background service. The control interface can be opened via the system tray icon.
-            3. Run `arbiter-forge.exe` to open the control interface directly (not recommended for regular use).
+            2. Run `arbiter.exe` as Administrator to start the background service.
+            3. Open Forge from the system tray icon (`Open Forge`).
 
             Configuration (ledger.json and signet.vault) is created automatically in an `arbiter-data` directory next to the executables on first launch.
           files: arbiter-*.zip

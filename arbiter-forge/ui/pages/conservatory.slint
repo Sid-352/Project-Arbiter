@@ -1,7 +1,7 @@
 import { ScrollView } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
 import { WardEntry } from "../models.slint";
-import { ActionButton, InputPill } from "../widgets.slint";
+import { ActionButton, InputPill, IconButton } from "../widgets.slint";
 
 export component ConservatoryPage inherits Rectangle {
     in-out property <[WardEntry]> wards: [];
@@ -43,12 +43,14 @@ export component ConservatoryPage inherits Rectangle {
                         Text { text: "PATH"; color: Theme.text-muted; font-size: Theme.font-tiny; vertical-alignment: center; font-weight: 800; width: 60px; }
                         InputPill { horizontal-stretch: 1; value: ward.path; placeholder: "Directory Path..."; monospaced: true; 
                                     committed(v) => { root.update-path(ward.id, v); } }
-                        ActionButton { label: "BROWSE"; clicked => { 
+                        IconButton {
+                            icon-commands: "M 11 19 A 8 8 0 1 1 19 11 M 22 22 L 17 17";
+                            clicked => {
                             let picked = root.pick-folder();
                             if (picked != "") {
                                 root.update-path(ward.id, picked);
                             }
-                        } }
+                        }}
                     }
                     HorizontalLayout {
                         spacing: Theme.space-md;

@@ -26,10 +26,16 @@ pub enum ForgeCommand {
     SaveWards(Vec<crate::decree::WardConfig>),
     /// Save updated Signet configuration.
     SaveSignet(crate::signet::ArbiterConfig),
+    /// Pause or resume engine task execution.
+    SetPaused { paused: bool },
+    /// Remove a decree definition by id.
+    RemoveDecree { decree_id: String },
+    /// Rename a decree label by id.
+    RenameDecree { decree_id: String, label: String },
     /// Request a reload of all ward configurations.
     ReloadWards,
     /// Manually trigger a specific decree.
-    ManualRun { summons_key: String },
+    ManualRun { summons_key: String, dry_run: bool },
 }
 
 /// A structured log entry for transmission over the wire.

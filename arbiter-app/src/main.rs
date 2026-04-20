@@ -227,7 +227,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 baton_allowed: fresh_signet.baton_allowed.clone(),
                 decree_id: exec_data.decree_id,
                 trigger_time: exec_data.trigger_time,
-                dry_run: false,
+                dry_run: exec_data.dry_run,
             };
             let _ = exec_cmd_tx.send(cmd).await;
         }
@@ -270,6 +270,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let shutdown_cell = Arc::new(std::sync::Mutex::new(Some(atlas_shutdown_tx)));
     let reset_cell = Arc::new(std::sync::Mutex::new(reset_tx));
+    let paused_cell = Arc::new(std::sync::Mutex::new(false));
+    let pause_cmd_tx = forge_cmd_tx.clone();
 
     // ── Tray (blocks main thread) ─────────────────────────────────────────────
     let tray_broadcast = atlas_broadcast.clone();
@@ -283,6 +285,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             tray::TrayAppEvent::Reset => {
                 if let Ok(cell) = reset_cell.lock() { let _ = cell.try_send(()); }
             }
+            tray::TrayAppEvent::SetPaused(paused) => {
+                if let Ok(mut p) = paused_cell.lock() {
+                    *p = paused;
+                }
+                let _ = pause_cmd_tx.try_send(ForgeCommand::SetPaused { paused });
+                let label = if paused { "Paused" } else { "Standing By" };
+                let _ = proxy.send_event(tray::TrayAppEvent::StatusUpdate(label.into()));
+            }
             _ => {}
         }
 
@@ -295,6 +305,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 while let Ok(entry) = log_rx.recv().await {
                     match entry.tag.as_str() {
                         "ATLAS" => {
+                            if entry.message.contains("Engine paused") {
+                                let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate("Paused".into()));
+                                continue;
+                            }
+                            if entry.message.contains("Engine resumed") {
+                                let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate("Standing By".into()));
+                                continue;
+                            }
                             if entry.message.contains("matched") {
                                 if let Some(id) = entry.decree_id {
                                     let _ = proxy_atlas.send_event(tray::TrayAppEvent::StatusUpdate(format!("Executing: {}", id)));

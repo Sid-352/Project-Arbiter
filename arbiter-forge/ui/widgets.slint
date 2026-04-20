@@ -157,6 +157,7 @@ export component InputPill inherits Rectangle {
     in-out property <string> value;
     in property <string> placeholder: "";
     in property <bool> monospaced: false;
+    callback edited(string);
     callback committed(string);
     background: Theme.bg-input;
     border-radius: Theme.radius / 2;
@@ -182,6 +183,9 @@ export component InputPill inherits Rectangle {
             font-family: root.monospaced ? "Consolas" : "Segoe UI";
             vertical-alignment: center;
             single-line: true;
+            edited => {
+                root.edited(self.text);
+            }
             accepted => {
                 root.committed(self.text);
             }
@@ -282,5 +286,39 @@ export component ActionButton inherits Rectangle {
             horizontal-alignment: center;
             vertical-alignment: center;
         }
+    }
+}
+
+export component IconButton inherits Rectangle {
+    in property <string> icon-commands;
+    in property <color> icon-color: Theme.text-secondary;
+    in property <color> hover-bg: Theme.accent-subtle;
+    callback clicked;
+    width: Theme.btn-height;
+    height: Theme.btn-height;
+    border-radius: Theme.radius / 2;
+    border-width: 1px;
+    border-color: Theme.border;
+    background: ta.has-hover ? root.hover-bg : transparent;
+    animate background { duration: Theme.dur-fast; }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    Path {
+        width: 14px;
+        height: 14px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        stroke: ta.has-hover ? Theme.accent : root.icon-color;
+        stroke-width: 2px;
+        fill: transparent;
+        commands: root.icon-commands;
     }
 }

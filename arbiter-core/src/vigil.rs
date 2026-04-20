@@ -87,10 +87,10 @@ pub fn is_temp_file(path: &str) -> bool {
 ///
 /// Polls the file size twice with a 400 ms delay. If both samples match and
 /// are non-zero the write is considered complete.
-pub async fn is_write_complete(path: &str) -> bool {
-    let size_a = tokio::fs::metadata(path).await.map(|m| m.len()).ok();
-    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
-    let size_b = tokio::fs::metadata(path).await.map(|m| m.len()).ok();
+pub fn is_write_complete(path: &str) -> bool {
+    let size_a = std::fs::metadata(path).map(|m| m.len()).ok();
+    std::thread::sleep(std::time::Duration::from_millis(400));
+    let size_b = std::fs::metadata(path).map(|m| m.len()).ok();
     match (size_a, size_b) {
         (Some(a), Some(b)) => {
             let stable = a == b && b > 0;
@@ -155,16 +155,47 @@ pub mod fs {
             };
 
             let mode = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
-            if let Err(e) = watcher.watch(&watch_path, mode) {
-                warn!(%e, path = %watch_path.display(), ?mode, "Vigil-fs: failed to watch path");
-                return;
-            }
+            let mut watching = false;
+            let mut missing_logged = false;
 
             loop {
                 // Check for shutdown signal
                 if shutdown_rx.try_recv().is_ok() {
                     info!(%ward_id, "Vigil-fs: shutdown signal received, terminating watcher");
                     break;
+                }
+
+                if !watching {
+                    if !watch_path.exists() {
+                        if !missing_logged {
+                            warn!(
+                                path = %watch_path.display(),
+                                ?mode,
+                                "Vigil-fs: watch path unavailable at startup; retrying until available"
+                            );
+                            missing_logged = true;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(1000));
+                        continue;
+                    }
+
+                    match watcher.watch(&watch_path, mode) {
+                        Ok(_) => {
+                            watching = true;
+                            missing_logged = false;
+                            info!(path = %watch_path.display(), ?mode, "Vigil-fs: watcher attached");
+                        }
+                        Err(e) => {
+                            warn!(
+                                %e,
+                                path = %watch_path.display(),
+                                ?mode,
+                                "Vigil-fs: failed to attach watcher; retrying"
+                            );
+                            std::thread::sleep(std::time::Duration::from_millis(1000));
+                            continue;
+                        }
+                    }
                 }
 
                 // Drain notify events with a short timeout to keep checking shutdown_rx
@@ -267,10 +298,10 @@ pub mod fs {
                             // so this watcher loop is freed immediately to pick up the
                             // next filesystem event without sitting idle on every file.
                             let tx_clone = tx.clone();
-                            tokio::spawn(async move {
-                                if !super::is_write_complete(&path_str_check).await { return; }
+                            std::thread::spawn(move || {
+                                if !super::is_write_complete(&path_str_check) { return; }
                                 if is_debounced(&debounce_sig) { return; }
-                                let _ = tx_clone.send(summons).await;
+                                let _ = tx_clone.blocking_send(summons);
                             });
                         }
                     }

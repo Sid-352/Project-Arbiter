@@ -44,6 +44,33 @@ async fn send_command(cmd: &ForgeCommand) {
     }
 }
 
+fn normalize_windows_path(path: &str) -> String {
+    fn is_drive_root(p: &str) -> bool {
+        let b = p.as_bytes();
+        b.len() == 3 && b[1] == b':' && b[2] == b'\\'
+    }
+
+    let mut out = path.trim().replace('/', "\\");
+    while out.ends_with('\\') && !is_drive_root(&out) {
+        out.pop();
+    }
+    out
+}
+
+async fn app_is_available(wait_for: Duration) -> bool {
+    use tokio::net::windows::named_pipe::ClientOptions;
+    let deadline = std::time::Instant::now() + wait_for;
+    loop {
+        if ClientOptions::new().open(PIPE_COMMAND).is_ok() {
+            return true;
+        }
+        if std::time::Instant::now() >= deadline {
+            return false;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+}
+
 fn collect_decree_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::DecreeDef {
     let id = DecreeId(ui.get_active_decree_id().to_string());
     let label = ui.get_active_decree_label().to_string();
@@ -51,7 +78,7 @@ fn collect_decree_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::DecreeDef 
     let _trigger_type = ui.get_summons_trigger_type();
     let summons = match ui.get_summons_trigger_type() {
         0 => SummonsDef::FileCreated {
-            ward_id: ui.get_summons_path().to_string(),
+            ward_id: normalize_windows_path(ui.get_summons_path().as_ref()),
             pattern: ui.get_summons_pattern().to_string(),
             recursive: ui.get_summons_ward_recursive(),
         },
@@ -153,6 +180,23 @@ fn collect_decree_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::DecreeDef 
             ignore_keyboard: ui.get_presence_ignore_keyboard(),
         },
     }
+}
+
+fn next_new_decree_label() -> String {
+    let mut max_n = 0u32;
+    DECREE_MODEL.with(|m| {
+        for i in 0..m.row_count() {
+            if let Some(entry) = m.row_data(i) {
+                let label = entry.label.to_string();
+                if let Some(suffix) = label.strip_prefix("New Decree ") {
+                    if let Ok(n) = suffix.trim().parse::<u32>() {
+                        max_n = max_n.max(n);
+                    }
+                }
+            }
+        }
+    });
+    format!("New Decree {}", max_n + 1)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -266,6 +310,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     info!("Arbiter Forge: Launching Slint Interface");
 
+    if !app_is_available(Duration::from_secs(4)).await {
+        let _ = rfd::MessageDialog::new()
+            .set_title("Arbiter Forge")
+            .set_description("Arbiter App is not running. Start the app first.")
+            .set_level(rfd::MessageLevel::Error)
+            .show();
+        return Ok(());
+    }
+
     let ui = ArbiterForge::new()?;
     let ui_handle = ui.as_weak();
 
@@ -369,6 +422,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     || core_entry.message.contains("aborted")
                                 );
 
+                                let should_sync = core_entry.tag == "ATLAS" && (
+                                    core_entry.message.contains("registered and saved")
+                                    || core_entry.message.contains("removed and saved")
+                                );
+                                let should_sync_signet = core_entry.tag == "VIGIL"
+                                    && core_entry.message.contains("Conservatory Wards updated");
+
                                 let entry = LogEntry {
                                     time:      time_str.into(),
                                     tag:       core_entry.tag.into(),
@@ -384,6 +444,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             m.remove(0);
                                         }
                                     });
+                                    if should_sync {
+                                        sync_ledger_to_ui();
+                                    }
+                                    if should_sync_signet {
+                                        sync_signet_to_ui(&ui);
+                                    }
                                     // Reflect engine execution state in the UI tracer
                                     if is_runner {
                                         ui.set_engine_running(!is_done);
@@ -448,9 +514,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tokio::spawn(async move {
                     send_command(&cmd).await;
                 });
-                
-                // Refresh sidebar list to reflect any label changes
-                sync_ledger_to_ui();
+            }
+        }
+    });
+
+    ui.on_simulate_decree({
+        let ui_handle = ui_handle.clone();
+        move || {
+            if let Some(ui) = ui_handle.upgrade() {
+                let def = collect_decree_from_ui(&ui);
+                if let Err(e) = def.validate() {
+                    LOG_MODEL.with(|m| {
+                        m.push(LogEntry {
+                            time: chrono::Local::now().format("%H:%M:%S").to_string().into(),
+                            tag: "VALIDATE".into(),
+                            tag_color: Color::from_rgb_u8(244, 63, 94),
+                            msg: format!("Validation Error: {}", e).into(),
+                            decree_id: "".into(),
+                        });
+                    });
+                    return;
+                }
+
+                let key = match &def.summons {
+                    SummonsDef::FileCreated { ward_id, pattern, .. } => format!("FileCreated|{}|{}", ward_id, pattern),
+                    SummonsDef::Hotkey { combo } => format!("Hotkey|{}", combo),
+                    SummonsDef::ProcessAppeared { name } => format!("ProcessAppeared|{}", name),
+                    SummonsDef::Manual => "Manual".to_string(),
+                };
+                let save_cmd = ForgeCommand::SaveDecree(def);
+                let run_cmd = ForgeCommand::ManualRun { summons_key: key, dry_run: true };
+                tokio::spawn(async move {
+                    send_command(&save_cmd).await;
+                    send_command(&run_cmd).await;
+                });
             }
         }
     });
@@ -462,10 +559,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let ui_handle    = ui_handle.clone();
         move || {
             let id = next_id();
+            let label = next_new_decree_label();
             info!(new_id = %id, "Forge: new-decree");
             decree_model.push(DecreeEntry {
                 id:     id.clone().into(),
-                label:  "New Decree".into(),
+                label:  label.clone().into(),
                 status: 0,
             });
             // Clear the step canvas for the new decree
@@ -474,7 +572,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             if let Some(ui) = ui_handle.upgrade() {
                 ui.set_active_decree_id(id.into());
-                ui.set_active_decree_label("New Decree".into());
+                ui.set_active_decree_label(label.into());
                 ui.set_active_decree_status(0);
                 ui.set_selected_step_id("".into());
                 ui.set_presence_ignore_mouse(false);
@@ -516,7 +614,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match &ord.summons {
                         SummonsDef::FileCreated { ward_id, pattern, recursive } => {
                             ui.set_summons_trigger_type(0);
-                            ui.set_summons_path(ward_id.clone().into());
+                            ui.set_summons_path(normalize_windows_path(ward_id).into());
                             ui.set_summons_pattern(pattern.clone().into());
                             ui.set_summons_ward_recursive(*recursive);
                         }
@@ -627,7 +725,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         move |step_type| {
             let id = next_id();
             let (title, subtext, arg_a, arg_b) = match step_type {
-                0 => ("Move File",     "Inscribe: relocate artifact",      "${env.file_path}", "C:/Destination/"),
+                0 => ("Move File",     "Inscribe: relocate artifact",      "${env.file_path}", "C:\\Destination\\"),
                 1 => ("Shell Command", "Shell: execute external program",  "program.exe",      "${env.file_path}"),
                 2 => ("Type Text",     "Synthetic: emit keystrokes",         "TYPE",             "${env.file_name}"),
                 3 => ("Steady Wait",   "Wait for condition to stabilise",  "1000",             ""),
@@ -656,14 +754,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let ui_handle = ui_handle.clone();
         move |id| {
             info!(decree_id = %id, "Forge: remove-decree");
-            let mut ledger = arbiter_core::ledger::load().unwrap_or_else(|e| {
-                tracing::error!("Forge: Failed to load ledger for removal: {}", e);
-                arbiter_core::ledger::ArbiterLedger::default()
+            let cmd = ForgeCommand::RemoveDecree {
+                decree_id: id.to_string(),
+            };
+            tokio::spawn(async move {
+                send_command(&cmd).await;
             });
-            ledger.decrees.retain(|o| id != o.id.0);
-            let _ = arbiter_core::ledger::save(&ledger);
-            
-            sync_ledger_to_ui();
             
             if let Some(ui) = ui_handle.upgrade() {
                 if ui.get_active_decree_id() == id {
@@ -710,6 +806,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     ui.on_active_decree_renamed(move |id, new_label| {
         info!(id = %id, label = %new_label, "Forge: active-decree-renamed");
+        if id.is_empty() || new_label.trim().is_empty() {
+            return;
+        }
         DECREE_MODEL.with(|m| {
             for i in 0..m.row_count() {
                 if let Some(mut entry) = m.row_data(i) {
@@ -722,12 +821,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         });
 
-        // Also update in ledger file
-        let mut ledger = arbiter_core::ledger::load().unwrap_or_else(|_| arbiter_core::ledger::ArbiterLedger::default());
-        if let Some(ord) = ledger.decrees.iter_mut().find(|o| o.id.0 == id.as_str()) {
-            ord.label = new_label.to_string();
-            let _ = arbiter_core::ledger::save(&ledger);
-        }
+        let cmd = ForgeCommand::RenameDecree {
+            decree_id: id.to_string(),
+            label: new_label.to_string(),
+        };
+        tokio::spawn(async move {
+            send_command(&cmd).await;
+        });
     });
 
     // ── Ward Callbacks ────────────────────────────────────────────────────────
@@ -881,18 +981,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    ui.on_browse_monitor_path({
+        let ui_handle = ui_handle.clone();
+        move || {
+            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                if let Some(ui) = ui_handle.upgrade() {
+                    let path_str = normalize_windows_path(&path.to_string_lossy());
+                    ui.set_summons_path(path_str.into());
+                }
+            }
+        }
+    });
+
     // ── IPC Save Callbacks ────────────────────────────────────────────────────
     ui.on_save_wards({
         let ward_model_cb = ward_model_cb.clone();
         move || {
             let mut wards = Vec::new();
+            let mut seen_paths = std::collections::HashSet::new();
             for i in 0..ward_model_cb.row_count() {
                 if let Some(w) = ward_model_cb.row_data(i) {
                     // Quick validation - do not save if path is empty
                     if !w.path.is_empty() {
+                        let normalized_path = normalize_windows_path(w.path.as_ref());
+                        if !seen_paths.insert(normalized_path.clone()) {
+                            continue;
+                        }
                         wards.push(arbiter_core::decree::WardConfig {
-                            id: w.id.to_string(),
-                            path: w.path.to_string().into(),
+                            id: normalized_path.clone(),
+                            path: normalized_path.into(),
                             pattern: w.pattern.to_string(),
                             layer: match w.layer {
                                 1 => arbiter_core::decree::WardLayer::Analytical,
