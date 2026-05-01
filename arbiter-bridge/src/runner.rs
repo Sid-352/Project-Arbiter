@@ -8,9 +8,22 @@ use tracing::{error, info, warn};
 use crate::{hand::HardwareBridge, inscribe, shell};
 use arbiter_core::{
     filter::ArbiterFilter,
-    decree::{Action, ActionType, EnvContext, NodeKind, DecreeNode, RunEvent, DecreeId},
+    decree::{ActionType, EnvContext, NodeKind, DecreeNode, RunEvent, DecreeId, NodeState},
     protocol::LogEntry,
 };
+
+// ── Errors ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, thiserror::Error)]
+pub enum RunnerError {
+    #[error("Hand interaction failed: {0}")]
+    HandError(String),
+    #[error(transparent)]
+    InscribeError(#[from] crate::inscribe::InscribeError),
+    #[error(transparent)]
+    ShellError(#[from] crate::shell::ShellError),
+}
+
 
 // ── Runner Commands ────────────────────────────────────────────────────────
 
@@ -159,15 +172,12 @@ pub fn spawn(
             let _guard = QUEUE_LOCK.lock().await;
             info!("Runner: lock acquired, checking hibernation guard");
 
-            // The Hibernation Guard: Discard stale events > 5s
             if trigger_time.elapsed().as_secs() > 5 {
                 warn!("Runner: Hibernation Guard triggered — dropping stale event (age > 5s)");
                 let _ = event_tx.send(RunEvent::Done).await;
-                continue; // bypass processing
+                continue; 
             }
 
-            // Idle Telemetry: Log how long the user has been idle before
-            // starting. Informational only.
             let idle = get_idle_secs();
             info!(idle_secs = idle, "Runner: user idle time at sequence start");
 
@@ -192,138 +202,124 @@ pub fn spawn(
                     continue;
                 }
 
-                // Parse the internal state into an Action
-                let parsed: Result<Action, _> = serde_json::from_str(&node.internal_state);
-                match parsed {
-                    Ok(mut action) => {
-                        interpolate_action(&mut action.action_type, &context);
-
-                        // Pacing: Handle pre-action delay asynchronously
-                        if action.delay_ms > 0 {
-                            tokio::time::sleep(std::time::Duration::from_millis(action.delay_ms)).await;
-                        }
-
-                        // Async Wait: Handle ActionType::Wait without blocking
-                        if let ActionType::Wait(ms) = action.action_type {
-                            if !dry_run {
-                                tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
-                            } else {
-                                info!(ms, "DRY RUN: Would wait");
-                            }
-                            let _ = event_tx.send(RunEvent::Progress(idx)).await;
-                            continue;
-                        }
-
-                        let exec_result = match &action.action_type {
-                            // Presence actions
-                            ActionType::Click
-                            | ActionType::DoubleClick
-                            | ActionType::RightClick
-                            | ActionType::Type(_)
-                            | ActionType::Scroll(_)
-                            | ActionType::Navigate(_) => {
-                                if !dry_run {
-                                    filter.inhibit_presence();
-                                    let res = hand.execute(&action).await;
-                                    filter.resume_presence();
-                                    res
-                                } else {
-                                    info!(action = ?action.action_type, "DRY RUN: Would execute synthetic action");
-                                    Ok(())
-                                }
-                            }
-
-                            // Inscribe actions
-                            ActionType::InscribeMove {
-                                source,
-                                destination,
-                            } => {
-                                if !dry_run {
-                                    let r = inscribe::move_file(
-                                        source,
-                                        destination,
-                                        &trusted_roots,
-                                    ).await;
-                                    if let Ok(ref final_dst) = r {
-                                        filter.mark(final_dst);
-                                    }
-                                    r.map(|_| ()).map_err(|e| e.to_string())
-                                } else {
-                                    info!(?source, ?destination, "DRY RUN: Would move file");
-                                    Ok(())
-                                }
-                            }
-                            ActionType::InscribeCopy {
-                                source,
-                                destination,
-                            } => {
-                                if !dry_run {
-                                    let r = inscribe::copy_file(
-                                        source,
-                                        destination,
-                                        &trusted_roots,
-                                    ).await;
-                                    if let Ok((ref final_dst, _)) = r {
-                                        filter.mark(final_dst);
-                                    }
-                                    r.map(|_| ()).map_err(|e| e.to_string())
-                                } else {
-                                    info!(?source, ?destination, "DRY RUN: Would copy file");
-                                    Ok(())
-                                }
-                            }
-                            ActionType::InscribeDelete { target } => {
-                                if !dry_run {
-                                    inscribe::delete_file(target, &trusted_roots).await
-                                        .map_err(|e| e.to_string())
-                                } else {
-                                    info!(?target, "DRY RUN: Would delete file");
-                                    Ok(())
-                                }
-                            }
-
-                            // Shell actions
-                            ActionType::Shell {
-                                command,
-                                args,
-                                detached,
-                            } => {
-                                if !dry_run {
-                                    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-                                    if *detached {
-                                        shell::spawn_detached(command, command, &arg_refs, &baton_allowed).await
-                                            .map_err(|e| e.to_string())
-                                    } else {
-                                        shell::run(command, command, &arg_refs, &baton_allowed).await
-                                            .map(|_| ())
-                                            .map_err(|e| e.to_string())
-                                    }
-                                } else {
-                                    info!(%command, ?args, detached = *detached, "DRY RUN: Would execute shell command");
-                                    Ok(())
-                                }
-                            }
-                            _ => Ok(()),
-                        };
-
-                        if let Err(e) = exec_result {
-                            error!(%e, id = %node.id, "Runner: action failed");
-                            let _ = event_tx.send(RunEvent::Panic(format!("Step '{}' failed: {}", node.label, e))).await;
-                            break;
-                        }
-                    }
-                    Err(e) => {
-                        error!(%e, id = %node.id, "Runner: failed to parse JSON action");
-                        let _ = event_tx.send(RunEvent::Log(LogEntry {
-                            time: chrono::Utc::now().to_rfc3339(),
-                            tag: "HAND".into(),
-                            message: format!("Corrupt Action data in step '{}'", node.label),
-                            is_error: true,
-                            decree_id: decree_id.as_ref().map(|id| id.0.clone()),
-                        })).await;
+                let mut action = match &node.state {
+                    NodeState::Action(a) => a.clone(),
+                    _ => {
+                        error!(%node.id, "Runner: Expected Action state, found something else");
                         let _ = event_tx.send(RunEvent::Panic("Engine halt: Malformed decree data".into())).await;
                         break;
                     }
+                };
+
+                interpolate_action(&mut action.action_type, &context);
+
+                if action.delay_ms > 0 {
+                    tokio::time::sleep(std::time::Duration::from_millis(action.delay_ms)).await;
+                }
+
+                if let ActionType::Wait(ms) = action.action_type {
+                    if !dry_run {
+                        tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+                    } else {
+                        info!(ms, "DRY RUN: Would wait");
+                    }
+                    let _ = event_tx.send(RunEvent::Progress(idx)).await;
+                    continue;
+                }
+
+                let exec_result: Result<(), RunnerError> = match &action.action_type {
+                    ActionType::Click
+                    | ActionType::DoubleClick
+                    | ActionType::RightClick
+                    | ActionType::Type(_)
+                    | ActionType::Scroll(_)
+                    | ActionType::Navigate(_) => {
+                        if !dry_run {
+                            filter.inhibit_presence();
+                            let res = hand.execute(&action).await.map_err(RunnerError::HandError);
+                            filter.resume_presence();
+                            res
+                        } else {
+                            info!(action = ?action.action_type, "DRY RUN: Would execute synthetic action");
+                            Ok(())
+                        }
+                    }
+
+                    ActionType::InscribeMove {
+                        source,
+                        destination,
+                    } => {
+                        if !dry_run {
+                            let r = inscribe::move_file(
+                                source,
+                                destination,
+                                &trusted_roots,
+                            ).await;
+                            if let Ok(ref final_dst) = r {
+                                filter.mark(final_dst);
+                            }
+                            r.map(|_| ()).map_err(RunnerError::from)
+                        } else {
+                            info!(?source, ?destination, "DRY RUN: Would move file");
+                            Ok(())
+                        }
+                    }
+                    ActionType::InscribeCopy {
+                        source,
+                        destination,
+                    } => {
+                        if !dry_run {
+                            let r = inscribe::copy_file(
+                                source,
+                                destination,
+                                &trusted_roots,
+                            ).await;
+                            if let Ok((ref final_dst, _)) = r {
+                                filter.mark(final_dst);
+                            }
+                            r.map(|_| ()).map_err(RunnerError::from)
+                        } else {
+                            info!(?source, ?destination, "DRY RUN: Would copy file");
+                            Ok(())
+                        }
+                    }
+                    ActionType::InscribeDelete { target } => {
+                        if !dry_run {
+                            inscribe::delete_file(target, &trusted_roots).await
+                                .map_err(RunnerError::from)
+                        } else {
+                            info!(?target, "DRY RUN: Would delete file");
+                            Ok(())
+                        }
+                    }
+
+                    ActionType::Shell {
+                        command,
+                        args,
+                        detached,
+                    } => {
+                        if !dry_run {
+                            let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+                            if *detached {
+                                shell::spawn_detached(&command, &command, &arg_refs, &baton_allowed).await
+                                    .map_err(RunnerError::from)
+                            } else {
+                                shell::run(&command, &command, &arg_refs, &baton_allowed).await
+                                    .map(|_| ())
+                                    .map_err(RunnerError::from)
+                            }
+                        } else {
+                            info!(%command, ?args, detached = detached, "DRY RUN: Would execute shell command");
+                            Ok(())
+                        }
+                    }
+                    _ => Ok(()),
+                };
+
+                if let Err(e) = exec_result {
+                    error!(%e, id = %node.id, "Runner: action failed");
+                    let _ = event_tx.send(RunEvent::Panic(format!("Step '{}' failed: {}", node.label, e))).await;
+                    break;
                 }
 
                 let _ = event_tx.send(RunEvent::Progress(idx)).await;

@@ -178,6 +178,25 @@ impl Atlas {
         }
     }
 
+    fn reset_state(&mut self, log_broadcast: &tokio::sync::broadcast::Sender<LogEntry>, reason: &str) {
+        if self.state == EngineState::Idle {
+            return;
+        }
+        info!("Atlas: {}", reason);
+        if let Some(tx) = self.active_abort.take() {
+            let _ = tx.send(());
+        }
+        self.state = EngineState::Idle;
+        self.active_decree_id = None;
+        let _ = log_broadcast.send(LogEntry {
+            time: chrono::Utc::now().to_rfc3339(),
+            tag: "ATLAS".into(),
+            message: reason.into(),
+            is_error: false,
+            decree_id: None,
+        });
+    }
+
     /// Register a sequence to a trigger key, compiling its glob pattern if applicable.
     pub fn register_decree(&mut self, summons_key: String, decree: Decree) {
         info!(%summons_key, "Atlas: registering decree");
@@ -234,45 +253,9 @@ impl Atlas {
                 // ── Process Manual Reset ──
                 Some(_) = reset_rx.recv() => {
                     match self.state {
-                        EngineState::Executing => {
-                            info!("Atlas: reset signal received, aborting active sequence");
-                            if let Some(tx) = self.active_abort.take() {
-                                let _ = tx.send(());
-                            }
-                            self.state = EngineState::Idle;
-                            self.active_decree_id = None;
-                            let _ = log_broadcast.send(LogEntry {
-                                time: chrono::Utc::now().to_rfc3339(),
-                                tag: "ATLAS".into(),
-                                message: "Active sequence aborted by manual reset.".into(),
-                                is_error: false,
-                                decree_id: None,
-                            });
-                        }
-                        EngineState::Faulted => {
-                            info!("Atlas: reset signal received, clearing Faulted state");
-                            self.state = EngineState::Idle;
-                            self.active_decree_id = None;
-                            let _ = log_broadcast.send(LogEntry {
-                                time: chrono::Utc::now().to_rfc3339(),
-                                tag: "ATLAS".into(),
-                                message: "Engine fault cleared manually.".into(),
-                                is_error: false,
-                                decree_id: None,
-                            });
-                        }
-                        EngineState::Yielded => {
-                            info!("Atlas: reset signal received, clearing Yielded state");
-                            self.state = EngineState::Idle;
-                            self.active_decree_id = None;
-                            let _ = log_broadcast.send(LogEntry {
-                                time: chrono::Utc::now().to_rfc3339(),
-                                tag: "ATLAS".into(),
-                                message: "Engine yield cleared manually — standing by.".into(),
-                                is_error: false,
-                                decree_id: None,
-                            });
-                        }
+                        EngineState::Executing => self.reset_state(&log_broadcast, "Active sequence aborted by manual reset."),
+                        EngineState::Faulted => self.reset_state(&log_broadcast, "Engine fault cleared manually."),
+                        EngineState::Yielded => self.reset_state(&log_broadcast, "Engine yield cleared manually — standing by."),
                         _ => {}
                     }
                 }
@@ -297,6 +280,7 @@ impl Atlas {
                         }
                         ForgeCommand::SaveDecree(def) => {
                             info!(id = %def.id, "Atlas: received SaveDecree command");
+                            self.reset_state(&log_broadcast, "Engine reset automatically due to rule definition changes.");
 
                             // 1. Update the Ledger on disk
                             let mut ledger = crate::ledger::load().unwrap_or_else(|e| {
@@ -417,7 +401,11 @@ impl Atlas {
                         }
                         ForgeCommand::SaveWards(wards) => {
                             info!("Atlas: received SaveWards IPC command");
-                            let mut ledger = crate::ledger::load().unwrap_or_default();
+                            self.reset_state(&log_broadcast, "Engine reset automatically due to ward definition changes.");
+                            let mut ledger = crate::ledger::load().unwrap_or_else(|e| {
+                                warn!(%e, "Atlas: Failed to load ledger, using default");
+                                crate::ledger::ArbiterLedger::default()
+                            });
                             ledger.wards = dedupe_wards(wards);
                             let _ = crate::ledger::save(&ledger);
                             merge_ward_paths_into_signet(
@@ -446,6 +434,7 @@ impl Atlas {
                         }
                         ForgeCommand::SaveSignet(cfg) => {
                             info!("Atlas: received SaveSignet IPC command");
+                            self.reset_state(&log_broadcast, "Engine reset automatically due to Signet constraint changes.");
                             let _ = crate::signet::save(&cfg);
                             crate::signet::reload_cache();
                             
@@ -479,7 +468,11 @@ impl Atlas {
                         }
                         ForgeCommand::RemoveDecree { decree_id } => {
                             info!(%decree_id, "Atlas: received RemoveDecree command");
-                            let mut ledger = crate::ledger::load().unwrap_or_default();
+                            self.reset_state(&log_broadcast, "Engine reset automatically due to rule definition changes.");
+                            let mut ledger = crate::ledger::load().unwrap_or_else(|e| {
+                                warn!(%e, "Atlas: Failed to load ledger, using default");
+                                crate::ledger::ArbiterLedger::default()
+                            });
                             if let Some(pos) = ledger.decrees.iter().position(|d| d.id.0 == decree_id) {
                                 let removed = ledger.decrees.remove(pos);
                                 let _ = crate::ledger::save(&ledger);
@@ -508,7 +501,10 @@ impl Atlas {
                         }
                         ForgeCommand::RenameDecree { decree_id, label } => {
                             info!(%decree_id, %label, "Atlas: received RenameDecree command");
-                            let mut ledger = crate::ledger::load().unwrap_or_default();
+                            let mut ledger = crate::ledger::load().unwrap_or_else(|e| {
+                                warn!(%e, "Atlas: Failed to load ledger, using default");
+                                crate::ledger::ArbiterLedger::default()
+                            });
                             if let Some(ord) = ledger.decrees.iter_mut().find(|d| d.id.0 == decree_id) {
                                 ord.label = label.clone();
                                 let _ = crate::ledger::save(&ledger);

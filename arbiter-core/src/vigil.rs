@@ -23,7 +23,13 @@ const DEBOUNCE_MS: u64 = 400;
 
 /// Returns true if the event signature is currently in cooldown.
 fn is_debounced(signature: &str) -> bool {
-    let mut map = COOLDOWN_MAP.lock().unwrap();
+    let mut map = match COOLDOWN_MAP.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            warn!("Vigil: COOLDOWN_MAP poisoned, recovering...");
+            poisoned.into_inner()
+        }
+    };
     let now = Instant::now();
     
     if let Some(last_fire) = map.get(signature) {
@@ -420,44 +426,70 @@ pub mod fs {
 pub mod keys {
     use super::*;
 
-    pub fn register_hotkey(combo: String, tx: mpsc::Sender<Summons>) -> Result<(), String> {
-        use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
+    pub enum HotkeyCommand {
+        Register(String, tokio::sync::mpsc::Sender<Summons>),
+    }
 
-        let manager = GlobalHotKeyManager::new().map_err(|e| format!("HotKey manager init failed: {e:?}"))?;
-        let hotkey: HotKey = combo.parse().map_err(|e| format!("Cannot parse hotkey '{combo}': {e:?}"))?;
-        manager.register(hotkey).map_err(|e| format!("Hotkey registration failed: {e:?}"))?;
-
-        info!(%combo, "Vigil-keys: hotkey registered");
-
-        tokio::spawn(async move {
-            loop {
-                if let Ok(event) = global_hotkey::GlobalHotKeyEvent::receiver().try_recv() {
-                    if event.state != global_hotkey::HotKeyState::Pressed {
-                        continue;
+    lazy_static::lazy_static! {
+        static ref HOTKEY_TX: std::sync::mpsc::Sender<HotkeyCommand> = {
+            let (tx, rx) = std::sync::mpsc::channel::<HotkeyCommand>();
+            std::thread::spawn(move || {
+                use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager, GlobalHotKeyEvent};
+                let manager = match GlobalHotKeyManager::new() {
+                    Ok(m) => m,
+                    Err(e) => {
+                        tracing::error!("Vigil-keys: failed to init manager: {:?}", e);
+                        return;
                     }
-                    let mut context = super::EnvContext::new();
-                    context.insert("hotkey_combo", &combo);
-                    context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
-                    context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
-                    let summons = Summons::Hotkey {
-                        combo: combo.clone(),
-                        context,
-                    };
+                };
+                
+                let mut senders: std::collections::HashMap<u32, (String, tokio::sync::mpsc::Sender<Summons>)> = std::collections::HashMap::new();
+                let receiver = GlobalHotKeyEvent::receiver();
+                
+                loop {
+                    while let Ok(cmd) = rx.try_recv() {
+                        match cmd {
+                            HotkeyCommand::Register(combo, sum_tx) => {
+                                if let Ok(hotkey) = combo.parse::<HotKey>() {
+                                    if manager.register(hotkey).is_ok() {
+                                        senders.insert(hotkey.id(), (combo.clone(), sum_tx));
+                                        info!(%combo, "Vigil-keys: hotkey registered");
+                                    } else {
+                                        warn!(%combo, "Vigil-keys: failed to register hotkey");
+                                    }
+                                } else {
+                                    warn!(%combo, "Vigil-keys: invalid hotkey string");
+                                }
+                            }
+                        }
+                    }
 
-                    if is_debounced(&summons.to_registry_key()) { continue; }
-                    if tx.send(summons).await.is_err() { break; }
+                    if let Ok(event) = receiver.try_recv() {
+                        if event.state == global_hotkey::HotKeyState::Pressed {
+                            if let Some((combo, sum_tx)) = senders.get(&event.id) {
+                                let mut context = super::EnvContext::new();
+                                context.insert("hotkey_combo", combo);
+                                context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
+                                context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
+                                let summons = super::Summons::Hotkey {
+                                    combo: combo.clone(),
+                                    context,
+                                };
+
+                                if !super::is_debounced(&summons.to_registry_key()) {
+                                    let _ = sum_tx.blocking_send(summons);
+                                }
+                            }
+                        }
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(50));
                 }
-                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-            }
-        });
+            });
+            tx
+        };
+    }
 
-        // `GlobalHotKeyManager` holds a raw `*mut c_void` internally, so it is
-        // neither `Send` nor `Sync`. A `static OnceLock<GlobalHotKeyManager>`
-        // is therefore a compile error. `mem::forget` is the only correct
-        // approach: the manager must live for the process lifetime, the OS
-        // reclaims all hotkey registrations on exit, so the leak is bounded.
-        #[allow(clippy::mem_forget)]
-        std::mem::forget(manager);
-        Ok(())
+    pub fn register_hotkey(combo: String, tx: tokio::sync::mpsc::Sender<Summons>) -> Result<(), String> {
+        HOTKEY_TX.send(HotkeyCommand::Register(combo, tx)).map_err(|e| e.to_string())
     }
 }

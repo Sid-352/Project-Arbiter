@@ -98,7 +98,7 @@ fn collect_decree_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::DecreeDef 
         id: NodeId("entry".into()),
         label: "Start".into(),
         kind: NodeKind::Entry,
-        internal_state: "".into(),
+        state: arbiter_core::decree::NodeState::Empty,
         next_nodes: std::collections::HashMap::new(),
     });
 
@@ -155,7 +155,7 @@ fn collect_decree_from_ui(ui: &ArbiterForge) -> arbiter_core::ledger::DecreeDef 
                     id: step_id,
                     label: step.title.to_string(),
                     kind: NodeKind::Action,
-                    internal_state: serde_json::to_string(&action).unwrap_or_default(),
+                    state: arbiter_core::decree::NodeState::Action(action),
                     next_nodes,
                 });
             }
@@ -636,7 +636,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let mut incoming_steps = Vec::new();
                         for node in &ord.nodes {
                             if node.kind == NodeKind::Action {
-                                if let Ok(action) = serde_json::from_str::<Action>(&node.internal_state) {
+                                if let arbiter_core::decree::NodeState::Action(action) = &node.state {
                                     let (step_type, arg_a, arg_b, subtext) = match &action.action_type {
                                         ActionType::InscribeMove { source, destination } => {
                                             (0, source.to_string_lossy().to_string(), destination.to_string_lossy().to_string(), "Inscribe: Move Mode".to_string())

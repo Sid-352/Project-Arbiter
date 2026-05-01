@@ -63,6 +63,84 @@ pub fn data_dir() -> PathBuf {
         .join("arbiter-data")
 }
 
+// ── DPAPI Encryption ─────────────────────────────────────────────────────────
+
+#[cfg(windows)]
+fn protect_data(data: &[u8]) -> Result<Vec<u8>, String> {
+    use windows::Win32::Security::Cryptography::{CryptProtectData, CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN};
+    use windows::Win32::Foundation::LocalFree;
+    use std::ptr;
+
+    let mut data_in = CRYPT_INTEGER_BLOB {
+        cbData: data.len() as u32,
+        pbData: data.as_ptr() as *mut u8,
+    };
+    let mut data_out = CRYPT_INTEGER_BLOB {
+        cbData: 0,
+        pbData: ptr::null_mut(),
+    };
+
+    unsafe {
+        CryptProtectData(
+            &mut data_in,
+            None,
+            None,
+            None,
+            None,
+            CRYPTPROTECT_UI_FORBIDDEN,
+            &mut data_out,
+        ).map_err(|e| format!("DPAPI Protect failed: {}", e))?;
+
+        let slice = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize);
+        let vec = slice.to_vec();
+        let _ = LocalFree(windows::Win32::Foundation::HLOCAL(data_out.pbData as _));
+        Ok(vec)
+    }
+}
+
+#[cfg(windows)]
+fn unprotect_data(data: &[u8]) -> Result<Vec<u8>, String> {
+    use windows::Win32::Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN};
+    use windows::Win32::Foundation::LocalFree;
+    use std::ptr;
+
+    let mut data_in = CRYPT_INTEGER_BLOB {
+        cbData: data.len() as u32,
+        pbData: data.as_ptr() as *mut u8,
+    };
+    let mut data_out = CRYPT_INTEGER_BLOB {
+        cbData: 0,
+        pbData: ptr::null_mut(),
+    };
+
+    unsafe {
+        CryptUnprotectData(
+            &mut data_in,
+            None,
+            None,
+            None,
+            None,
+            CRYPTPROTECT_UI_FORBIDDEN,
+            &mut data_out,
+        ).map_err(|e| format!("DPAPI Unprotect failed: {}", e))?;
+
+        let slice = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize);
+        let vec = slice.to_vec();
+        let _ = LocalFree(windows::Win32::Foundation::HLOCAL(data_out.pbData as _));
+        Ok(vec)
+    }
+}
+
+#[cfg(not(windows))]
+fn protect_data(data: &[u8]) -> Result<Vec<u8>, String> {
+    Ok(data.to_vec())
+}
+
+#[cfg(not(windows))]
+fn unprotect_data(data: &[u8]) -> Result<Vec<u8>, String> {
+    Ok(data.to_vec())
+}
+
 
 /// Load the Arbiter configuration from disk.
 ///
@@ -75,7 +153,7 @@ pub fn load() -> Result<ArbiterConfig, String> {
         }
     }
 
-    let path = data_dir().join("signet.vault");
+    let path = data_dir().join("arbiter.vault");
     if !path.exists() {
         info!("Signet: vault not found, using default configuration");
         let def = ArbiterConfig::default();
@@ -84,7 +162,14 @@ pub fn load() -> Result<ArbiterConfig, String> {
     }
 
     let bytes = std::fs::read(&path).map_err(|e| format!("Signet: failed to read vault: {e}"))?;
-    let config: ArbiterConfig = serde_json::from_slice(&bytes).map_err(|e| format!("Signet: failed to deserialize vault: {e}"))?;
+    
+    // DPAPI decrypt (or passthrough on non-windows)
+    let dec_bytes = unprotect_data(&bytes)?;
+
+    let config: ArbiterConfig = bincode::deserialize(&dec_bytes).unwrap_or_else(|e| {
+        warn!("Signet: failed to deserialize decrypted vault, maybe corrupted or key changed? {e}");
+        ArbiterConfig::default()
+    });
 
     // Update cache
     let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(config.clone()));
@@ -95,13 +180,14 @@ pub fn load() -> Result<ArbiterConfig, String> {
 
 /// Save the Arbiter configuration to disk and invalidate cache.
 pub fn save(config: &ArbiterConfig) -> Result<(), String> {
-    let path = data_dir().join("signet.vault");
+    let path = data_dir().join("arbiter.vault");
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("Signet: failed to create data directory: {e}"))?;
     }
 
-    let bytes = serde_json::to_vec(config).map_err(|e| format!("Signet: failed to serialize config: {e}"))?;
-    std::fs::write(path, bytes).map_err(|e| format!("Signet: failed to write vault: {e}"))?;
+    let bytes = bincode::serialize(config).map_err(|e| format!("Signet: failed to serialize config: {e}"))?;
+    let enc_bytes = protect_data(&bytes)?;
+    std::fs::write(path, enc_bytes).map_err(|e| format!("Signet: failed to write vault: {e}"))?;
 
     // Update cache
     let _ = CONFIG_CACHE.write().map(|mut c| *c = Some(config.clone()));

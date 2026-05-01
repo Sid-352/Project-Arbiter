@@ -13,13 +13,79 @@ use crate::atlas::Atlas;
 use crate::filter::ArbiterFilter;
 use crate::decree::{DecreeId, EnvContext, DecreeNode, Decree, PresenceConfig, Summons, WardConfig};
 
+// ── Errors ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, thiserror::Error)]
+pub enum LedgerError {
+    #[error("Ledger: read failed: {0}")]
+    ReadFailed(String),
+    #[error("Ledger: parse failed: {0}")]
+    ParseFailed(String),
+    #[error("Ledger: serialisation failed: {0}")]
+    SerializationFailed(String),
+    #[error("Ledger: write failed: {0}")]
+    WriteFailed(String),
+    #[error("Ledger: rename failed: {0}")]
+    RenameFailed(String),
+    #[error("Ledger: failed to create data directory: {0}")]
+    DirCreationFailed(String),
+}
+
+impl From<std::io::Error> for LedgerError {
+    fn from(e: std::io::Error) -> Self {
+        LedgerError::ReadFailed(e.to_string())
+    }
+}
+
+fn resolve_dynamic_paths(path: &str) -> String {
+    let mut expanded = path.to_string();
+    
+    let upper = expanded.to_uppercase();
+    if upper.contains("%USERPROFILE%\\DOWNLOADS") || upper.contains("%USERPROFILE%/DOWNLOADS") {
+        if let Some(dl) = dirs::download_dir() {
+            let re = regex::Regex::new(r"(?i)%USERPROFILE%[\\/]Downloads").unwrap();
+            expanded = re.replace_all(&expanded, dl.to_string_lossy().as_ref()).to_string();
+        }
+    }
+    
+    if upper.contains("%USERPROFILE%\\DESKTOP") || upper.contains("%USERPROFILE%/DESKTOP") {
+        if let Some(desktop) = dirs::desktop_dir() {
+            let re = regex::Regex::new(r"(?i)%USERPROFILE%[\\/]Desktop").unwrap();
+            expanded = re.replace_all(&expanded, desktop.to_string_lossy().as_ref()).to_string();
+        }
+    }
+
+    if upper.contains("%USERPROFILE%\\DOCUMENTS") || upper.contains("%USERPROFILE%/DOCUMENTS") {
+        if let Some(docs) = dirs::document_dir() {
+            let re = regex::Regex::new(r"(?i)%USERPROFILE%[\\/]Documents").unwrap();
+            expanded = re.replace_all(&expanded, docs.to_string_lossy().as_ref()).to_string();
+        }
+    }
+    
+    if upper.contains("%USERPROFILE%") {
+        if let Some(home) = dirs::home_dir() {
+            let re = regex::Regex::new(r"(?i)%USERPROFILE%").unwrap();
+            expanded = re.replace_all(&expanded, home.to_string_lossy().as_ref()).to_string();
+        }
+    }
+    
+    if expanded.starts_with("~/") || expanded.starts_with("~\\") {
+        if let Some(home) = dirs::home_dir() {
+            expanded = expanded.replacen("~", &home.to_string_lossy(), 1);
+        }
+    }
+    
+    expanded
+}
+
 fn normalize_windows_path(path: &str) -> String {
     fn is_drive_root(p: &str) -> bool {
         let b = p.as_bytes();
         b.len() == 3 && b[1] == b':' && b[2] == b'\\'
     }
 
-    let mut out = path.trim().replace('/', "\\");
+    let resolved = resolve_dynamic_paths(path);
+    let mut out = resolved.trim().replace('/', "\\");
     while out.ends_with('\\') && !is_drive_root(&out) {
         out.pop();
     }
@@ -160,15 +226,15 @@ fn default_recursive() -> bool {
 // ── I/O Operations ───────────────────────────────────────────────────────────
 
 /// Load the Arbiter ledger from disk.
-pub fn load() -> Result<ArbiterLedger, String> {
-    let path = crate::signet::data_dir().join("ledger.json");
+pub fn load() -> Result<ArbiterLedger, LedgerError> {
+    let path = crate::signet::data_dir().join("ledger.toml");
     if !path.exists() {
         info!("Ledger: file not found, using default");
         return Ok(ArbiterLedger::default());
     }
 
-    let content = fs::read_to_string(&path).map_err(|e| format!("Ledger: read failed: {e}"))?;
-    let mut ledger: ArbiterLedger = serde_json::from_str(&content).map_err(|e| format!("Ledger: parse failed: {e}"))?;
+    let content = fs::read_to_string(&path).map_err(|e| LedgerError::ReadFailed(e.to_string()))?;
+    let mut ledger: ArbiterLedger = toml::from_str(&content).map_err(|e| LedgerError::ParseFailed(e.to_string()))?;
     let migrated = normalize_ledger(&mut ledger);
 
     // Warn if the on-disk format version doesn't match what this build expects.
@@ -195,7 +261,7 @@ pub fn load() -> Result<ArbiterLedger, String> {
 }
 
 /// Save the Arbiter ledger to disk atomically.
-pub fn save(ledger: &ArbiterLedger) -> Result<(), String> {
+pub fn save(ledger: &ArbiterLedger) -> Result<(), LedgerError> {
     let mut out = ArbiterLedger {
         version: ledger.version,
         wards: ledger.wards.clone(),
@@ -203,17 +269,17 @@ pub fn save(ledger: &ArbiterLedger) -> Result<(), String> {
     };
     normalize_ledger(&mut out);
 
-    let path = crate::signet::data_dir().join("ledger.json");
+    let path = crate::signet::data_dir().join("ledger.toml");
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("Ledger: failed to create data directory: {e}"))?;
+        fs::create_dir_all(parent).map_err(|e| LedgerError::DirCreationFailed(e.to_string()))?;
     }
 
-    let content = serde_json::to_string_pretty(&out).map_err(|e| format!("Ledger: serialisation failed: {e}"))?;
+    let content = toml::to_string_pretty(&out).map_err(|e| LedgerError::SerializationFailed(e.to_string()))?;
     
     // Atomic write: write to temp file then rename
     let tmp_path = path.with_extension("tmp");
-    fs::write(&tmp_path, content).map_err(|e| format!("Ledger: write failed: {e}"))?;
-    fs::rename(&tmp_path, path).map_err(|e| format!("Ledger: rename failed: {e}"))?;
+    fs::write(&tmp_path, content).map_err(|e| LedgerError::WriteFailed(e.to_string()))?;
+    fs::rename(&tmp_path, path).map_err(|e| LedgerError::RenameFailed(e.to_string()))?;
 
     info!("Ledger: configuration saved to disk");
     Ok(())

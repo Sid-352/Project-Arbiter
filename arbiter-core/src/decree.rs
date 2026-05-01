@@ -159,14 +159,21 @@ pub enum NodeKind {
 
 /// A single node in a compiled Decree sequence.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum NodeState {
+    Action(Action),
+    Empty,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DecreeNode {
     /// Stable UUID for this node, used for graph wiring.
     pub id: NodeId,
     /// Human-readable label shown in the editor.
     pub label: String,
-    /// The action this node executes (serialised as a string key for the editor).
-    pub internal_state: String,
     pub kind: NodeKind,
+    #[serde(flatten)]
+    pub state: NodeState,
     /// Adjacency map: output-port-name → next node UUID.
     #[serde(default)]
     pub next_nodes: HashMap<String, NodeId>,
