@@ -301,10 +301,10 @@ pub fn spawn(
                         if !dry_run {
                             let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
                             if *detached {
-                                shell::spawn_detached(&command, &command, &arg_refs, &baton_allowed).await
+                                shell::spawn_detached(command, command, &arg_refs, &baton_allowed).await
                                     .map_err(RunnerError::from)
                             } else {
-                                shell::run(&command, &command, &arg_refs, &baton_allowed).await
+                                shell::run(command, command, &arg_refs, &baton_allowed).await
                                     .map(|_| ())
                                     .map_err(RunnerError::from)
                             }

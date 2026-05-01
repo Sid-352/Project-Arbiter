@@ -71,7 +71,7 @@ fn protect_data(data: &[u8]) -> Result<Vec<u8>, String> {
     use windows::Win32::Foundation::LocalFree;
     use std::ptr;
 
-    let mut data_in = CRYPT_INTEGER_BLOB {
+    let data_in = CRYPT_INTEGER_BLOB {
         cbData: data.len() as u32,
         pbData: data.as_ptr() as *mut u8,
     };
@@ -82,7 +82,7 @@ fn protect_data(data: &[u8]) -> Result<Vec<u8>, String> {
 
     unsafe {
         CryptProtectData(
-            &mut data_in,
+            &data_in,
             None,
             None,
             None,
@@ -104,7 +104,7 @@ fn unprotect_data(data: &[u8]) -> Result<Vec<u8>, String> {
     use windows::Win32::Foundation::LocalFree;
     use std::ptr;
 
-    let mut data_in = CRYPT_INTEGER_BLOB {
+    let data_in = CRYPT_INTEGER_BLOB {
         cbData: data.len() as u32,
         pbData: data.as_ptr() as *mut u8,
     };
@@ -115,7 +115,7 @@ fn unprotect_data(data: &[u8]) -> Result<Vec<u8>, String> {
 
     unsafe {
         CryptUnprotectData(
-            &mut data_in,
+            &data_in,
             None,
             None,
             None,
