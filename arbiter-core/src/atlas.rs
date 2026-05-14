@@ -661,73 +661,61 @@ impl Atlas {
 
             for (index, node) in decree.nodes.iter().enumerate() {
                 match &node.state {
-                    crate::decree::NodeState::Action {
-                        action_type,
-                        ..
-                    } => {
-                        match action_type {
-                            crate::decree::ActionType::Navigate(path) => {
-                                info!(
-                                    "[DRY-RUN] Node {} -> '{}' | Action: Navigate | Target: {}",
-                                    index,
-                                    node.label,
-                                    path
-                                );
-                            }
-
-                            crate::decree::ActionType::InscribeMove {
-                                source,
-                                destination,
-                            } => {
-                                info!(
-                                    "[DRY-RUN] Node {} -> '{}' | Action: Move | {} -> {}",
-                                    index,
-                                    node.label,
-                                    source.display(),
-                                    destination.display()
-                                );
-                            }
-
-                            crate::decree::ActionType::InscribeCopy {
-                                source,
-                                destination,
-                            } => {
-                                info!(
-                                    "[DRY-RUN] Node {} -> '{}' | Action: Copy | {} -> {}",
-                                    index,
-                                    node.label,
-                                    source.display(),
-                                    destination.display()
-                                );
-                            }
-
-                            crate::decree::ActionType::InscribeDelete {
-                                target,
-                            } => {
-                                info!(
-                                    "[DRY-RUN] Node {} -> '{}' | Action: Delete | Target: {}",
-                                    index,
-                                    node.label,
-                                    target.display()
-                                );
-                            }
-
-                            other => {
-                                info!(
-                                    "[DRY-RUN] Node {} -> '{}' | Action: {:?}",
-                                    index,
-                                    node.label,
-                                    other
-                                );
-                            }
+                    crate::decree::NodeState::Action { action_type, .. } => match action_type {
+                        crate::decree::ActionType::Navigate(path) => {
+                            info!(
+                                "[DRY-RUN] Node {} -> '{}' | Action: Navigate | Target: {}",
+                                index, node.label, path
+                            );
                         }
-                    }
+
+                        crate::decree::ActionType::InscribeMove {
+                            source,
+                            destination,
+                        } => {
+                            info!(
+                                "[DRY-RUN] Node {} -> '{}' | Action: Move | {} -> {}",
+                                index,
+                                node.label,
+                                source.display(),
+                                destination.display()
+                            );
+                        }
+
+                        crate::decree::ActionType::InscribeCopy {
+                            source,
+                            destination,
+                        } => {
+                            info!(
+                                "[DRY-RUN] Node {} -> '{}' | Action: Copy | {} -> {}",
+                                index,
+                                node.label,
+                                source.display(),
+                                destination.display()
+                            );
+                        }
+
+                        crate::decree::ActionType::InscribeDelete { target } => {
+                            info!(
+                                "[DRY-RUN] Node {} -> '{}' | Action: Delete | Target: {}",
+                                index,
+                                node.label,
+                                target.display()
+                            );
+                        }
+
+                        other => {
+                            info!(
+                                "[DRY-RUN] Node {} -> '{}' | Action: {:?}",
+                                index, node.label, other
+                            );
+                        }
+                    },
 
                     crate::decree::NodeState::Empty => {
                         info!(
                             "[DRY-RUN] Node {} -> '{}' | Entry node skipped",
-                            index,
-                            node.label
+                            index, node.label
                         );
                     }
                 }
@@ -735,7 +723,7 @@ impl Atlas {
 
             info!("[DRY-RUN] No actions were actually executed");
         }
-                let exec_data = ExecData {
+        let exec_data = ExecData {
             nodes: decree.nodes,
             context,
             presence_config: decree.presence_config,
