@@ -533,6 +533,7 @@ fn compute_mime(_path: &PathBuf) -> Option<String> {
 }
 
 #[cfg(feature = "vigil-deep")]
+fn compute_sha2::Sha256(path: &PathBuf) -> Option<String> {
 fn compute_md5(path: &PathBuf) -> Option<String> {
     use md5::{Digest, Md5};
     use std::io::Read;
