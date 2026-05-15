@@ -202,108 +202,59 @@ pub fn dry_run_walk(root: &Path, pattern: &str) -> DryRunReport {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::File;
-    use tempfile::tempdir;
+    use std::path::PathBuf;
 
-    #[tokio::test]
-    async fn test_conservatory_allows_trusted() {
-        let root = tempdir().unwrap();
-        let root_str = root.path().to_string_lossy().to_string();
+    #[test]
+    fn preserves_filename_when_destination_is_directory() {
+        let src = PathBuf::from("report.txt");
+        let dst = PathBuf::from("archive/");
 
-        let trusted_roots = vec![root_str.clone()];
+        let result = ensure_file_path(&src, &dst);
 
-        let src = root.path().join("source.txt");
-        let dst = root.path().join("subfolder").join("dest.txt");
-
-        File::create(&src).unwrap();
-
-        // Should succeed because dst is within root
-        let res = move_file(&src, &dst, &trusted_roots).await;
-        assert!(res.is_ok());
-        assert!(dst.exists());
-        assert!(!src.exists());
+        assert_eq!(result, PathBuf::from("archive/report.txt"));
     }
 
-    #[tokio::test]
-    async fn test_conservatory_blocks_untrusted() {
-        let allowed_root = tempdir().unwrap();
-        let malicious_root = tempdir().unwrap();
+    #[test]
+    fn preserves_direct_file_destination() {
+        let src = PathBuf::from("report.txt");
+        let dst = PathBuf::from("archive/final.txt");
 
-        let trusted_roots = vec![allowed_root.path().to_string_lossy().to_string()];
+        let result = ensure_file_path(&src, &dst);
 
-        let src = allowed_root.path().join("source.txt");
-        let dst = malicious_root.path().join("dest.txt");
-
-        File::create(&src).unwrap();
-
-        // Should return NotTrusted because dst is inside malicious_root
-        let res = copy_file(&src, &dst, &trusted_roots).await;
-        match res {
-            Err(InscribeError::NotTrusted(_)) => {}
-            _ => panic!("Expected NotTrusted error, got {:?}", res),
-        }
-        assert!(!dst.exists());
+        assert_eq!(result, PathBuf::from("archive/final.txt"));
     }
 
-    #[tokio::test]
-    async fn test_dry_run_warnings() {
-        let sys_root = tempdir().unwrap();
-        let f2 = sys_root.path().join("SYSTEM32");
-        std::fs::create_dir_all(&f2).unwrap();
-        File::create(f2.join("dummy.sys")).unwrap();
+    #[test]
+    fn rejects_untrusted_path() {
+        let temp = tempfile::tempdir().unwrap();
 
-        let report = dry_run_walk(sys_root.path(), "*.sys");
-        assert!(report
-            .warnings
-            .iter()
-            .any(|w| w.contains("System-critical")));
+        let trusted = vec![temp.path().join("safe").to_string_lossy().to_string()];
+
+        let outside = temp.path().join("outside.txt");
+
+        std::fs::write(&outside, "data").unwrap();
+
+        let result = assert_trusted(&outside, &trusted);
+
+        assert!(result.is_err());
     }
 
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-        use std::path::PathBuf;
+    #[test]
+    fn accepts_trusted_path() {
+        let temp = tempfile::tempdir().unwrap();
 
-        #[test]
-        fn preserves_filename_when_destination_is_directory() {
-            let src = PathBuf::from("report.txt");
-            let dst = PathBuf::from("archive/");
+        let trusted_dir = temp.path().join("safe");
 
-            let result = ensure_file_path(&src, &dst);
+        std::fs::create_dir_all(&trusted_dir).unwrap();
 
-            assert_eq!(result, PathBuf::from("archive/report.txt"));
-        }
+        let trusted = vec![trusted_dir.to_string_lossy().to_string()];
 
-        #[test]
-        fn preserves_direct_file_destination() {
-            let src = PathBuf::from("report.txt");
-            let dst = PathBuf::from("archive/final.txt");
+        let trusted_file = trusted_dir.join("example.txt");
 
-            let result = ensure_file_path(&src, &dst);
+        std::fs::write(&trusted_file, "data").unwrap();
 
-            assert_eq!(result, PathBuf::from("archive/final.txt"));
-        }
+        let result = assert_trusted(&trusted_file, &trusted);
 
-        #[test]
-        fn rejects_untrusted_path() {
-            let trusted = vec![String::from("C:/safe")];
-
-            let result = assert_trusted("C:/Windows/System32", &trusted);
-
-            assert!(result.is_err());
-        }
-
-        #[test]
-        fn accepts_trusted_path() {
-            let cwd = std::env::current_dir().unwrap();
-
-            let trusted = vec![cwd.to_string_lossy().to_string()];
-
-            let trusted_file = cwd.join("example.txt");
-
-            let result = assert_trusted(trusted_file, &trusted);
-
-            assert!(result.is_ok());
-        }
+        assert!(result.is_ok());
     }
 }

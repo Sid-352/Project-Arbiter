@@ -184,6 +184,27 @@ impl Drop for HardwareBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arbiter_core::decree::{Action, ActionType};
+
+    #[tokio::test]
+    async fn coordinate_guard_rejects_out_of_bounds() {
+        let bridge = HardwareBridge::new(1920, 1080);
+
+        assert!(bridge.validate_coordinate(2000, 500).is_err());
+    }
+
+    #[tokio::test]
+    async fn wait_action_does_not_need_coordinates() {
+        let mut bridge = HardwareBridge::new(1920, 1080);
+
+        let action = Action {
+            action_type: ActionType::Wait(10),
+            point: None,
+            delay_ms: 0,
+        };
+
+        assert!(bridge.execute(&action).await.is_ok());
+    }
 
     #[test]
     fn accepts_valid_coordinates() {
@@ -198,5 +219,17 @@ mod tests {
     #[test]
     fn rejects_out_of_bounds_coordinates() {
         assert!(!HardwareBridge::is_valid_coordinate(3000, 400, 1920, 1080));
+    }
+
+    #[test]
+    fn accepts_boundary_coordinates() {
+        assert!(HardwareBridge::is_valid_coordinate(1920, 1080, 1920, 1080));
+    }
+
+    #[test]
+    fn rejects_coordinates_beyond_boundary() {
+        assert!(!HardwareBridge::is_valid_coordinate(1921, 1080, 1920, 1080));
+
+        assert!(!HardwareBridge::is_valid_coordinate(1920, 1081, 1920, 1080));
     }
 }
