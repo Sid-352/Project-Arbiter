@@ -258,4 +258,52 @@ mod tests {
             .iter()
             .any(|w| w.contains("System-critical")));
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use std::path::PathBuf;
+
+        #[test]
+        fn preserves_filename_when_destination_is_directory() {
+            let src = PathBuf::from("report.txt");
+            let dst = PathBuf::from("archive/");
+
+            let result = ensure_file_path(&src, &dst);
+
+            assert_eq!(result, PathBuf::from("archive/report.txt"));
+        }
+
+        #[test]
+        fn preserves_direct_file_destination() {
+            let src = PathBuf::from("report.txt");
+            let dst = PathBuf::from("archive/final.txt");
+
+            let result = ensure_file_path(&src, &dst);
+
+            assert_eq!(result, PathBuf::from("archive/final.txt"));
+        }
+
+        #[test]
+        fn rejects_untrusted_path() {
+            let trusted = vec![String::from("C:/safe")];
+
+            let result = assert_trusted("C:/Windows/System32", &trusted);
+
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn accepts_trusted_path() {
+            let cwd = std::env::current_dir().unwrap();
+
+            let trusted = vec![cwd.to_string_lossy().to_string()];
+
+            let trusted_file = cwd.join("example.txt");
+
+            let result = assert_trusted(trusted_file, &trusted);
+
+            assert!(result.is_ok());
+        }
+    }
 }

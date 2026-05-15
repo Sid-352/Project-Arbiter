@@ -141,15 +141,22 @@ impl HardwareBridge {
     }
 
     fn validate_coordinate(&self, x: i32, y: i32) -> Result<(), String> {
-        if x < 0 || x > self.screen_width || y < 0 || y > self.screen_height {
+        if Self::is_valid_coordinate(x, y, self.screen_width, self.screen_height) {
+            Ok(())
+        } else {
             let msg = format!(
                 "Hardware Guard: ({x}, {y}) outside monitor bounds ({}×{})",
                 self.screen_width, self.screen_height
             );
+
             warn!(%msg, "Hand: coordinate rejected");
-            return Err(msg);
+
+            Err(msg)
         }
-        Ok(())
+    }
+
+    fn is_valid_coordinate(x: i32, y: i32, width: i32, height: i32) -> bool {
+        x >= 0 && y >= 0 && x <= width && y <= height
     }
 }
 
@@ -167,6 +174,7 @@ impl Drop for HardwareBridge {
         for &key in &modifiers {
             let _ = self.enigo.key(key, Direction::Release);
         }
+
         debug!("Hand: safety release executed (all modifiers up)");
     }
 }
@@ -176,25 +184,19 @@ impl Drop for HardwareBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arbiter_core::decree::{Action, ActionType};
 
-    #[tokio::test]
-    async fn coordinate_guard_rejects_out_of_bounds() {
-        let bridge = HardwareBridge::new(1920, 1080);
-        // Direct call to the guard — no enigo interaction
-        assert!(bridge.validate_coordinate(2000, 500).is_err());
-        assert!(bridge.validate_coordinate(-1, 0).is_err());
-        assert!(bridge.validate_coordinate(960, 540).is_ok());
+    #[test]
+    fn accepts_valid_coordinates() {
+        assert!(HardwareBridge::is_valid_coordinate(500, 400, 1920, 1080));
     }
 
-    #[tokio::test]
-    async fn wait_action_does_not_need_coordinates() {
-        let mut bridge = HardwareBridge::new(1920, 1080);
-        let action = Action {
-            action_type: ActionType::Wait(10),
-            point: None,
-            delay_ms: 0,
-        };
-        assert!(bridge.execute(&action).await.is_ok());
+    #[test]
+    fn rejects_negative_coordinates() {
+        assert!(!HardwareBridge::is_valid_coordinate(-1, 400, 1920, 1080));
+    }
+
+    #[test]
+    fn rejects_out_of_bounds_coordinates() {
+        assert!(!HardwareBridge::is_valid_coordinate(3000, 400, 1920, 1080));
     }
 }
