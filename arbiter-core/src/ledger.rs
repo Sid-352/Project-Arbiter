@@ -224,6 +224,7 @@ impl DecreeDef {
                     return Err("Process name cannot be empty".into());
                 }
             }
+            SummonsDef::Clipboard => {}
             SummonsDef::Manual => {}
         }
 
@@ -258,6 +259,7 @@ pub enum SummonsDef {
     ProcessAppeared {
         name: String,
     },
+    Clipboard,
     Manual,
 }
 
@@ -405,6 +407,18 @@ pub fn apply(
                     });
                 Summons::ProcessAppeared {
                     name: name.clone(),
+                    context: EnvContext::new(),
+                }
+            }
+            SummonsDef::Clipboard => {
+                #[cfg(feature = "vigil-clipboard")]
+                {
+                    atlas.active_watchers.entry("clipboard".to_string()).or_insert_with(|| {
+                        info!("Ledger: booting clipboard monitor");
+                        crate::vigil::clipboard::spawn_watcher(vigil_tx.clone())
+                    });
+                }
+                Summons::Clipboard {
                     context: EnvContext::new(),
                 }
             }

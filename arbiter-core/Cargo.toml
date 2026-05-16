@@ -7,10 +7,11 @@ license.workspace = true
 description = "The Atlas, Vigil, Presence, and Signet — the deterministic engine core."
 
 [features]
-default = ["vigil-sys"]
+default = ["vigil-sys", "vigil-clipboard"]
 vigil-fs   = ["dep:notify"]
 vigil-keys = ["dep:global-hotkey"]
 vigil-sys  = ["dep:sysinfo"]
+vigil-clipboard = []
 presence   = ["dep:rdev"]
 signet     = ["dep:aes-gcm", "dep:base64", "dep:hostname", "dep:typenum"]
 # Layer 2 (Analytical) content extraction: SHA-256 hashing and MIME detection.
@@ -28,7 +29,7 @@ lazy_static= { workspace = true }
 dirs       = { workspace = true }
 rmp-serde  = { workspace = true }
 thiserror  = { workspace = true }
-windows    = { workspace = true, features = ["Win32_System_Registry", "Win32_Foundation", "Win32_Security", "Win32_Security_Cryptography", "Win32_Security_Authorization", "Win32_System_Memory"] }
+windows    = { workspace = true, features = ["Win32_System_Registry", "Win32_Foundation", "Win32_Security", "Win32_Security_Cryptography", "Win32_Security_Authorization", "Win32_System_Memory", "Win32_System_DataExchange"] }
 
 # Feature: vigil-fs
 notify      = { workspace = true, optional = true }

@@ -157,6 +157,8 @@ impl Atlas {
                 Summons::FileCreated { context, .. } => context,
                 #[cfg(feature = "vigil-keys")]
                 Summons::Hotkey { context, .. } => context,
+                #[cfg(feature = "vigil-clipboard")]
+                Summons::Clipboard { context } => context,
                 Summons::ProcessAppeared { context, .. } => context,
                 Summons::Manual { context, .. } => context,
             };
@@ -375,6 +377,16 @@ impl Atlas {
                                         context,
                                     }
                                 }
+                                crate::ledger::SummonsDef::Clipboard => {
+                                    #[cfg(feature = "vigil-clipboard")]
+                                    {
+                                        self.active_watchers.entry("clipboard".to_string()).or_insert_with(|| {
+                                            info!("Atlas: spawning new clipboard watcher");
+                                            crate::vigil::clipboard::spawn_watcher(vigil_tx.clone())
+                                        });
+                                    }
+                                    Summons::Clipboard { context }
+                                }
                                 crate::ledger::SummonsDef::Manual => Summons::Manual {
                                     context,
                                 },
@@ -482,6 +494,7 @@ impl Atlas {
                                     }
                                     crate::ledger::SummonsDef::Hotkey { combo } => format!("Hotkey|{}", combo),
                                     crate::ledger::SummonsDef::ProcessAppeared { name } => format!("ProcessAppeared|{}", name),
+                                    crate::ledger::SummonsDef::Clipboard => "Clipboard".to_string(),
                                     crate::ledger::SummonsDef::Manual => "Manual".to_string(),
                                 };
                                 self.registry.remove(&key);

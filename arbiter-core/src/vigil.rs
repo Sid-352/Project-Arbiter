@@ -483,3 +483,125 @@ pub mod keys {
             .map_err(|e| e.to_string())
     }
 }
+
+#[cfg(feature = "vigil-clipboard")]
+pub mod clipboard {
+    use super::*;
+    use windows::core::w;
+    use windows::Win32::Foundation::*;
+    use windows::Win32::System::DataExchange::*;
+    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows::Win32::UI::WindowsAndMessaging::*;
+    use tokio::sync::broadcast;
+
+    pub fn spawn_watcher(tx: mpsc::Sender<Summons>) -> broadcast::Sender<()> {
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel(1);
+
+        std::thread::spawn(move || {
+            unsafe {
+                let h_instance = GetModuleHandleW(None).unwrap_or_default();
+                let window_class = w!("ArbiterClipboardWatcher");
+
+                let wc = WNDCLASSW {
+                    lpfnWndProc: Some(DefWindowProcW),
+                    hInstance: h_instance.into(),
+                    lpszClassName: window_class,
+                    ..Default::default()
+                };
+
+                // Ignore error if already registered
+                let _ = RegisterClassW(&wc);
+
+                let hwnd = CreateWindowExW(
+                    WINDOW_EX_STYLE::default(),
+                    window_class,
+                    w!("ArbiterClipboard"),
+                    WINDOW_STYLE::default(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    HWND_MESSAGE,
+                    HMENU::default(),
+                    h_instance,
+                    None,
+                );
+
+                if hwnd.0 == 0 {
+                    tracing::error!("Vigil-clipboard: failed to create message window");
+                    return;
+                }
+
+                if AddClipboardFormatListener(hwnd).is_err() {
+                    tracing::error!("Vigil-clipboard: failed to add listener");
+                    let _ = DestroyWindow(hwnd);
+                    return;
+                }
+
+                let mut msg = MSG::default();
+                loop {
+                    if shutdown_rx.try_recv().is_ok() {
+                        let _ = RemoveClipboardFormatListener(hwnd);
+                        let _ = DestroyWindow(hwnd);
+                        break;
+                    }
+
+                    while PeekMessageW(&mut msg, hwnd, 0, 0, PM_REMOVE).as_bool() {
+                        if msg.message == WM_CLIPBOARDUPDATE {
+                            let mut context = EnvContext::new();
+                            if let Some(content) = get_clipboard_text() {
+                                context.insert("clipboard_content", &content);
+                            }
+                            context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
+                            context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
+
+                            let summons = Summons::Clipboard { context };
+                            if !is_debounced("Clipboard") {
+                                let _ = tx.blocking_send(summons);
+                            }
+                        }
+                        let _ = DispatchMessageW(&msg);
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(200));
+                }
+            }
+        });
+
+        shutdown_tx
+    }
+
+    fn get_clipboard_text() -> Option<String> {
+        unsafe {
+            if OpenClipboard(None).is_err() {
+                return None;
+            }
+
+            let handle = GetClipboardData(CF_UNICODETEXT.0 as _);
+            let result = if let Ok(h) = handle {
+                let h_global = HGLOBAL(h.0);
+                let ptr = windows::Win32::System::Memory::GlobalLock(h_global);
+                if !ptr.is_null() {
+                    let size = windows::Win32::System::Memory::GlobalSize(h_global);
+                    let p_u16 = ptr as *const u16;
+                    let max_len = size / 2; // size in bytes, each u16 is 2 bytes
+                    
+                    let mut len = 0;
+                    while len < max_len && *p_u16.add(len) != 0 {
+                        len += 1;
+                    }
+                    
+                    let text = String::from_utf16_lossy(std::slice::from_raw_parts(p_u16, len));
+                    let _ = windows::Win32::System::Memory::GlobalUnlock(h_global);
+                    Some(text)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            let _ = CloseClipboard();
+            result
+        }
+    }
+}

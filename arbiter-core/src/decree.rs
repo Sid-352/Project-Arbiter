@@ -249,6 +249,9 @@ pub enum Summons {
     Hotkey { combo: String, context: EnvContext },
     /// A named process appeared in the process list.
     ProcessAppeared { name: String, context: EnvContext },
+    /// Clipboard content changed.
+    #[cfg(feature = "vigil-clipboard")]
+    Clipboard { context: EnvContext },
     /// Manual trigger (used for testing and UI-triggered runs).
     Manual { context: EnvContext },
 }
@@ -264,6 +267,8 @@ impl Summons {
             } => format!("FileCreated|{}|{}", watch_path.display(), pattern),
             #[cfg(feature = "vigil-keys")]
             Self::Hotkey { combo, .. } => format!("Hotkey|{}", combo),
+            #[cfg(feature = "vigil-clipboard")]
+            Self::Clipboard { .. } => "Clipboard".to_string(),
             Self::ProcessAppeared { name, .. } => format!("ProcessAppeared|{}", name),
             Self::Manual { .. } => "Manual".to_string(),
         }
@@ -306,6 +311,8 @@ pub enum EnvKey {
     ProcessPid,
     // ── Hotkey Layer ──
     HotkeyCombo,
+    // ── Clipboard Layer ──
+    ClipboardContent,
 }
 
 impl EnvKey {
@@ -340,6 +347,7 @@ impl EnvKey {
             Self::ProcessName => "process_name",
             Self::ProcessPid => "process_pid",
             Self::HotkeyCombo => "hotkey_combo",
+            Self::ClipboardContent => "clipboard_content",
         }
     }
 
@@ -375,6 +383,7 @@ impl EnvKey {
             "process_name" => Some(Self::ProcessName),
             "process_pid" => Some(Self::ProcessPid),
             "hotkey_combo" => Some(Self::HotkeyCombo),
+            "clipboard_content" => Some(Self::ClipboardContent),
             _ => None,
         }
     }
