@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         tokio_util::codec::LengthDelimitedCodec::new(),
                     );
                     while let Ok(entry) = rx.recv().await {
-                        if let Ok(bin) = rmp_serde::to_vec(&entry) {
+                        if let Ok(bin) = rmp_serde::to_vec_named(&entry) {
                             if framed.send(bytes::Bytes::from(bin)).await.is_err() {
                                 break;
                             }

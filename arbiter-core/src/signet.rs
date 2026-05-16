@@ -214,7 +214,7 @@ pub fn save(config: &ArbiterConfig) -> Result<(), String> {
             .map_err(|e| format!("Signet: failed to create data directory: {e}"))?;
     }
 
-    let bytes = rmp_serde::to_vec(config)
+    let bytes = rmp_serde::to_vec_named(config)
         .map_err(|e| format!("Signet: failed to serialize config: {e}"))?;
     let enc_bytes = protect_data(&bytes)?;
     std::fs::write(path, enc_bytes).map_err(|e| format!("Signet: failed to write vault: {e}"))?;

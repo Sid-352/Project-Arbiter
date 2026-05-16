@@ -64,7 +64,7 @@ async fn send_command(cmd: &ForgeCommand) {
 
         let client = ClientOptions::new().open(PIPE_COMMAND)?;
         let mut framed = FramedWrite::new(client, LengthDelimitedCodec::new());
-        let bin = rmp_serde::to_vec(cmd).map_err(std::io::Error::other)?;
+        let bin = rmp_serde::to_vec_named(cmd).map_err(std::io::Error::other)?;
         framed.send(bytes::Bytes::from(bin)).await?;
         Ok::<(), std::io::Error>(())
     }
