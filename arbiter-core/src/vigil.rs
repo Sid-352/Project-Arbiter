@@ -502,17 +502,21 @@ pub mod clipboard {
                 let h_instance = GetModuleHandleW(None).unwrap_or_default();
                 let window_class = w!("ArbiterClipboardWatcher");
 
-                let wc = WNDCLASSW {
-                    lpfnWndProc: Some(DefWindowProcW),
-                    hInstance: h_instance.into(),
+                unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+                    DefWindowProcW(hwnd, msg, wparam, lparam)
+                }
+
+                let wc = windows::Win32::UI::WindowsAndMessaging::WNDCLASSW {
+                    lpfnWndProc: Some(wnd_proc),
+                    hInstance: HINSTANCE(h_instance.0),
                     lpszClassName: window_class,
                     ..Default::default()
                 };
 
                 // Ignore error if already registered
-                let _ = RegisterClassW(&wc);
+                let _ = windows::Win32::UI::WindowsAndMessaging::RegisterClassW(&wc);
 
-                let hwnd = CreateWindowExW(
+                let hwnd_res = CreateWindowExW(
                     WINDOW_EX_STYLE::default(),
                     window_class,
                     w!("ArbiterClipboard"),
@@ -523,14 +527,17 @@ pub mod clipboard {
                     0,
                     HWND_MESSAGE,
                     HMENU::default(),
-                    h_instance,
+                    HINSTANCE(h_instance.0),
                     None,
                 );
 
-                if hwnd.0 == 0 {
-                    tracing::error!("Vigil-clipboard: failed to create message window");
-                    return;
-                }
+                let hwnd = match hwnd_res {
+                    Ok(h) => h,
+                    Err(e) => {
+                        tracing::error!(?e, "Vigil-clipboard: failed to create message window");
+                        return;
+                    }
+                };
 
                 if AddClipboardFormatListener(hwnd).is_err() {
                     tracing::error!("Vigil-clipboard: failed to add listener");
@@ -576,8 +583,9 @@ pub mod clipboard {
                 return None;
             }
 
-            let handle = GetClipboardData(CF_UNICODETEXT.0 as _);
-            let result = if let Ok(h) = handle {
+            // CF_UNICODETEXT is 13
+            let handle_res = GetClipboardData(13);
+            let result = if let Ok(h) = handle_res {
                 let h_global = HGLOBAL(h.0);
                 let ptr = windows::Win32::System::Memory::GlobalLock(h_global);
                 if !ptr.is_null() {

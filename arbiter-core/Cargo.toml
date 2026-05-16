@@ -7,7 +7,7 @@ license.workspace = true
 description = "The Atlas, Vigil, Presence, and Signet — the deterministic engine core."
 
 [features]
-default = ["vigil-sys", "vigil-clipboard"]
+default = ["vigil-sys", "vigil-fs", "vigil-keys", "vigil-clipboard", "signet"]
 vigil-fs   = ["dep:notify"]
 vigil-keys = ["dep:global-hotkey"]
 vigil-sys  = ["dep:sysinfo"]
@@ -29,7 +29,7 @@ lazy_static= { workspace = true }
 dirs       = { workspace = true }
 rmp-serde  = { workspace = true }
 thiserror  = { workspace = true }
-windows    = { workspace = true, features = ["Win32_System_Registry", "Win32_Foundation", "Win32_Security", "Win32_Security_Cryptography", "Win32_Security_Authorization", "Win32_System_Memory", "Win32_System_DataExchange"] }
+windows    = { workspace = true, features = ["Win32_System_Registry", "Win32_Foundation", "Win32_Security", "Win32_Security_Cryptography", "Win32_Security_Authorization", "Win32_System_Memory", "Win32_System_DataExchange", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi"] }
 
 # Feature: vigil-fs
 notify      = { workspace = true, optional = true }

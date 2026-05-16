@@ -607,9 +607,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     ui.on_simulate_decree({
-        let ui_handle = ui_handle.clone();
+        let _ui_handle = ui_handle.clone();
         move || {
-            if let Some(ui) = ui_handle.upgrade() {
+            if let Some(ui) = _ui_handle.upgrade() {
                 let def = collect_decree_from_ui(&ui);
                 if let Err(e) = def.validate() {
                     LOG_MODEL.with(|m| {
@@ -630,6 +630,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     } => format!("FileCreated|{}|{}", ward_id, pattern),
                     SummonsDef::Hotkey { combo } => format!("Hotkey|{}", combo),
                     SummonsDef::ProcessAppeared { name } => format!("ProcessAppeared|{}", name),
+                    SummonsDef::Clipboard => "Clipboard".to_string(),
                     SummonsDef::Manual => "Manual".to_string(),
                 };
                 let save_cmd = ForgeCommand::SaveDecree(def);
@@ -678,12 +679,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     ui.on_select_decree({
-        let ui_handle = ui_handle.clone();
+        let _ui_handle = ui_handle.clone();
         move |id| {
             if id.is_empty() {
                 return;
             }
-            if let Some(ui) = ui_handle.upgrade() {
+            if let Some(ui) = _ui_handle.upgrade() {
                 // If this is already the active decree, don't reload from disk (prevents wiping unsaved edits)
                 if ui.get_active_decree_id() == id && ui.get_active_decree_status() != 0 {
                     return;
@@ -725,6 +726,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         SummonsDef::ProcessAppeared { name } => {
                             ui.set_summons_trigger_type(2);
                             ui.set_summons_process(name.clone().into());
+                        }
+                        SummonsDef::Clipboard => {
+                            ui.set_summons_trigger_type(4);
                         }
                         SummonsDef::Manual => {
                             ui.set_summons_trigger_type(3);
