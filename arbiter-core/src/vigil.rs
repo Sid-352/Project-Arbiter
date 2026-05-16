@@ -487,12 +487,12 @@ pub mod keys {
 #[cfg(feature = "vigil-clipboard")]
 pub mod clipboard {
     use super::*;
+    use tokio::sync::broadcast;
     use windows::core::w;
     use windows::Win32::Foundation::*;
     use windows::Win32::System::DataExchange::*;
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::*;
-    use tokio::sync::broadcast;
 
     pub fn spawn_watcher(tx: mpsc::Sender<Summons>) -> broadcast::Sender<()> {
         let (shutdown_tx, mut shutdown_rx) = broadcast::channel(1);
@@ -502,7 +502,12 @@ pub mod clipboard {
                 let h_instance = GetModuleHandleW(None).unwrap_or_default();
                 let window_class = w!("ArbiterClipboardWatcher");
 
-                unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+                unsafe extern "system" fn wnd_proc(
+                    hwnd: HWND,
+                    msg: u32,
+                    wparam: WPARAM,
+                    lparam: LPARAM,
+                ) -> LRESULT {
                     DefWindowProcW(hwnd, msg, wparam, lparam)
                 }
 
@@ -559,8 +564,20 @@ pub mod clipboard {
                             if let Some(content) = get_clipboard_text() {
                                 context.insert("clipboard_content", &content);
                             }
-                            context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
-                            context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
+                            context.insert(
+                                "timestamp",
+                                &format!(
+                                    "{}",
+                                    std::time::SystemTime::now()
+                                        .duration_since(std::time::UNIX_EPOCH)
+                                        .unwrap_or_default()
+                                        .as_secs()
+                                ),
+                            );
+                            context.insert(
+                                "timestamp_local",
+                                &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string(),
+                            );
 
                             let summons = Summons::Clipboard { context };
                             if !is_debounced("Clipboard") {
@@ -592,12 +609,12 @@ pub mod clipboard {
                     let size = windows::Win32::System::Memory::GlobalSize(h_global);
                     let p_u16 = ptr as *const u16;
                     let max_len = size / 2; // size in bytes, each u16 is 2 bytes
-                    
+
                     let mut len = 0;
                     while len < max_len && *p_u16.add(len) != 0 {
                         len += 1;
                     }
-                    
+
                     let text = String::from_utf16_lossy(std::slice::from_raw_parts(p_u16, len));
                     let _ = windows::Win32::System::Memory::GlobalUnlock(h_global);
                     Some(text)

@@ -413,10 +413,13 @@ pub fn apply(
             SummonsDef::Clipboard => {
                 #[cfg(feature = "vigil-clipboard")]
                 {
-                    atlas.active_watchers.entry("clipboard".to_string()).or_insert_with(|| {
-                        info!("Ledger: booting clipboard monitor");
-                        crate::vigil::clipboard::spawn_watcher(vigil_tx.clone())
-                    });
+                    atlas
+                        .active_watchers
+                        .entry("clipboard".to_string())
+                        .or_insert_with(|| {
+                            info!("Ledger: booting clipboard monitor");
+                            crate::vigil::clipboard::spawn_watcher(vigil_tx.clone())
+                        });
                 }
                 Summons::Clipboard {
                     context: EnvContext::new(),
