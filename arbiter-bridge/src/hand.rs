@@ -143,8 +143,9 @@ impl HardwareBridge {
     fn validate_coordinate(&self, x: i32, y: i32) -> Result<(), String> {
         if x < 0 || x > self.screen_width || y < 0 || y > self.screen_height {
             let msg = format!(
-                "Hardware Guard: ({x}, {y}) outside monitor bounds ({}×{})",
-                self.screen_width, self.screen_height
+                "Hardware Guard: ({x}, {y}) outside monitor bounds ({w}x{h})",
+                w = self.screen_width,
+                h = self.screen_height
             );
             warn!(%msg, "Hand: coordinate rejected");
             return Err(msg);

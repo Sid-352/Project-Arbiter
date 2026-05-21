@@ -190,7 +190,10 @@ pub fn dry_run_walk(root: &Path, pattern: &str) -> DryRunReport {
                 let path_str = path.to_string_lossy().to_lowercase();
 
                 if path_str.contains("windows") || path_str.contains("system32") {
-                    warnings.push(format!("System-critical path detected: {}", path.display()));
+                    warnings.push(format!(
+                        "System-critical path detected: {path_name}",
+                        path_name = path.display()
+                    ));
                 }
 
                 debug!(path = %path.display(), "Dry-run: would affect");

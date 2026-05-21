@@ -36,7 +36,7 @@ fn generate_decree_id(label: &str) -> String {
         .collect();
 
     if slug.is_empty() {
-        format!("id-{}", CTR.fetch_add(1, Ordering::Relaxed))
+        format!("id-{id}", id = CTR.fetch_add(1, Ordering::Relaxed))
     } else {
         slug
     }
@@ -202,7 +202,7 @@ fn next_new_decree_label() -> String {
             }
         }
     });
-    format!("New Decree {}", max_n + 1)
+    format!("New Decree {n}", n = max_n + 1)
 }
 
 fn sync_ledger_to_ui() {
@@ -779,7 +779,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             use std::io::Write;
             use std::process::{Command, Stdio};
-            info!("Copying to clipboard: {}", text);
+            info!("Copying to clipboard: {text}");
             if let Ok(mut child) = Command::new("clip").stdin(Stdio::piped()).spawn() {
                 if let Some(mut stdin) = child.stdin.take() {
                     let _ = stdin.write_all(text.as_bytes());

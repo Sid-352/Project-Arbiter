@@ -30,7 +30,7 @@ impl ArbiterRollingWriter {
 impl std::io::Write for ArbiterRollingWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let now = chrono::Local::now();
-        let filename = format!("arbiter.{}.log", now.format("%Y-%m-%d"));
+        let filename = format!("arbiter.{log_time}.log", log_time = now.format("%Y-%m-%d"));
         let path = self.base_dir.join(filename);
 
         if let Some(parent) = path.parent() {
@@ -85,8 +85,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     "
     );
     info!(
-        "Arbiter Engine: booting version {}",
-        env!("CARGO_PKG_VERSION")
+        "Arbiter Engine: booting version {version}",
+        version = env!("CARGO_PKG_VERSION")
     );
 
     let filter = ArbiterFilter::new();
@@ -210,10 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             (1920, 1080)
         }
     };
-    info!(
-        "Runner: mapping display boundaries to {}x{}",
-        screen_width, screen_height
-    );
+    info!("Runner: mapping display boundaries to {screen_width}x{screen_height}",);
     arbiter_bridge::runner::spawn(exec_cmd_rx, screen_width, screen_height, filter.clone());
 
     // Signet config is loaded fresh on every execution via signet::load().

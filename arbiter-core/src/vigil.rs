@@ -300,7 +300,7 @@ pub mod fs {
                             };
 
                             let debounce_sig =
-                                format!("{}|{}", summons.to_registry_key(), filename);
+                                format!("{key}|{filename}", key = summons.to_registry_key());
                             let path_str_check = path_str.clone();
 
                             let tx_clone = tx.clone();
@@ -476,7 +476,7 @@ pub mod keys {
                             if let Some((combo, sum_tx)) = senders.get(&event.id) {
                                 let mut context = super::EnvContext::new();
                                 context.insert("hotkey_combo", combo);
-                                context.insert("timestamp", &format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
+                                context.insert("timestamp", &format!("{secs}", secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()));
                                 context.insert("timestamp_local", &chrono::Local::now().format("%m/%d/%Y %I:%M %p").to_string());
                                 let summons = super::Summons::Hotkey {
                                     combo: combo.clone(),
@@ -607,8 +607,8 @@ pub mod clipboard {
                             context.insert(
                                 "timestamp",
                                 &format!(
-                                    "{}",
-                                    std::time::SystemTime::now()
+                                    "{secs}",
+                                    secs = std::time::SystemTime::now()
                                         .duration_since(std::time::UNIX_EPOCH)
                                         .unwrap_or_default()
                                         .as_secs()

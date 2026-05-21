@@ -225,7 +225,7 @@ pub fn spawn(
 
                 if let ActionType::Wait(ms) = action.action_type {
                     if dry_run {
-                        info!("[DRY-RUN] Would wait for {} ms (execution bypassed)", ms);
+                        info!("[DRY-RUN] Would wait for {ms} ms (execution bypassed)");
                     } else {
                         tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
                     }
@@ -349,8 +349,8 @@ pub fn spawn(
                     error!(%e, id = %node.id, "Runner: action failed");
                     let _ = event_tx
                         .send(RunEvent::Panic(format!(
-                            "Step '{}' failed: {}",
-                            node.label, e
+                            "Step '{label}' failed: {e}",
+                            label = node.label
                         )))
                         .await;
                     break;

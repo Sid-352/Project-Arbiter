@@ -133,7 +133,7 @@ impl Atlas {
                 };
 
                 if !filename.is_empty() {
-                    let path_prefix = format!("FileCreated|{}|", watch_path.display());
+                    let path_prefix = format!("FileCreated|{path}|", path = watch_path.display());
 
                     for (reg_key, reg_ord) in &self.registry {
                         if reg_key.starts_with(&path_prefix) {
@@ -178,7 +178,7 @@ impl Atlas {
         if self.state == EngineState::Idle {
             return;
         }
-        info!("Atlas: {}", reason);
+        info!("Atlas: {reason}");
         if let Some(tx) = self.active_abort.take() {
             let _ = tx.send(());
         }
@@ -411,7 +411,7 @@ impl Atlas {
                             let _ = log_broadcast.send(LogEntry {
                                 time: chrono::Utc::now().to_rfc3339(),
                                 tag: "ATLAS".into(),
-                                message: format!("Decree '{}' registered and saved.", def.label),
+                                message: format!("Decree '{label}' registered and saved.", label = def.label),
                                 is_error: false,
                                 decree_id: Some(def.id.0.clone()),
                             });
@@ -446,7 +446,7 @@ impl Atlas {
                             let _ = log_broadcast.send(LogEntry {
                                 time: chrono::Utc::now().to_rfc3339(),
                                 tag: "VIGIL".into(),
-                                message: format!("Conservatory Wards updated ({} active).", ledger.wards.len()),
+                                message: format!("Conservatory Wards updated ({count} active).", count = ledger.wards.len()),
                                 is_error: false,
                                 decree_id: None,
                             });
@@ -503,7 +503,7 @@ impl Atlas {
 
                                 let key = match removed.summons {
                                     crate::ledger::SummonsDef::FileCreated { ward_id, pattern, .. } => {
-                                        format!("FileCreated|{}|{}", normalize_windows_path(&ward_id), pattern)
+                                        format!("FileCreated|{path}|{pattern}", path = normalize_windows_path(&ward_id))
                                     }
                                     crate::ledger::SummonsDef::Hotkey { combo } => format!("Hotkey|{combo}"),
                                     crate::ledger::SummonsDef::ProcessAppeared { name } => format!("ProcessAppeared|{name}"),

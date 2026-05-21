@@ -46,8 +46,8 @@ pub fn spawn_watcher(
                         context.insert(
                             "timestamp",
                             &format!(
-                                "{}",
-                                std::time::SystemTime::now()
+                                "{secs}",
+                                secs = std::time::SystemTime::now()
                                     .duration_since(std::time::UNIX_EPOCH)
                                     .unwrap_or_default()
                                     .as_secs()

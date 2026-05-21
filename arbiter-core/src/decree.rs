@@ -176,8 +176,8 @@ impl<'de> serde::Deserialize<'de> for DecreeNode {
             "Entry" => NodeState::Empty,
             _ => {
                 return Err(serde::de::Error::custom(format!(
-                    "Unknown node kind: {}",
-                    raw.kind
+                    "Unknown node kind: {kind}",
+                    kind = raw.kind
                 )))
             }
         };
@@ -264,7 +264,7 @@ impl Summons {
                 watch_path,
                 pattern,
                 ..
-            } => format!("FileCreated|{}|{}", watch_path.display(), pattern),
+            } => format!("FileCreated|{path}|{pattern}", path = watch_path.display()),
             #[cfg(feature = "vigil-keys")]
             Self::Hotkey { combo, .. } => format!("Hotkey|{combo}"),
             #[cfg(feature = "vigil-clipboard")]
@@ -519,7 +519,7 @@ fn compute_sha256(path: &PathBuf) -> Option<String> {
         hasher.update(&buffer[..n]);
     }
 
-    Some(format!("{:x}", hasher.finalize()))
+    Some(format!("{hash:x}", hash = hasher.finalize()))
 }
 
 #[cfg(not(feature = "vigil-deep"))]

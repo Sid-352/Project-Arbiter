@@ -233,8 +233,8 @@ impl DecreeDef {
             for (port, target_id) in &node.next_nodes {
                 if !node_ids.contains(target_id) {
                     return Err(format!(
-                        "Node '{}' transition '{}' points to non-existent node '{}'",
-                        node.label, port, target_id
+                        "Node '{label}' transition '{port}' points to non-existent node '{target_id}'",
+                        label = node.label
                     ));
                 }
             }
