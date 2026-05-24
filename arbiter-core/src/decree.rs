@@ -306,6 +306,7 @@ pub enum EnvKey {
     ImgModel,
     ImgGps,
     TextLines,
+    PdfPages,
     // ── Process Layer ──
     ProcessName,
     ProcessPid,
@@ -344,6 +345,7 @@ impl EnvKey {
             Self::ImgModel => "img_model",
             Self::ImgGps => "img_gps",
             Self::TextLines => "text_lines",
+            Self::PdfPages => "pdf_pages",
             Self::ProcessName => "process_name",
             Self::ProcessPid => "process_pid",
             Self::HotkeyCombo => "hotkey_combo",
@@ -380,6 +382,7 @@ impl EnvKey {
             "img_model" => Some(Self::ImgModel),
             "img_gps" => Some(Self::ImgGps),
             "text_lines" => Some(Self::TextLines),
+            "pdf_pages" => Some(Self::PdfPages),
             "process_name" => Some(Self::ProcessName),
             "process_pid" => Some(Self::ProcessPid),
             "hotkey_combo" => Some(Self::HotkeyCombo),
@@ -400,8 +403,15 @@ impl EnvKey {
                 | Self::ImgModel
                 | Self::ImgGps
                 | Self::TextLines
+                | Self::PdfPages
         )
     }
+}
+
+#[derive(Debug, Clone)]
+struct ExifData {
+    model: Option<String>,
+    gps: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -422,6 +432,10 @@ pub struct EnvContext {
     entropy_cache: OnceLock<Option<String>>,
     #[serde(skip)]
     text_lines_cache: OnceLock<Option<String>>,
+    #[serde(skip)]
+    exif_cache: OnceLock<Option<ExifData>>,
+    #[serde(skip)]
+    pdf_pages_cache: OnceLock<Option<String>>,
 }
 
 impl Default for EnvContext {
@@ -435,6 +449,8 @@ impl Default for EnvContext {
             md5_cache: OnceLock::new(),
             entropy_cache: OnceLock::new(),
             text_lines_cache: OnceLock::new(),
+            exif_cache: OnceLock::new(),
+            pdf_pages_cache: OnceLock::new(),
         }
     }
 }
@@ -450,6 +466,8 @@ impl Clone for EnvContext {
             md5_cache: OnceLock::new(),
             entropy_cache: OnceLock::new(),
             text_lines_cache: OnceLock::new(),
+            exif_cache: OnceLock::new(),
+            pdf_pages_cache: OnceLock::new(),
         }
     }
 }
@@ -497,6 +515,20 @@ impl EnvContext {
                 .text_lines_cache
                 .get_or_init(|| self.source_path.as_ref().and_then(compute_text_lines))
                 .as_deref(),
+            EnvKey::ImgModel => self
+                .exif_cache
+                .get_or_init(|| self.source_path.as_ref().and_then(compute_exif_data))
+                .as_ref()
+                .and_then(|data| data.model.as_deref()),
+            EnvKey::ImgGps => self
+                .exif_cache
+                .get_or_init(|| self.source_path.as_ref().and_then(compute_exif_data))
+                .as_ref()
+                .and_then(|data| data.gps.as_deref()),
+            EnvKey::PdfPages => self
+                .pdf_pages_cache
+                .get_or_init(|| self.source_path.as_ref().and_then(compute_pdf_pages))
+                .as_deref(),
             _ => None,
         }
     }
@@ -530,10 +562,42 @@ fn compute_sha256(_path: &PathBuf) -> Option<String> {
 #[cfg(feature = "vigil-deep")]
 fn compute_mime(path: &PathBuf) -> Option<String> {
     use std::io::Read;
-    let mut buf = [0u8; 512];
+    let mut buf = vec![0u8; 8192];
     let mut f = std::fs::File::open(path).ok()?;
     let n = f.read(&mut buf).ok()?;
-    infer::get(&buf[..n]).map(|t| t.mime_type().to_string())
+    buf.truncate(n);
+    if let Some(t) = infer::get(&buf) {
+        return Some(t.mime_type().to_string());
+    }
+
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+
+    let fallback = match ext.as_str() {
+        "pdf" => "application/pdf",
+        "zip" => "application/zip",
+        "7z" => "application/x-7z-compressed",
+        "rar" => "application/vnd.rar",
+        "tar" => "application/x-tar",
+        "gz" => "application/gzip",
+        "bz2" => "application/x-bzip2",
+        "xz" => "application/x-xz",
+        "exe" => "application/vnd.microsoft.portable-executable",
+        "dll" => "application/vnd.microsoft.portable-executable",
+        "iso" => "application/x-iso9660-image",
+        "jpg" | "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        "tif" | "tiff" => "image/tiff",
+        _ => "application/octet-stream",
+    };
+
+    Some(fallback.to_string())
 }
 
 #[cfg(not(feature = "vigil-deep"))]
@@ -630,6 +694,367 @@ fn compute_text_lines(path: &PathBuf) -> Option<String> {
 #[cfg(not(feature = "vigil-deep"))]
 fn compute_text_lines(_path: &PathBuf) -> Option<String> {
     None
+}
+
+#[cfg(feature = "vigil-deep")]
+fn compute_exif_data(path: &PathBuf) -> Option<ExifData> {
+    let bytes = std::fs::read(path).ok()?;
+    if bytes.len() < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8 {
+        return None;
+    }
+
+    let mut offset = 2usize;
+    while offset + 4 <= bytes.len() {
+        if bytes[offset] != 0xFF {
+            offset += 1;
+            continue;
+        }
+
+        let marker = bytes[offset + 1];
+        if marker == 0xDA || marker == 0xD9 {
+            break;
+        }
+
+        let length = u16::from_be_bytes([bytes[offset + 2], bytes[offset + 3]]) as usize;
+        if length < 2 || offset + 2 + length > bytes.len() {
+            break;
+        }
+
+        if marker == 0xE1
+            && offset + 10 <= bytes.len()
+            && &bytes[offset + 4..offset + 10] == b"Exif\0\0"
+        {
+            let exif = &bytes[offset + 10..offset + 2 + length];
+            return parse_exif_tiff(exif);
+        }
+
+        offset += 2 + length;
+    }
+
+    None
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_exif_data(_path: &PathBuf) -> Option<ExifData> {
+    None
+}
+
+#[cfg(feature = "vigil-deep")]
+fn compute_pdf_pages(path: &PathBuf) -> Option<String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut buffer = [0u8; 8192];
+    let mut read = file.read(&mut buffer).ok()?;
+    if read < 5 || &buffer[..5] != b"%PDF-" {
+        return None;
+    }
+
+    let pattern = b"/Type /Page";
+    let tail_len = pattern.len().saturating_sub(1);
+    let mut tail: Vec<u8> = Vec::new();
+    let mut count = 0u64;
+
+    loop {
+        if read == 0 {
+            break;
+        }
+
+        let mut scan_buf = Vec::with_capacity(tail.len() + read);
+        scan_buf.extend_from_slice(&tail);
+        scan_buf.extend_from_slice(&buffer[..read]);
+
+        if scan_buf.len() >= pattern.len() {
+            let scan_limit = scan_buf.len() - pattern.len();
+            for i in 0..=scan_limit {
+                if &scan_buf[i..i + pattern.len()] == pattern {
+                    if scan_buf.get(i + pattern.len()) == Some(&b's') {
+                        continue;
+                    }
+                    count += 1;
+                }
+            }
+        }
+
+        if scan_buf.len() >= tail_len {
+            tail.clear();
+            tail.extend_from_slice(&scan_buf[scan_buf.len() - tail_len..]);
+        } else {
+            tail = scan_buf;
+        }
+
+        read = file.read(&mut buffer).ok()?;
+    }
+
+    Some(count.to_string())
+}
+
+#[cfg(not(feature = "vigil-deep"))]
+fn compute_pdf_pages(_path: &PathBuf) -> Option<String> {
+    None
+}
+
+#[cfg(feature = "vigil-deep")]
+fn parse_exif_tiff(exif: &[u8]) -> Option<ExifData> {
+    if exif.len() < 8 {
+        return None;
+    }
+
+    let le = match &exif[..2] {
+        b"II" => true,
+        b"MM" => false,
+        _ => return None,
+    };
+
+    let read_u16 = |data: &[u8], offset: usize| -> Option<u16> {
+        let bytes = data.get(offset..offset + 2)?;
+        Some(if le {
+            u16::from_le_bytes([bytes[0], bytes[1]])
+        } else {
+            u16::from_be_bytes([bytes[0], bytes[1]])
+        })
+    };
+
+    let read_u32 = |data: &[u8], offset: usize| -> Option<u32> {
+        let bytes = data.get(offset..offset + 4)?;
+        Some(if le {
+            u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
+        } else {
+            u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
+        })
+    };
+
+    let ifd0_offset = read_u32(exif, 4)? as usize;
+    let ifd0_count = read_u16(exif, ifd0_offset)? as usize;
+    let mut model: Option<String> = None;
+    let mut gps_ifd_offset: Option<usize> = None;
+
+    for i in 0..ifd0_count {
+        let entry_offset = ifd0_offset + 2 + i * 12;
+        let tag = read_u16(exif, entry_offset)?;
+        let field_type = read_u16(exif, entry_offset + 2)?;
+        let count = read_u32(exif, entry_offset + 4)? as usize;
+        let value_offset = read_u32(exif, entry_offset + 8)? as usize;
+
+        match tag {
+            0x0110 => {
+                if field_type == 2 && count > 0 {
+                    let value = if count <= 4 {
+                        let slice = exif.get(entry_offset + 8..entry_offset + 8 + count)?;
+                        slice
+                    } else {
+                        exif.get(value_offset..value_offset + count)?
+                    };
+                    let text = String::from_utf8_lossy(value)
+                        .trim_end_matches('\0')
+                        .to_string();
+                    if !text.is_empty() {
+                        model = Some(text);
+                    }
+                }
+            }
+            0x8825 => {
+                if field_type == 4 {
+                    gps_ifd_offset = Some(value_offset);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let gps = gps_ifd_offset.and_then(|gps_offset| {
+        let gps_count = read_u16(exif, gps_offset)? as usize;
+        let mut lat_ref: Option<u8> = None;
+        let mut lon_ref: Option<u8> = None;
+        let mut lat: Option<(f64, f64, f64)> = None;
+        let mut lon: Option<(f64, f64, f64)> = None;
+
+        for i in 0..gps_count {
+            let entry_offset = gps_offset + 2 + i * 12;
+            let tag = read_u16(exif, entry_offset)?;
+            let field_type = read_u16(exif, entry_offset + 2)?;
+            let count = read_u32(exif, entry_offset + 4)? as usize;
+            let value_offset = read_u32(exif, entry_offset + 8)? as usize;
+
+            match tag {
+                0x0001 => {
+                    if field_type == 2 && count >= 2 {
+                        lat_ref = exif.get(entry_offset + 8).copied();
+                    }
+                }
+                0x0002 => {
+                    if field_type == 5 && count >= 3 {
+                        lat = read_gps_rationals(exif, value_offset, le);
+                    }
+                }
+                0x0003 => {
+                    if field_type == 2 && count >= 2 {
+                        lon_ref = exif.get(entry_offset + 8).copied();
+                    }
+                }
+                0x0004 => {
+                    if field_type == 5 && count >= 3 {
+                        lon = read_gps_rationals(exif, value_offset, le);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        let lat = lat?;
+        let lon = lon?;
+        let mut lat_val = lat.0 + lat.1 / 60.0 + lat.2 / 3600.0;
+        let mut lon_val = lon.0 + lon.1 / 60.0 + lon.2 / 3600.0;
+
+        if matches!(lat_ref, Some(b'S' | b's')) {
+            lat_val = -lat_val;
+        }
+        if matches!(lon_ref, Some(b'W' | b'w')) {
+            lon_val = -lon_val;
+        }
+
+        Some(format!("{lat:.6},{lon:.6}", lat = lat_val, lon = lon_val))
+    });
+
+    Some(ExifData { model, gps })
+}
+
+#[cfg(feature = "vigil-deep")]
+fn read_gps_rationals(exif: &[u8], offset: usize, le: bool) -> Option<(f64, f64, f64)> {
+    let mut read_u32 = |pos: usize| -> Option<u32> {
+        let bytes = exif.get(pos..pos + 4)?;
+        Some(if le {
+            u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
+        } else {
+            u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
+        })
+    };
+
+    let mut to_f64 = |pos: usize| -> Option<f64> {
+        let num = read_u32(pos)? as f64;
+        let den = read_u32(pos + 4)? as f64;
+        if den == 0.0 {
+            return None;
+        }
+        Some(num / den)
+    };
+
+    let deg = to_f64(offset)?;
+    let min = to_f64(offset + 8)?;
+    let sec = to_f64(offset + 16)?;
+    Some((deg, min, sec))
+}
+
+#[cfg(all(test, feature = "vigil-deep"))]
+mod tests {
+    use super::{compute_exif_data, compute_mime, compute_pdf_pages};
+    use std::fs::{self, File};
+    use std::io::Write;
+    use std::path::PathBuf;
+
+    fn write_temp_file(name: &str, bytes: &[u8]) -> PathBuf {
+        let mut path = std::env::temp_dir();
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        path.push(format!("arbiter_{name}_{stamp}"));
+        let mut file = File::create(&path).expect("create temp file");
+        file.write_all(bytes).expect("write temp file");
+        path
+    }
+
+    fn build_exif_jpeg(model: &str) -> Vec<u8> {
+        let model_bytes = format!("{model}\0").into_bytes();
+
+        let mut tiff = vec![0u8; 8];
+        tiff[0] = b'I';
+        tiff[1] = b'I';
+        tiff[2] = 0x2A;
+        tiff[3] = 0x00;
+        tiff[4..8].copy_from_slice(&8u32.to_le_bytes());
+
+        let ifd0_offset = 8usize;
+        let ifd0_size = 2 + 2 * 12 + 4;
+        let model_offset = ifd0_offset + ifd0_size;
+        let gps_ifd_offset = model_offset + model_bytes.len();
+        let gps_ifd_size = 2 + 4 * 12 + 4;
+        let gps_data_offset = gps_ifd_offset + gps_ifd_size;
+        let lon_offset = gps_data_offset + 24;
+
+        let total_size = gps_data_offset + 48;
+        tiff.resize(total_size, 0u8);
+
+        tiff[ifd0_offset..ifd0_offset + 2].copy_from_slice(&2u16.to_le_bytes());
+
+        write_ifd_entry_le(&mut tiff, ifd0_offset + 2, 0x0110, 2, model_bytes.len() as u32, model_offset as u32);
+        write_ifd_entry_le(&mut tiff, ifd0_offset + 14, 0x8825, 4, 1, gps_ifd_offset as u32);
+        tiff[ifd0_offset + 26..ifd0_offset + 30].copy_from_slice(&0u32.to_le_bytes());
+
+        tiff[model_offset..model_offset + model_bytes.len()].copy_from_slice(&model_bytes);
+
+        tiff[gps_ifd_offset..gps_ifd_offset + 2].copy_from_slice(&4u16.to_le_bytes());
+        write_ifd_entry_le(&mut tiff, gps_ifd_offset + 2, 0x0001, 2, 2, u32::from_le_bytes([b'N', 0, 0, 0]));
+        write_ifd_entry_le(&mut tiff, gps_ifd_offset + 14, 0x0002, 5, 3, gps_data_offset as u32);
+        write_ifd_entry_le(&mut tiff, gps_ifd_offset + 26, 0x0003, 2, 2, u32::from_le_bytes([b'W', 0, 0, 0]));
+        write_ifd_entry_le(&mut tiff, gps_ifd_offset + 38, 0x0004, 5, 3, lon_offset as u32);
+        tiff[gps_ifd_offset + 50..gps_ifd_offset + 54].copy_from_slice(&0u32.to_le_bytes());
+
+        write_rational_le(&mut tiff, gps_data_offset, 37, 1);
+        write_rational_le(&mut tiff, gps_data_offset + 8, 48, 1);
+        write_rational_le(&mut tiff, gps_data_offset + 16, 30, 1);
+        write_rational_le(&mut tiff, lon_offset, 122, 1);
+        write_rational_le(&mut tiff, lon_offset + 8, 24, 1);
+        write_rational_le(&mut tiff, lon_offset + 16, 15, 1);
+
+        let mut exif = b"Exif\0\0".to_vec();
+        exif.extend_from_slice(&tiff);
+
+        let mut jpeg = vec![0xFF, 0xD8, 0xFF, 0xE1];
+        let len = (exif.len() + 2) as u16;
+        jpeg.extend_from_slice(&len.to_be_bytes());
+        jpeg.extend_from_slice(&exif);
+        jpeg.extend_from_slice(&[0xFF, 0xD9]);
+        jpeg
+    }
+
+    fn write_ifd_entry_le(buf: &mut [u8], offset: usize, tag: u16, field_type: u16, count: u32, value: u32) {
+        buf[offset..offset + 2].copy_from_slice(&tag.to_le_bytes());
+        buf[offset + 2..offset + 4].copy_from_slice(&field_type.to_le_bytes());
+        buf[offset + 4..offset + 8].copy_from_slice(&count.to_le_bytes());
+        buf[offset + 8..offset + 12].copy_from_slice(&value.to_le_bytes());
+    }
+
+    fn write_rational_le(buf: &mut [u8], offset: usize, num: u32, den: u32) {
+        buf[offset..offset + 4].copy_from_slice(&num.to_le_bytes());
+        buf[offset + 4..offset + 8].copy_from_slice(&den.to_le_bytes());
+    }
+
+    #[test]
+    fn exif_extracts_model_and_gps() {
+        let jpeg = build_exif_jpeg("TestCam 1");
+        let path = write_temp_file("exif.jpg", &jpeg);
+        let exif = compute_exif_data(&path).expect("exif data");
+        assert_eq!(exif.model.as_deref(), Some("TestCam 1"));
+        assert_eq!(exif.gps.as_deref(), Some("37.808333,-122.404167"));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn mime_falls_back_to_octet_stream() {
+        let path = write_temp_file("mystery.bin", &[0, 1, 2, 3, 4, 5]);
+        let mime = compute_mime(&path).expect("mime");
+        assert_eq!(mime, "application/octet-stream");
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn pdf_page_count_scans_pages() {
+        let pdf = b"%PDF-1.4\n1 0 obj << /Type /Pages /Count 2 /Kids [2 0 R 3 0 R] >>\n2 0 obj << /Type /Page >>\n3 0 obj << /Type /Page >>\n%%EOF";
+        let path = write_temp_file("sample.pdf", pdf);
+        let pages = compute_pdf_pages(&path).expect("pages");
+        assert_eq!(pages, "2");
+        let _ = fs::remove_file(path);
+    }
 }
 
 #[derive(Debug, Clone)]
