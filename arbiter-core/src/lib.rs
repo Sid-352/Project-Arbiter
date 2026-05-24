@@ -39,7 +39,7 @@ mod test {
     #[test]
     fn removes_trailing_slash() {
         assert_eq!(
-            normalize_windows_path(r"C:\temp\folder\"),
+            normalize_windows_path(r"C\:temp\folder\"),
             r"C\:temp\folder"
         );
     }
