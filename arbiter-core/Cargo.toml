@@ -15,7 +15,7 @@ vigil-clipboard = []
 presence   = ["dep:rdev"]
 signet     = ["dep:aes-gcm", "dep:base64", "dep:hostname", "dep:typenum"]
 # Layer 2 (Analytical) content extraction: SHA-256 hashing and MIME detection.
-vigil-deep = ["dep:sha2", "dep:md-5", "dep:infer"]
+vigil-deep = ["dep:sha2", "dep:md-5", "dep:infer", "dep:exif"]
 
 [dependencies]
 serde      = { workspace = true }
@@ -30,6 +30,7 @@ dirs       = { workspace = true }
 rmp-serde  = { workspace = true }
 thiserror  = { workspace = true }
 windows    = { workspace = true, features = ["Win32_System_Registry", "Win32_Foundation", "Win32_Security", "Win32_Security_Cryptography", "Win32_Security_Authorization", "Win32_System_Memory", "Win32_System_DataExchange", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi"] }
+
 
 # Feature: vigil-fs
 notify      = { workspace = true, optional = true }
@@ -53,4 +54,5 @@ typenum     = { workspace = true, optional = true }
 sha2        = { workspace = true, optional = true }
 "md-5"      = { workspace = true, optional = true }
 infer       = { workspace = true, optional = true }
+exif = { package = "kamadak-exif", version = "0.6", optional = true }
 globset     = { workspace = true }
