@@ -518,7 +518,7 @@ pub mod keys {
     }
 }
 
-#[cfg(feature = "vigil-clipboard")]
+#[cfg(all(feature = "vigil-clipboard", target_os = "windows"))]
 pub mod clipboard {
     use super::{is_debounced, mpsc, EnvContext, Summons};
     use tokio::sync::broadcast;
@@ -668,5 +668,17 @@ pub mod clipboard {
             let _ = CloseClipboard();
             result
         }
+    }
+}
+
+#[cfg(all(feature = "vigil-clipboard", not(target_os = "windows")))]
+pub mod clipboard {
+    use super::{mpsc, Summons};
+    use tokio::sync::broadcast;
+
+    pub fn spawn_watcher(_tx: mpsc::Sender<Summons>) -> broadcast::Sender<()> {
+        let (shutdown_tx, _shutdown_rx) = broadcast::channel(1);
+        tracing::warn!("Vigil-clipboard: clipboard watcher is only available on Windows");
+        shutdown_tx
     }
 }

@@ -7,8 +7,7 @@ license.workspace = true
 description = "Diagnostic UI for Arbiter."
 
 [dependencies]
-arbiter-core =   { path = "../arbiter-core", features = ["vigil-fs", "vigil-keys", "signet"] }
-arbiter-bridge = { path = "../arbiter-bridge" }
+arbiter-core =   { path = "../arbiter-core", features = ["vigil-fs", "vigil-keys", "vigil-deep", "signet"] }
 eframe             = { workspace = true }
 egui               = { workspace = true }
 egui_extras        = { workspace = true }
