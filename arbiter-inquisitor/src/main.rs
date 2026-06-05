@@ -1,10 +1,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use arbiter_core::protocol::{LogEntry, PIPE_TELEMETRY};
+#[cfg(target_os = "windows")]
+use arbiter_core::protocol::PIPE_TELEMETRY;
+use arbiter_core::{
+    decree::{preview_analytics, regex_pattern_matches, AnalyticalPreview},
+    protocol::LogEntry,
+};
 use eframe::{egui, epaint};
+#[cfg(target_os = "windows")]
 use futures::StreamExt;
 use globset::Glob;
 use std::sync::{Arc, Mutex};
+#[cfg(target_os = "windows")]
 use tokio_util::codec::{FramedRead, LengthDelimitedCodec};
 
 struct Palette;
@@ -16,18 +23,28 @@ impl Palette {
     const SYSTEM: egui::Color32 = egui::Color32::from_rgb(99, 102, 241);
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MatchMode {
+    Glob,
+    Regex,
+}
+
 struct InquisitorApp {
     logs: Arc<Mutex<Vec<LogEntry>>>,
     test_path: String,
-    glob_pattern: String,
+    pattern: String,
+    match_mode: MatchMode,
     is_match: bool,
     match_error: Option<String>,
+    analytics: AnalyticalPreview,
+    analytics_error: Option<String>,
+    match_stale: bool,
+    analytics_stale: bool,
 }
 
 impl InquisitorApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let logs = Arc::new(Mutex::new(Vec::new()));
-        let logs_clone = logs.clone();
         let ctx = cc.egui_ctx.clone();
 
         // UI Theme
@@ -53,75 +70,166 @@ impl InquisitorApp {
 
         ctx.set_style(style);
 
-        std::thread::spawn(move || {
-            let rt = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .unwrap();
+        #[cfg(target_os = "windows")]
+        {
+            let logs_clone = logs.clone();
+            let telemetry_ctx = ctx.clone();
 
-            rt.block_on(async move {
-                loop {
-                    use tokio::net::windows::named_pipe::ClientOptions;
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
 
-                    if let Ok(client) = ClientOptions::new().open(PIPE_TELEMETRY) {
-                        let mut framed = FramedRead::new(client, LengthDelimitedCodec::new());
+                rt.block_on(async move {
+                    loop {
+                        use tokio::net::windows::named_pipe::ClientOptions;
 
-                        while let Some(Ok(bytes)) = framed.next().await {
-                            if let Ok(mut entry) = rmp_serde::from_slice::<LogEntry>(&bytes) {
-                                if entry.time.is_empty() {
-                                    entry.time =
-                                        chrono::Local::now().format("%H:%M:%S").to_string();
-                                } else if let Ok(dt) =
-                                    chrono::DateTime::parse_from_rfc3339(&entry.time)
-                                {
-                                    entry.time = dt
-                                        .with_timezone(&chrono::Local)
-                                        .format("%H:%M:%S")
-                                        .to_string();
+                        if let Ok(client) = ClientOptions::new().open(PIPE_TELEMETRY) {
+                            let mut framed = FramedRead::new(client, LengthDelimitedCodec::new());
+
+                            while let Some(Ok(bytes)) = framed.next().await {
+                                if let Ok(mut entry) = rmp_serde::from_slice::<LogEntry>(&bytes) {
+                                    if entry.time.is_empty() {
+                                        entry.time =
+                                            chrono::Local::now().format("%H:%M:%S").to_string();
+                                    } else if let Ok(dt) =
+                                        chrono::DateTime::parse_from_rfc3339(&entry.time)
+                                    {
+                                        entry.time = dt
+                                            .with_timezone(&chrono::Local)
+                                            .format("%H:%M:%S")
+                                            .to_string();
+                                    }
+                                    let mut logs = logs_clone.lock().unwrap();
+                                    logs.push(entry);
+
+                                    if logs.len() > 2000 {
+                                        logs.remove(0);
+                                    }
+
+                                    telemetry_ctx.request_repaint();
                                 }
-                                let mut logs = logs_clone.lock().unwrap();
-                                logs.push(entry);
-
-                                if logs.len() > 2000 {
-                                    logs.remove(0);
-                                }
-
-                                ctx.request_repaint();
                             }
                         }
-                    }
 
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                }
+                        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    }
+                });
             });
-        });
+        }
 
         Self {
             logs,
             test_path: String::new(),
-            glob_pattern: String::new(),
+            pattern: String::new(),
+            match_mode: MatchMode::Glob,
             is_match: false,
             match_error: None,
+            analytics: AnalyticalPreview {
+                content_sha256: None,
+                content_mime: None,
+            },
+            analytics_error: None,
+            match_stale: false,
+            analytics_stale: false,
         }
+    }
+
+    fn reset_match_preview(&mut self) {
+        self.is_match = false;
+        self.match_error = None;
+        self.match_stale = true;
+    }
+
+    fn reset_analytics_preview(&mut self) {
+        self.analytics = AnalyticalPreview {
+            content_sha256: None,
+            content_mime: None,
+        };
+        self.analytics_error = None;
+        self.analytics_stale = true;
     }
 
     fn update_match_status(&mut self) {
         self.match_error = None;
+        self.match_stale = false;
 
-        if self.glob_pattern.is_empty() || self.test_path.is_empty() {
+        if self.pattern.is_empty() || self.test_path.is_empty() {
             self.is_match = false;
+            self.match_error = Some("Enter both a pattern and test path.".to_string());
             return;
         }
 
-        match Glob::new(&self.glob_pattern) {
-            Ok(glob) => {
-                let matcher = glob.compile_matcher();
-                self.is_match = matcher.is_match(&self.test_path);
-            }
-            Err(err) => {
-                self.is_match = false;
-                self.match_error = Some(err.to_string());
-            }
+        match self.match_mode {
+            MatchMode::Glob => match Glob::new(&self.pattern) {
+                Ok(glob) => {
+                    let matcher = glob.compile_matcher();
+                    self.is_match = matcher.is_match(&self.test_path);
+                }
+                Err(err) => {
+                    self.is_match = false;
+                    self.match_error = Some(format!("Invalid glob: {}", err));
+                }
+            },
+            MatchMode::Regex => match regex_pattern_matches(&self.pattern, &self.test_path) {
+                Ok(is_match) => {
+                    self.is_match = is_match;
+                }
+                Err(err) => {
+                    self.is_match = false;
+                    self.match_error = Some(format!("Invalid regex: {}", err));
+                }
+            },
+        }
+    }
+
+    fn update_analytics(&mut self) {
+        self.analytics = AnalyticalPreview {
+            content_sha256: None,
+            content_mime: None,
+        };
+        self.analytics_error = None;
+        self.analytics_stale = false;
+
+        if self.test_path.trim().is_empty() {
+            self.analytics_error = Some("Enter a readable file path for analytics.".to_string());
+            return;
+        }
+
+        let path = std::path::PathBuf::from(self.test_path.trim());
+        if !path.is_file() {
+            self.analytics_error = Some("Enter a readable file path for analytics.".to_string());
+            return;
+        }
+
+        self.analytics = preview_analytics(path);
+
+        if self.analytics.content_sha256.is_none() && self.analytics.content_mime.is_none() {
+            self.analytics_error = Some(
+                "Analytical extraction is unavailable for this build or file type.".to_string(),
+            );
+        }
+    }
+
+    fn match_mode_label(&self) -> &'static str {
+        match self.match_mode {
+            MatchMode::Glob => "Glob Pattern",
+            MatchMode::Regex => "Regex Pattern",
+        }
+    }
+
+    fn match_mode_hint(&self) -> &'static str {
+        match self.match_mode {
+            MatchMode::Glob => "Example: src/**/*.rs",
+            MatchMode::Regex => "Example: ^src/.+\\.rs$",
+        }
+    }
+
+    fn analytics_value(value: &Option<String>) -> &str {
+        match value {
+            Some(value) => value.as_str(),
+            None => "unavailable",
         }
     }
 }
@@ -142,15 +250,28 @@ impl eframe::App for InquisitorApp {
 
                 ui.label("Test Path");
                 if ui.text_edit_singleline(&mut self.test_path).changed() {
-                    self.update_match_status();
+                    self.reset_match_preview();
+                    self.reset_analytics_preview();
                 }
 
                 ui.add_space(4.0);
+                let previous_mode = self.match_mode;
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut self.match_mode, MatchMode::Glob, "Glob");
+                    ui.selectable_value(&mut self.match_mode, MatchMode::Regex, "Regex");
+                });
+                if previous_mode != self.match_mode {
+                    self.reset_match_preview();
+                }
 
-                ui.label("Glob Pattern");
-                ui.small("Example: src/**/*.rs");
+                ui.label(self.match_mode_label());
+                ui.small(self.match_mode_hint());
 
-                if ui.text_edit_singleline(&mut self.glob_pattern).changed() {
+                if ui.text_edit_singleline(&mut self.pattern).changed() {
+                    self.reset_match_preview();
+                }
+
+                if ui.button("Test Pattern").clicked() {
                     self.update_match_status();
                 }
 
@@ -173,10 +294,38 @@ impl eframe::App for InquisitorApp {
                 );
 
                 if let Some(err) = &self.match_error {
+                    ui.label(egui::RichText::new(err).color(Palette::WARN).small());
+                } else if self.match_stale {
                     ui.label(
-                        egui::RichText::new(format!("Invalid glob: {}", err))
+                        egui::RichText::new("Pattern changed. Press Test Pattern to evaluate.")
                             .color(Palette::WARN)
                             .small(),
+                    );
+                }
+
+                ui.separator();
+                ui.label(egui::RichText::new("ANALYTICS").strong());
+                if ui.button("Analyze File").clicked() {
+                    self.update_analytics();
+                }
+                ui.monospace(format!(
+                    "content_sha256: {}",
+                    Self::analytics_value(&self.analytics.content_sha256)
+                ));
+                ui.monospace(format!(
+                    "content_mime: {}",
+                    Self::analytics_value(&self.analytics.content_mime)
+                ));
+
+                if let Some(err) = &self.analytics_error {
+                    ui.label(egui::RichText::new(err).color(Palette::WARN).small());
+                } else if self.analytics_stale {
+                    ui.label(
+                        egui::RichText::new(
+                            "Path changed. Press Analyze File to compute metadata.",
+                        )
+                        .color(Palette::WARN)
+                        .small(),
                     );
                 }
             });

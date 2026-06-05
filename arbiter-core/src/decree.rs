@@ -521,6 +521,27 @@ impl EnvContext {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AnalyticalPreview {
+    pub content_sha256: Option<String>,
+    pub content_mime: Option<String>,
+}
+
+pub fn preview_analytics(path: impl Into<PathBuf>) -> AnalyticalPreview {
+    let mut context = EnvContext::new();
+    context.source_path = Some(path.into());
+    context.integrity_scan = true;
+
+    AnalyticalPreview {
+        content_sha256: context.resolve("content_sha256").map(str::to_owned),
+        content_mime: context.resolve("content_mime").map(str::to_owned),
+    }
+}
+
+pub fn regex_pattern_matches(pattern: &str, input: &str) -> Result<bool, regex::Error> {
+    regex::Regex::new(pattern).map(|regex| regex.is_match(input))
+}
+
 #[cfg(feature = "vigil-deep")]
 fn compute_sha256(path: &PathBuf) -> Option<String> {
     use sha2::{Digest, Sha256};
@@ -705,4 +726,39 @@ pub struct ExecData {
     pub trigger_time: Instant,
     pub dry_run: bool,
     pub abort_rx: tokio::sync::oneshot::Receiver<()>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{preview_analytics, regex_pattern_matches};
+
+    #[test]
+    fn regex_pattern_matches_valid_pattern() {
+        assert!(regex_pattern_matches(r"^src/.+\.rs$", "src/decree.rs").unwrap());
+        assert!(!regex_pattern_matches(r"^src/.+\.rs$", "doc/decree.md").unwrap());
+    }
+
+    #[test]
+    fn regex_pattern_reports_invalid_pattern() {
+        assert!(regex_pattern_matches(r"[", "src/decree.rs").is_err());
+    }
+
+    #[cfg(feature = "vigil-deep")]
+    #[test]
+    fn preview_analytics_reuses_env_context_extractors() {
+        let path = std::env::temp_dir().join(format!(
+            "arbiter-analytics-preview-{}-{}.txt",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+        ));
+        std::fs::write(&path, b"arbiter\n").unwrap();
+
+        let preview = preview_analytics(path.clone());
+
+        std::fs::remove_file(path).unwrap();
+        assert_eq!(
+            preview.content_sha256.as_deref(),
+            Some("eb1724a315397e3771be4fb927ab82bf63dc3f3d75c2acea2f50d795dce3f194")
+        );
+    }
 }

@@ -35,6 +35,18 @@ If you are used to standard Regular Expressions, keep these differences in mind:
 *   **The `+` Symbol:** In Glob syntax, `+` is just a literal character. To match "one or more" characters, use `?*` (exactly one character followed by zero or more).
 *   **The `.` Symbol:** In Regex, `.` matches any character. In Glob, `.` is a literal dot. Use `?` for a single-character wildcard.
 
+### Inquisitor Sandbox
+
+The Inquisitor sandbox can test either a Glob or Regex pattern against the entered test path.
+
+*   **Glob mode** uses the same `globset` matcher as Arbiter's path filtering helpers.
+*   **Regex mode** compiles the expression directly and reports invalid syntax without saving a Decree.
+*   **Analytics preview** reads SHA-256 and MIME values for a valid file path through the same analytical environment context used by `${env.content_sha256}` and `${env.content_mime}`.
+
+Pattern checks run when you press **Test Pattern**. File analytics run when you press **Analyze File**, so large-file hashing and Regex compilation do not block the UI while typing.
+
+The sandbox is diagnostic only. It does not change the stored Decree or backend execution path.
+
 ### Processing Rules
 
 **Case Sensitivity:**
