@@ -38,6 +38,8 @@ struct InquisitorApp {
     match_error: Option<String>,
     analytics: AnalyticalPreview,
     analytics_error: Option<String>,
+    match_stale: bool,
+    analytics_stale: bool,
 }
 
 impl InquisitorApp {
@@ -129,14 +131,33 @@ impl InquisitorApp {
                 content_mime: None,
             },
             analytics_error: None,
+            match_stale: false,
+            analytics_stale: false,
         }
+    }
+
+    fn reset_match_preview(&mut self) {
+        self.is_match = false;
+        self.match_error = None;
+        self.match_stale = true;
+    }
+
+    fn reset_analytics_preview(&mut self) {
+        self.analytics = AnalyticalPreview {
+            content_sha256: None,
+            content_mime: None,
+        };
+        self.analytics_error = None;
+        self.analytics_stale = true;
     }
 
     fn update_match_status(&mut self) {
         self.match_error = None;
+        self.match_stale = false;
 
         if self.pattern.is_empty() || self.test_path.is_empty() {
             self.is_match = false;
+            self.match_error = Some("Enter both a pattern and test path.".to_string());
             return;
         }
 
@@ -169,8 +190,10 @@ impl InquisitorApp {
             content_mime: None,
         };
         self.analytics_error = None;
+        self.analytics_stale = false;
 
         if self.test_path.trim().is_empty() {
+            self.analytics_error = Some("Enter a readable file path for analytics.".to_string());
             return;
         }
 
@@ -187,11 +210,6 @@ impl InquisitorApp {
                 "Analytical extraction is unavailable for this build or file type.".to_string(),
             );
         }
-    }
-
-    fn refresh_sandbox(&mut self) {
-        self.update_match_status();
-        self.update_analytics();
     }
 
     fn match_mode_label(&self) -> &'static str {
@@ -232,7 +250,8 @@ impl eframe::App for InquisitorApp {
 
                 ui.label("Test Path");
                 if ui.text_edit_singleline(&mut self.test_path).changed() {
-                    self.refresh_sandbox();
+                    self.reset_match_preview();
+                    self.reset_analytics_preview();
                 }
 
                 ui.add_space(4.0);
@@ -242,13 +261,17 @@ impl eframe::App for InquisitorApp {
                     ui.selectable_value(&mut self.match_mode, MatchMode::Regex, "Regex");
                 });
                 if previous_mode != self.match_mode {
-                    self.update_match_status();
+                    self.reset_match_preview();
                 }
 
                 ui.label(self.match_mode_label());
                 ui.small(self.match_mode_hint());
 
                 if ui.text_edit_singleline(&mut self.pattern).changed() {
+                    self.reset_match_preview();
+                }
+
+                if ui.button("Test Pattern").clicked() {
                     self.update_match_status();
                 }
 
@@ -272,10 +295,19 @@ impl eframe::App for InquisitorApp {
 
                 if let Some(err) = &self.match_error {
                     ui.label(egui::RichText::new(err).color(Palette::WARN).small());
+                } else if self.match_stale {
+                    ui.label(
+                        egui::RichText::new("Pattern changed. Press Test Pattern to evaluate.")
+                            .color(Palette::WARN)
+                            .small(),
+                    );
                 }
 
                 ui.separator();
                 ui.label(egui::RichText::new("ANALYTICS").strong());
+                if ui.button("Analyze File").clicked() {
+                    self.update_analytics();
+                }
                 ui.monospace(format!(
                     "content_sha256: {}",
                     Self::analytics_value(&self.analytics.content_sha256)
@@ -287,6 +319,14 @@ impl eframe::App for InquisitorApp {
 
                 if let Some(err) = &self.analytics_error {
                     ui.label(egui::RichText::new(err).color(Palette::WARN).small());
+                } else if self.analytics_stale {
+                    ui.label(
+                        egui::RichText::new(
+                            "Path changed. Press Analyze File to compute metadata.",
+                        )
+                        .color(Palette::WARN)
+                        .small(),
+                    );
                 }
             });
 

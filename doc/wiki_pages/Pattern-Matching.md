@@ -43,6 +43,8 @@ The Inquisitor sandbox can test either a Glob or Regex pattern against the enter
 *   **Regex mode** compiles the expression directly and reports invalid syntax without saving a Decree.
 *   **Analytics preview** reads SHA-256 and MIME values for a valid file path through the same analytical environment context used by `${env.content_sha256}` and `${env.content_mime}`.
 
+Pattern checks run when you press **Test Pattern**. File analytics run when you press **Analyze File**, so large-file hashing and Regex compilation do not block the UI while typing.
+
 The sandbox is diagnostic only. It does not change the stored Decree or backend execution path.
 
 ### Processing Rules
